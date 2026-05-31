@@ -52,7 +52,7 @@ async def health():
 @app.get("/api/v1/version")
 async def version():
     return {
-        "versionCode": 8,
+        "versionCode": 9,
         "versionName": "1.4.0",
         "apkUrl": "/uploads/app-release.apk",
     }

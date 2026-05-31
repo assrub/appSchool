@@ -49,10 +49,10 @@ fun UnitTheoryView(
     Card(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -171,19 +171,23 @@ private fun buildTheoryHtml(theory: UnitTheory): String {
 }
 
 private val THEORY_CSS = """
-    body { font-family: sans-serif; font-size: 17px; color: #333; padding: 8px; margin: 0; line-height: 1.5; }
-    h1 { font-size: 1.5em; margin: 12px 0 8px; color: #4CAF50; }
-    h2 { font-size: 1.25em; margin: 10px 0 6px; color: #4CAF50; }
-    h3 { font-size: 1.1em; margin: 8px 0 4px; color: #4CAF50; }
-    p { margin: 4px 0 8px; }
-    table { border-collapse: collapse; width: 100%; margin: 8px 0; }
-    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 0.85em; }
-    th { background: #f5f5f5; font-weight: bold; }
-    blockquote { border-left: 3px solid #4CAF50; margin: 8px 0; padding: 4px 12px; color: #666; }
-    img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
-    ul, ol { padding-left: 20px; }
-    a { color: #4CAF50; }
-    mark { background: #FFF9C4; padding: 1px 4px; }
-    .youtube-video { margin: 8px 0; }
-    .youtube-video iframe { width: 100% !important; height: 180px !important; }
+    body { font-family: 'Roboto', sans-serif; font-size: 16px; color: #333; padding: 12px 8px; margin: 0; line-height: 1.6; }
+    h1 { font-size: 1.4em; margin: 14px 0 10px; color: #388E3C; border-bottom: 2px solid #C8E6C9; padding-bottom: 6px; }
+    h2 { font-size: 1.2em; margin: 12px 0 8px; color: #4CAF50; }
+    h3 { font-size: 1.05em; margin: 10px 0 6px; color: #4CAF50; }
+    p { margin: 6px 0 10px; }
+    strong { color: #2E7D32; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    th { background: #4CAF50; color: white; padding: 10px 12px; text-align: left; font-size: 14px; font-weight: bold; }
+    td { padding: 8px 12px; border-bottom: 1px solid #E8F5E9; font-size: 14px; }
+    tr:nth-child(even) td { background: #F1F8E9; }
+    tr:last-child td { border-bottom: none; }
+    blockquote { border-left: 4px solid #4CAF50; margin: 12px 0; padding: 8px 16px; color: #555; background: #F1F8E9; border-radius: 0 8px 8px 0; font-style: italic; }
+    img { max-width: 100%; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    ul, ol { padding-left: 24px; }
+    li { margin: 6px 0; }
+    a { color: #4CAF50; text-decoration: underline; }
+    mark { background: #FFF9C4; padding: 2px 6px; border-radius: 4px; color: #333; }
+    .youtube-video { margin: 10px 0; }
+    .youtube-video iframe { width: 100% !important; height: 180px !important; border-radius: 8px; }
 """.trimIndent()
