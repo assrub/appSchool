@@ -193,21 +193,9 @@ fun UnitExerciseScreen(
         } else {
             val currentItem = viewModel.getCurrentItem()
             val options = viewModel.getOptions()
-            var selectedTab by remember { mutableStateOf(0) }
 
-            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                if (uiState.unitTheory != null) {
-                    TabRow(selectedTabIndex = selectedTab, containerColor = Color.White, contentColor = Primary) {
-                        Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("📝 Ejercicio") })
-                        Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📖 Explicación") })
-                    }
-                }
-
-                if (selectedTab == 1 && uiState.unitTheory != null) {
-                    UnitTheoryView(theory = uiState.unitTheory!!, modifier = Modifier)
-                } else {
-                    LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)
             ) {
                 if (uiState.unitTheory != null) {
                     item { UnitTheoryView(theory = uiState.unitTheory!!); Spacer(Modifier.height(12.dp)) }
@@ -513,9 +501,7 @@ fun UnitExerciseScreen(
                         }
                     }
                 }
-                }
-                } // closes else (selectedTab)
-            } // closes Column
             }
         }
+    }
 }
