@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.Subject
 import com.appenglish.domain.model.TopicSummary
@@ -45,7 +46,7 @@ import com.appenglish.ui.theme.Primary
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectsScreen(
-    onTopicClick: (String, String) -> Unit,
+    onSubjectClick: (String) -> Unit,
     onDictionaryClick: () -> Unit,
     onProgressClick: () -> Unit,
     viewModel: SubjectsViewModel = hiltViewModel()
@@ -122,7 +123,7 @@ fun SubjectsScreen(
                 items(uiState.subjects) { subject ->
                     SubjectCard(
                         subject = subject,
-                        onTopicClick = onTopicClick
+                        onClick = { onSubjectClick(subject.id) }
                     )
                 }
             }
@@ -133,32 +134,21 @@ fun SubjectsScreen(
 @Composable
 fun SubjectCard(
     subject: Subject,
-    onTopicClick: (String, String) -> Unit
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(subject.icon, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    subject.name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
+        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(subject.icon, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(subject.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("${subject.topicsCount} temas", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            subject.topics.forEach { topic ->
-                TopicItem(
-                    topic = topic,
-                    onClick = { onTopicClick(subject.id, topic.id) }
-                )
-            }
+            Text("→", fontSize = 24.sp, color = Primary)
         }
     }
 }

@@ -8,6 +8,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.appenglish.ui.screens.login.LoginScreen
 import com.appenglish.ui.screens.subjects.SubjectsScreen
+import com.appenglish.ui.screens.topics.TopicsScreen
+import com.appenglish.ui.screens.units.UnitsScreen
+import com.appenglish.ui.screens.blocks.BlocksScreen
 import com.appenglish.ui.screens.topic.TopicScreen
 import com.appenglish.ui.screens.exercise.UnitExerciseScreen
 import com.appenglish.ui.screens.test.FinalTestScreen
@@ -17,21 +20,19 @@ import com.appenglish.ui.screens.progress.ProgressScreen
 object Routes {
     const val LOGIN = "login"
     const val SUBJECTS = "subjects"
-    const val TOPIC = "topic/{topicId}"
-    const val UNIT = "unit/{topicId}/{unitId}"
+    const val TOPICS_LIST = "topics/{subjectId}"
+    const val UNITS_LIST = "units/{topicId}"
+    const val BLOCKS = "blocks/{unitId}"
+    const val EXERCISE = "exercise/{topicId}/{unitId}"
     const val TEST = "test/{topicId}"
     const val DICTIONARY = "dictionary"
     const val PROGRESS = "progress"
-    const val BLOCKS = "blocks/{unitId}"
-    const val UNITS_LIST = "units/{topicId}"
-    const val TOPICS_LIST = "topics/{subjectId}"
 
-    fun topic(topicId: String) = "topic/$topicId"
-    fun unit(topicId: String, unitId: String) = "unit/$topicId/$unitId"
-    fun test(topicId: String) = "test/$topicId"
-    fun blocks(unitId: String) = "blocks/$unitId"
-    fun unitsList(topicId: String) = "units/$topicId"
     fun topicsList(subjectId: String) = "topics/$subjectId"
+    fun unitsList(topicId: String) = "units/$topicId"
+    fun blocks(unitId: String) = "blocks/$unitId"
+    fun exercise(topicId: String, unitId: String) = "exercise/$topicId/$unitId"
+    fun test(topicId: String) = "test/$topicId"
 }
 
 @Composable
@@ -52,26 +53,34 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable(Routes.SUBJECTS) {
             SubjectsScreen(
-                onTopicClick = { subjectId, topicId ->
-                    navController.navigate(Routes.topic(topicId))
+                onSubjectClick = { subjectId ->
+                    navController.navigate(Routes.topicsList(subjectId))
                 },
-                onDictionaryClick = {
-                    navController.navigate(Routes.DICTIONARY)
-                },
-                onProgressClick = {
-                    navController.navigate(Routes.PROGRESS)
+                onDictionaryClick = { navController.navigate(Routes.DICTIONARY) },
+                onProgressClick = { navController.navigate(Routes.PROGRESS) }
+            )
+        }
+
+        composable(
+            route = Routes.TOPICS_LIST,
+            arguments = listOf(navArgument("subjectId") { type = NavType.StringType })
+        ) {
+            TopicsScreen(
+                onBackClick = { navController.popBackStack() },
+                onTopicClick = { topicId ->
+                    navController.navigate(Routes.unitsList(topicId))
                 }
             )
         }
 
         composable(
-            route = Routes.TOPIC,
+            route = Routes.UNITS_LIST,
             arguments = listOf(navArgument("topicId") { type = NavType.StringType })
         ) {
-            TopicScreen(
+            UnitsScreen(
                 onBackClick = { navController.popBackStack() },
                 onUnitClick = { topicId, unitId ->
-                    navController.navigate(Routes.unit(topicId, unitId))
+                    navController.navigate(Routes.blocks(unitId))
                 },
                 onTestClick = { topicId ->
                     navController.navigate(Routes.test(topicId))
@@ -80,7 +89,19 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = Routes.UNIT,
+            route = Routes.BLOCKS,
+            arguments = listOf(navArgument("unitId") { type = NavType.StringType })
+        ) {
+            BlocksScreen(
+                onBackClick = { navController.popBackStack() },
+        onBlockClick = { topicId, unitId ->
+            navController.navigate(Routes.exercise(topicId, unitId))
+        }
+            )
+        }
+
+        composable(
+            route = Routes.EXERCISE,
             arguments = listOf(
                 navArgument("topicId") { type = NavType.StringType },
                 navArgument("unitId") { type = NavType.StringType }
@@ -95,21 +116,15 @@ fun AppNavGraph(navController: NavHostController) {
             route = Routes.TEST,
             arguments = listOf(navArgument("topicId") { type = NavType.StringType })
         ) {
-            FinalTestScreen(
-                onBackClick = { navController.popBackStack() }
-            )
+            FinalTestScreen(onBackClick = { navController.popBackStack() })
         }
 
         composable(Routes.DICTIONARY) {
-            DictionaryScreen(
-                onBackClick = { navController.popBackStack() }
-            )
+            DictionaryScreen(onBackClick = { navController.popBackStack() })
         }
 
         composable(Routes.PROGRESS) {
-            ProgressScreen(
-                onBackClick = { navController.popBackStack() }
-            )
+            ProgressScreen(onBackClick = { navController.popBackStack() })
         }
     }
 }
