@@ -37,6 +37,7 @@
               </v-chip>
             </td>
             <td>
+              <v-btn icon="mdi-dumbbell" variant="text" size="small" color="warning" :to="`/topics/${t.id}/units`" />
               <v-btn icon="mdi-pencil" variant="text" size="small" color="primary" @click="openDialog(t)" />
               <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="confirmDelete(t)" />
             </td>
