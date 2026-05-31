@@ -15,8 +15,15 @@
     </v-alert>
 
     <v-row>
-      <v-col cols="7">
+      <v-col cols="12" md="9">
         <v-card rounded="lg" elevation="2">
+          <div class="d-flex align-center pa-2 border-b">
+            <span class="text-overline">Materias</span>
+            <v-spacer />
+            <v-btn size="x-small" variant="tonal" prepend-icon="mdi-cellphone" @click="showPreview = !showPreview">
+              {{ showPreview ? 'Ocultar' : 'Mostrar' }} preview
+            </v-btn>
+          </div>
           <v-progress-linear v-if="loading" indeterminate color="primary" />
           <v-table v-else>
             <thead>
@@ -76,7 +83,7 @@
           </v-table>
         </v-card>
       </v-col>
-      <v-col cols="5" class="d-flex align-start justify-center">
+      <v-col v-if="showPreview" cols="12" md="3">
         <MobilePreview :html="listPreviewHtml" />
       </v-col>
     </v-row>
@@ -228,6 +235,7 @@ const showExportDialog = ref(false)
 const exportId = ref(null)
 const exporting = ref(false)
 const fileInput = ref(null)
+const showPreview = ref(false)
 
 const form = ref({ id: '', name: '', icon: '', color: '#4CAF50', sort_order: 0 })
 
