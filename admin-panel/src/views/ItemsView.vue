@@ -14,8 +14,10 @@
       <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay ejercicios.</v-card-text>
     </v-card>
 
-    <v-dialog v-model="dialog" max-width="600"><v-card rounded="lg"><v-card-title>{{ editing?'Editar':'Nuevo' }} Ejercicio</v-card-title>
+    <v-dialog v-model="dialog" max-width="900"><v-card rounded="lg"><v-card-title>{{ editing?'Editar':'Nuevo' }} Ejercicio</v-card-title>
       <v-card-text>
+        <v-row>
+          <v-col cols="7">
         <v-select v-model="form.item_type" label="Tipo" :items="itemTypes" variant="outlined" class="mb-3" />
         <v-select v-model="form.input_mode" label="Modo" :items="inputModes" variant="outlined" class="mb-3" clearable hint="Vacío = hereda de la unidad" persistent-hint />
         <template v-if="form.item_type==='fill-blank'">
@@ -40,6 +42,11 @@
         <template v-else-if="form.item_type==='listening'"><v-text-field v-model="form.sentence" label="Frase" variant="outlined" class="mb-2" /><v-text-field v-model="form.audio_url" label="URL audio" variant="outlined" class="mb-2" /><v-text-field v-model="form.answer" label="Respuesta" variant="outlined" /></template>
         <template v-else-if="form.item_type==='matching'"><div v-for="(p,i) in formPairs" :key="i" class="d-flex align-center mb-2"><v-text-field v-model="formPairs[i].left" label="Izq" variant="outlined" density="compact" hide-details class="mr-2" /><v-icon>mdi-arrow-right</v-icon><v-text-field v-model="formPairs[i].right" label="Der" variant="outlined" density="compact" hide-details class="ml-2" /><v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="formPairs.splice(i,1)" /></div><v-btn variant="outlined" size="small" prepend-icon="mdi-plus" @click="formPairs.push({left:'',right:''})">Par</v-btn></template>
         <template v-else-if="form.item_type==='true-false'"><v-text-field v-model="form.sentence" label="Frase" variant="outlined" class="mb-2" /><v-switch v-model="form.is_correct_boolean" label="¿Es correcta?" color="primary" /><v-text-field v-if="!form.is_correct_boolean" v-model="form.answer" label="Corrección" variant="outlined" /></template>
+          </v-col>
+          <v-col cols="5" class="d-flex align-center justify-center">
+            <MobilePreview :html="previewExerciseHtml" />
+          </v-col>
+        </v-row>
       </v-card-text>
       <v-card-actions><v-spacer /><v-btn variant="text" @click="dialog=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" @click="save">{{ editing?'Guardar':'Crear' }}</v-btn></v-card-actions></v-card>
     </v-dialog>
@@ -48,9 +55,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
+import MobilePreview from '../components/MobilePreview.vue'
 
 const route = useRoute()
 const blockId = route.params.blockId
@@ -67,6 +75,15 @@ const formPairs = ref([{left:'',right:''},{left:'',right:''}])
 const wordsText = ref('')
 const correctOrderText = ref('')
 const form = ref({block_id:Number(blockId),item_type:'fill-blank',sentence:'',answer:'',answers:null,hint:'',question:'',options:null,words:null,correct_order:null,input_mode:null,audio_url:'',pairs:null,is_correct_boolean:null,sort_order:0})
+const previewExerciseHtml = computed(() => {
+  if (form.value.item_type==='fill-blank') {
+    const s = form.value.sentence || '...'
+    const opts = optionsList.value.filter(o=>o.trim())
+    const btns = opts.length ? opts : ['am','is','are']
+    return `<p style="font-size:18px;text-align:center">${s.replace(/_+/g,'<span style="border-bottom:2px dashed #999;padding:2px 12px;margin:0 4px">______</span>')}</p><div style="display:flex;gap:8px;justify-content:center;margin-top:12px">${btns.map(o=>`<span style="background:#f5f5f5;border-radius:8px;padding:8px 16px;font-weight:bold;font-size:16px">${o}</span>`).join('')}</div>`
+  }
+  return `<p style="text-align:center;color:#999">Vista previa: ${form.value.item_type}</p>`
+})
 
 async function fetchData() { loading.value=true; error.value=''; try { const r=await api.get(`/admin/blocks/${blockId}/items`); items.value=r.data; const b=await api.get(`/admin/blocks/${blockId}`); blockTitle.value=b.data.title||'Bloque'; unitId.value=b.data.unit_id } catch(e) { error.value=e.response?.data?.detail||'Error' } finally { loading.value=false } }
 watch(() => route.params, fetchData, { immediate: true })

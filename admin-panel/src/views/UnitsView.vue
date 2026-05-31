@@ -10,8 +10,10 @@
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
 
     <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
-      <v-table v-else><thead><tr><th>ID</th><th>Título</th><th>Tipo</th><th>Input</th><th>Estado</th><th>Acciones</th></tr></thead>
-        <tbody><tr v-for="u in items" :key="u.id"><td class="font-weight-medium">{{ u.id }}</td><td>{{ u.title }}</td><td><v-chip size="small" color="primary" variant="tonal">{{ u.exercise_type }}</v-chip></td><td><v-chip :color="u.input_mode==='tap'?'green':'orange'" size="small" variant="tonal">{{ u.input_mode==='tap'?'Tocar':'Escribir' }}</v-chip></td><td><v-chip :color="u.is_locked?'grey':'green'" size="small" variant="tonal">{{ u.is_locked?'🔒 Bloqueado':'🔓 Abierto' }}</v-chip></td>
+      <v-table v-else><thead><tr><th>Ord.</th><th>ID</th><th>Título</th><th>Input</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody><tr v-for="(u,idx) in items" :key="u.id">
+          <td><v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx===0" @click="moveItem(idx,-1)" /><v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx===items.length-1" @click="moveItem(idx,1)" /></td>
+          <td class="font-weight-medium">{{ u.id }}</td><td>{{ u.title }}</td><td><v-chip :color="u.input_mode==='tap'?'green':'orange'" size="small" variant="tonal">{{ u.input_mode==='tap'?'Tocar':'Escribir' }}</v-chip></td><td><v-chip :color="u.is_locked?'grey':'green'" size="small" variant="tonal">{{ u.is_locked?'🔒':'🔓' }}</v-chip></td>
             <td>
               <v-tooltip text="Editar unidad" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(u)" /></template></v-tooltip>
               <v-tooltip text="Ver bloques" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-list-box-outline" v-bind="tp" variant="text" size="small" color="secondary" :to="`/units/${u.id}/blocks`" /></template></v-tooltip>
@@ -60,4 +62,11 @@ async function doDelete() { await api.delete(`/admin/units/${toDelete.value.id}`
 async function toggleLock(unit,lock) { try { await api.put(`/admin/units/${unit.id}/${lock?'lock':'unlock'}`); await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } }
 async function confirmReset(unit) { if(!confirm(`¿Resetear progreso de "${unit.title}"?`)) return; await api.delete(`/admin/progress/android-default/${topicId}/${unit.id}`); alert('Reseteado') }
 async function topicAction(action) { const labels={'lock-all':'Bloquear','unlock-all':'Desbloquear','reset-all':'Resetear'}; if(!confirm(`¿${labels[action]} todas las unidades?`)) return; await api.post(`/admin/topics/${topicId}/${action}`); await fetchData(); alert('Hecho') }
+async function moveItem(idx, dir) {
+  const a = items.value[idx]; const b = items.value[idx+dir]
+  const temp = a.sort_order; a.sort_order = b.sort_order; b.sort_order = temp
+  const list = items.value.map(x=>({id:x.id,sort_order:x.sort_order}))
+  await api.put('/admin/units/reorder', { items: list })
+  await fetchData()
+}
 </script>

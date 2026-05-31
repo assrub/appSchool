@@ -3,8 +3,10 @@
     <div class="d-flex align-center mb-6"><div><v-btn variant="text" prepend-icon="mdi-arrow-left" to="/subjects" class="mb-2">Materias</v-btn><h1 class="text-h4">Temas de {{ subjectName }}</h1></div><v-spacer /><v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">Nuevo Tema</v-btn></div>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
     <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
-      <v-table v-else><thead><tr><th></th><th>ID</th><th>Nombre</th><th>Dificultad</th><th>Activo</th><th>Acciones</th></tr></thead>
-        <tbody><tr v-for="t in items" :key="t.id"><td><span class="text-h5">{{ t.icon }}</span></td><td class="font-weight-medium">{{ t.id }}</td><td>{{ t.name }}</td><td><v-rating :model-value="t.difficulty" length="5" size="20" readonly density="compact" color="amber" /></td><td><v-chip :color="t.is_active?'green':'grey'" size="small" variant="tonal">{{ t.is_active?'Sí':'No' }}</v-chip></td>
+      <v-table v-else><thead><tr><th>Orden</th><th></th><th>ID</th><th>Nombre</th><th>Dificultad</th><th>Activo</th><th>Acciones</th></tr></thead>
+        <tbody><tr v-for="(t,idx) in items" :key="t.id">
+          <td><v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx===0" @click="moveItem(idx,-1)" /><v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx===items.length-1" @click="moveItem(idx,1)" /></td>
+          <td><span class="text-h5">{{ t.icon }}</span></td><td class="font-weight-medium">{{ t.id }}</td><td>{{ t.name }}</td><td><v-rating :model-value="t.difficulty" length="5" size="20" readonly density="compact" color="amber" /></td><td><v-chip :color="t.is_active?'green':'grey'" size="small" variant="tonal">{{ t.is_active?'Sí':'No' }}</v-chip></td>
             <td>
               <v-tooltip text="Ver unidades" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-dumbbell" v-bind="tp" variant="text" size="small" color="warning" :to="`/topics/${t.id}/units`" /></template></v-tooltip>
               <v-tooltip text="Editar teoría" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="{ path: `/theory/topic/${t.id}`, query: { subjectId } }" /></template></v-tooltip>
@@ -44,4 +46,11 @@ function confirmDelete(t) { toDelete.value=t; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/topics/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
 function confirmHardDelete(t) { if(confirm(`¿Eliminar "${t.name}" PERMANENTEMENTE?`)) doHardDelete(t) }
 async function doHardDelete(t) { await api.delete(`/admin/topics/${t.id}/hard`); await fetchData() }
+async function moveItem(idx, dir) {
+  const a = items.value[idx]; const b = items.value[idx+dir]
+  const temp = a.sort_order; a.sort_order = b.sort_order; b.sort_order = temp
+  const list = items.value.map(x=>({id:x.id,sort_order:x.sort_order}))
+  await api.put('/admin/topics/reorder', { items: list })
+  await fetchData()
+}
 </script>
