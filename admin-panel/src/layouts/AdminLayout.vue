@@ -13,7 +13,7 @@
       <v-spacer />
       <v-chip class="mr-4" color="white" variant="tonal">
         <v-icon start>mdi-account</v-icon>
-        {{ auth.username }}
+        {{ username }}
       </v-chip>
     </v-app-bar>
 
@@ -26,22 +26,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import api from '../api/client'
 
-const auth = useAuthStore()
 const router = useRouter()
-
-import { onMounted } from 'vue'
-onMounted(async () => {
-  if (!auth.isAuthenticated) { router.push('/login'); return }
-  try { await api.post('/auth/refresh') } catch { auth.logout(); router.push('/login') }
-})
+const username = computed(() => localStorage.getItem('username') || '')
 
 function logout() {
-  auth.logout()
+  localStorage.removeItem('token')
+  localStorage.removeItem('username')
   router.push('/login')
 }
 </script>

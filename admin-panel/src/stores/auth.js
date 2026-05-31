@@ -1,13 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { setTokenGetter } from '../api/client'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
   const username = ref(localStorage.getItem('username') || '')
   const isAuthenticated = computed(() => !!token.value)
-
-  setTokenGetter(() => token.value)
 
   async function login(user, pass) {
     const { default: api } = await import('../api/client')
