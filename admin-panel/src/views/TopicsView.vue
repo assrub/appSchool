@@ -2,7 +2,10 @@
   <div>
     <div class="d-flex align-center mb-6"><div><v-btn variant="text" prepend-icon="mdi-arrow-left" to="/subjects" class="mb-2">Materias</v-btn><h1 class="text-h4">Temas de {{ subjectName }}</h1></div><v-spacer /><v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">Nuevo Tema</v-btn></div>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
-    <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
+
+    <v-row>
+      <v-col cols="7">
+        <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
       <v-table v-else><thead><tr><th>Orden</th><th></th><th>ID</th><th>Nombre</th><th>Dificultad</th><th>Activo</th><th>Acciones</th></tr></thead>
         <tbody><tr v-for="(t,idx) in items" :key="t.id">
           <td><v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx===0" @click="moveItem(idx,-1)" /><v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx===items.length-1" @click="moveItem(idx,1)" /></td>
@@ -16,6 +19,9 @@
             </td></tr></tbody></v-table>
       <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay temas.</v-card-text>
     </v-card>
+      </v-col>
+      <v-col cols="5" class="d-flex align-start"><AppPreview /></v-col>
+    </v-row>
 
     <v-dialog v-model="dialog" max-width="500"><v-card rounded="lg"><v-card-title>{{ editing?'Editar':'Nuevo' }} Tema</v-card-title>
       <v-card-text><v-text-field v-model="form.id" label="ID" :disabled="!!editing" variant="outlined" class="mb-2" /><v-text-field v-model="form.name" label="Nombre" variant="outlined" class="mb-2" /><v-text-field v-model="form.icon" label="Ícono" variant="outlined" class="mb-2" /><v-text-field v-model.number="form.difficulty" label="Dificultad (1-5)" type="number" min="1" max="5" variant="outlined" class="mb-2" /><v-text-field v-model.number="form.sort_order" label="Orden" type="number" variant="outlined" /></v-card-text>
@@ -30,6 +36,7 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
+import AppPreview from '../components/AppPreview.vue'
 
 const route = useRoute()
 const subjectId = route.params.subjectId
