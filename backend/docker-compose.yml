@@ -15,7 +15,7 @@ services:
       - ./content:/app/content
 
   admin:
-    build: ./admin-panel
+    build: ../admin-panel
     ports:
       - "9000:80"
     depends_on:

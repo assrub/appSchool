@@ -6,9 +6,9 @@ App educativa para celular Android, pensada para aprendizaje escalable de múlti
 
 ```
 appSchool/
-├── backend/          # API REST (Python + FastAPI)
+├── backend/          # API REST (Python + FastAPI + Docker)
 ├── app-android/      # App Android (Kotlin + Jetpack Compose)
-├── admin-panel/      # Panel de administración web (Vue.js — próxima fase)
+├── admin-panel/      # Panel de administración web (Vue.js + Docker)
 ├── PLAN.md           # Plan de desarrollo completo
 ├── BACKEND.md        # Especificación del backend
 └── Ejercicios_*      # Archivos de ejercicios (verb to be)
