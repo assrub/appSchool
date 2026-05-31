@@ -11,6 +11,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -250,9 +251,8 @@ private fun ExerciseContent(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
-                        Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { }
+                        Modifier.padding(14.dp).clickable { },
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("📖", fontSize = 24.sp)
                         Spacer(Modifier.width(10.dp))
@@ -571,8 +571,4 @@ private fun ExerciseContent(
             }
         }
     }
-}
-
-private fun androidx.compose.foundation.clickable.clickable(onClick: () -> Unit): Modifier {
-    return Modifier.clickable(onClick = onClick)
 }

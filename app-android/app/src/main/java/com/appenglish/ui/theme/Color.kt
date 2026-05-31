@@ -19,6 +19,8 @@ val WarningOrange = Color(0xFFFFA726)
 val InfoBlue = Color(0xFF2196F3)
 val ErrorRed = Color(0xFFE53935)
 
+val CorrectGreen = Color(0xFF4CAF50)
+val IncorrectRed = Color(0xFFE53935)
 val CorrectBackground = Color(0xFFC8E6C9)
 val IncorrectBackground = Color(0xFFFFCDD2)
 val WarningBackground = Color(0xFFFFF3E0)

@@ -97,7 +97,7 @@ fun BlocksScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onBlockClick(uiState.topicId, viewModel.getUnitId()) },
+                                    .clickable { onBlockClick(uiState.topicId, viewModel.getUnitId) },
                                 shape = MaterialTheme.shapes.large,
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White)

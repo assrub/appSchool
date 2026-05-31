@@ -55,9 +55,6 @@ Scaffold(
                 )
             )
         }
-    )
-            )
-        }
     ) { padding ->
         if (uiState.isLoading) {
             Box(
