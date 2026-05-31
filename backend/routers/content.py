@@ -1,96 +1,61 @@
-import json
-import os
 import random
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
-from config import CONTENT_DIR
+from database import get_db
+from models import Subject, Topic, TopicTheory, TheorySection, TheoryVideo
+from models import ExerciseUnit, UnitTheory, UnitTheorySection, ExerciseBlock, ExerciseItem
 from schemas.content import (
-    SubjectsResponse,
-    SubjectResponse,
-    TopicResponse,
-    TopicSummary,
-    TopicProgress,
-    TestResponse,
-    TestQuestion,
+    SubjectsResponse, SubjectResponse, TopicResponse, TopicSummary, TopicProgress,
+    TestResponse, TestQuestion,
+    Unit, UnitProgress, UnitTheoryDto, TheorySectionDto,
+    ExerciseBlockDto, ExerciseItemDto, TheoryDto, TableDto, TipDto, TestConfigDto,
 )
 
 router = APIRouter()
 
 
-def _load_subjects() -> list[dict]:
-    path = os.path.join(CONTENT_DIR, "subjects.json")
-    if not os.path.exists(path):
-        return []
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data.get("subjects", [])
-
-
-def _load_topic_content(topic_id: str) -> dict | None:
-    for subject_data in _load_subjects():
-        subject_id = subject_data["id"]
-        path = os.path.join(CONTENT_DIR, subject_id, f"{topic_id}.json")
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-    return None
-
-
-def _get_all_topics() -> list[dict]:
-    topics = []
-    for subject_data in _load_subjects():
-        subject_id = subject_data["id"]
-        subject_dir = os.path.join(CONTENT_DIR, subject_id)
-        if os.path.exists(subject_dir):
-            for filename in sorted(os.listdir(subject_dir)):
-                if filename.endswith(".json"):
-                    filepath = os.path.join(subject_dir, filename)
-                    with open(filepath, "r", encoding="utf-8") as f:
-                        topic = json.load(f)
-                        topic["subjectId"] = subject_id
-                        topics.append(topic)
-    return topics
-
-
 @router.get("/subjects", response_model=SubjectsResponse)
-async def get_subjects():
-    subjects_data = _load_subjects()
-    all_topics = _get_all_topics()
+async def get_subjects(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Subject)
+        .where(Subject.is_active == True)
+        .order_by(Subject.sort_order)
+        .options(selectinload(Subject.topics))
+    )
+    subjects = result.scalars().all()
 
     response_subjects = []
-    for subj in subjects_data:
-        subject_topics = [
-            t for t in all_topics if t.get("subjectId") == subj["id"]
-        ]
-        subject_topics.sort(key=lambda t: t.get("order", 0))
-
+    for subj in subjects:
         topic_summaries = []
-        for topic in subject_topics:
-            units = topic.get("units", [])
-            total_units = len(units)
+        for topic in subj.topics:
+            if not topic.is_active:
+                continue
+            unit_count = await db.scalar(
+                select(ExerciseUnit).where(ExerciseUnit.topic_id == topic.id)
+            )
+            total_units = 1 if unit_count is None else 0
             topic_summaries.append(
                 TopicSummary(
-                    id=topic["id"],
-                    name=topic["name"],
-                    order=topic.get("order", 1),
-                    difficulty=topic.get("difficulty", 1),
-                    icon=topic.get("icon", ""),
+                    id=topic.id,
+                    name=topic.name,
+                    order=topic.sort_order,
+                    difficulty=topic.difficulty,
+                    icon=topic.icon,
                     isLocked=False,
-                    progress=TopicProgress(
-                        completedUnits=0,
-                        totalUnits=total_units,
-                        percentComplete=0.0,
-                    ),
+                    progress=TopicProgress(),
                 )
             )
-
+        total_units = await _count_units_for_subject(db, subj.id)
         response_subjects.append(
             SubjectResponse(
-                id=subj["id"],
-                name=subj["name"],
-                icon=subj.get("icon", ""),
-                color=subj.get("color", "#4CAF50"),
+                id=subj.id,
+                name=subj.name,
+                icon=subj.icon,
+                color=subj.color,
                 topicsCount=len(topic_summaries),
                 topics=topic_summaries,
             )
@@ -99,51 +64,138 @@ async def get_subjects():
     return SubjectsResponse(subjects=response_subjects)
 
 
+async def _count_units_for_subject(db: AsyncSession, subject_id: str) -> int:
+    from sqlalchemy import func
+    result = await db.execute(
+        select(func.count())
+        .select_from(ExerciseUnit)
+        .join(Topic)
+        .where(Topic.subject_id == subject_id, Topic.is_active == True)
+    )
+    return result.scalar() or 0
+
+
 @router.get("/topics/{topic_id}", response_model=TopicResponse)
-async def get_topic(topic_id: str):
-    topic = _load_topic_content(topic_id)
+async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Topic)
+        .where(Topic.id == topic_id, Topic.is_active == True)
+        .options(
+            selectinload(Topic.theory).selectinload(TopicTheory.sections),
+            selectinload(Topic.videos),
+            selectinload(Topic.units).selectinload(ExerciseUnit.theory).selectinload(UnitTheory.sections),
+            selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.items),
+            selectinload(Topic.subject),
+        )
+    )
+    topic = result.scalar_one_or_none()
     if topic is None:
         raise HTTPException(status_code=404, detail="Topic not found")
 
-    subject_id = topic.get("subjectId", "")
-    return TopicResponse(**topic)
+    theory_dto = None
+    if topic.theory:
+        theory_dto = TheoryDto(
+            text=topic.theory.text,
+            table=TableDto(
+                headers=topic.theory.table_headers or [],
+                rows=topic.theory.table_rows or [],
+            ) if topic.theory.table_headers else None,
+            tips=[TipDto(emoji=t["emoji"], text=t["text"]) for t in (topic.theory.tips or [])],
+        )
+
+    units_dto = []
+    for unit in topic.units:
+        unit_theory_dto = None
+        if unit.theory:
+            unit_theory_dto = UnitTheoryDto(
+                text=unit.theory.text,
+                sections=[
+                    TheorySectionDto(title=s.title, text=s.text, examples=s.examples or [])
+                    for s in (unit.theory.sections or [])
+                ],
+                table=TableDto(
+                    headers=unit.theory.table_headers or [],
+                    rows=unit.theory.table_rows or [],
+                ) if unit.theory.table_headers else None,
+                tips=[TipDto(emoji=t["emoji"], text=t["text"]) for t in (unit.theory.tips or [])],
+            )
+
+        blocks_dto = []
+        for block in unit.blocks:
+            items_dto = [
+                ExerciseItemDto(
+                    sentence=item.sentence,
+                    answer=item.answer,
+                    hint=item.hint,
+                )
+                for item in block.items
+            ]
+            blocks_dto.append(ExerciseBlockDto(title=block.title, items=items_dto))
+
+        total_items = sum(len(b.items) for b in unit.blocks)
+        units_dto.append(
+            Unit(
+                id=unit.id,
+                title=unit.title,
+                exerciseType=unit.exercise_type,
+                explanation=unit.explanation or "",
+                progress=UnitProgress(totalItems=total_items),
+                theory=unit_theory_dto,
+                blocks=blocks_dto,
+            )
+        )
+
+    return TopicResponse(
+        id=topic.id,
+        name=topic.name,
+        subjectId=topic.subject_id,
+        order=topic.sort_order,
+        difficulty=topic.difficulty,
+        icon=topic.icon,
+        theory=theory_dto or TheoryDto(text="", table=None, tips=[]),
+        units=units_dto,
+        testConfig=TestConfigDto(
+            totalQuestions=20,
+            shuffle=True,
+            includeUnits=[u.id for u in topic.units],
+        ),
+    )
 
 
 @router.get("/topics/{topic_id}/test", response_model=TestResponse)
 async def get_test(
     topic_id: str,
     count: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
 ):
-    topic = _load_topic_content(topic_id)
+    result = await db.execute(
+        select(Topic)
+        .where(Topic.id == topic_id, Topic.is_active == True)
+        .options(
+            selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.items)
+        )
+    )
+    topic = result.scalar_one_or_none()
     if topic is None:
         raise HTTPException(status_code=404, detail="Topic not found")
 
     all_items = []
-    unit_ids_included = set()
-
-    for unit in topic.get("units", []):
-        unit_id = unit["id"]
-        for block in unit.get("blocks", []):
-            for idx, item in enumerate(block.get("items", [])):
+    for unit in topic.units:
+        for block in unit.blocks:
+            for idx, item in enumerate(block.items):
                 all_items.append({
-                    "id": f"{unit_id}_b{idx}",
-                    "unitId": unit_id,
-                    "sentence": item["sentence"],
-                    "answer": item["answer"],
-                    "hint": item.get("hint"),
+                    "id": f"{unit.id}_b{idx}",
+                    "unitId": unit.id,
+                    "sentence": item.sentence,
+                    "answer": item.answer,
+                    "hint": item.hint,
                 })
-                unit_ids_included.add(unit_id)
 
     if count > len(all_items):
         count = len(all_items)
+    if count == 0:
+        return TestResponse(topicId=topic_id, questions=[])
 
     selected = random.sample(all_items, count)
-
-    questions = [
-        TestQuestion(**q) for q in selected
-    ]
-
-    return TestResponse(
-        topicId=topic_id,
-        questions=questions,
-    )
+    questions = [TestQuestion(**q) for q in selected]
+    return TestResponse(topicId=topic_id, questions=questions)

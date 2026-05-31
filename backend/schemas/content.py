@@ -2,42 +2,49 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
-class Tip(BaseModel):
+class TipDto(BaseModel):
     emoji: str
     text: str
 
 
-class TableData(BaseModel):
+class TableDto(BaseModel):
     headers: list[str]
     rows: list[list[str]]
 
 
-class Theory(BaseModel):
+class TheoryDto(BaseModel):
     text: str
-    table: TableData | None = None
-    tips: list[Tip] = []
+    table: TableDto | None = None
+    tips: list[TipDto] = []
 
 
-class ExerciseItem(BaseModel):
+class TheorySectionDto(BaseModel):
+    title: str
+    text: str
+    examples: list[str] = []
+
+
+class UnitTheoryDto(BaseModel):
+    text: str
+    sections: list[TheorySectionDto] = []
+    table: TableDto | None = None
+    tips: list[TipDto] = []
+
+
+class ExerciseItemDto(BaseModel):
     sentence: str
     answer: str
     hint: str | None = None
 
 
-class ExerciseBlock(BaseModel):
+class ExerciseBlockDto(BaseModel):
     title: str
-    items: list[ExerciseItem]
+    items: list[ExerciseItemDto]
 
 
 class UnitProgress(BaseModel):
     completedItems: int = 0
     totalItems: int = 0
-
-    @property
-    def percent(self) -> float:
-        if self.totalItems == 0:
-            return 0.0
-        return (self.completedItems / self.totalItems) * 100
 
 
 class Unit(BaseModel):
@@ -46,7 +53,8 @@ class Unit(BaseModel):
     exerciseType: str
     explanation: str
     progress: UnitProgress | None = None
-    blocks: list[ExerciseBlock]
+    theory: UnitTheoryDto | None = None
+    blocks: list[ExerciseBlockDto]
 
 
 class TopicProgress(BaseModel):
@@ -78,7 +86,7 @@ class SubjectsResponse(BaseModel):
     subjects: list[SubjectResponse]
 
 
-class TestConfig(BaseModel):
+class TestConfigDto(BaseModel):
     totalQuestions: int = 20
     shuffle: bool = True
     includeUnits: list[str]
@@ -91,9 +99,9 @@ class TopicResponse(BaseModel):
     order: int
     difficulty: int
     icon: str
-    theory: Theory
+    theory: TheoryDto
     units: list[Unit]
-    testConfig: TestConfig
+    testConfig: TestConfigDto
 
 
 class TestQuestion(BaseModel):
