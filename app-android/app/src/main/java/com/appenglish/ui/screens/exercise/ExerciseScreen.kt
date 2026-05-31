@@ -29,6 +29,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -191,9 +193,21 @@ fun UnitExerciseScreen(
         } else {
             val currentItem = viewModel.getCurrentItem()
             val options = viewModel.getOptions()
+            var selectedTab by remember { mutableStateOf(0) }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)
+            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                if (uiState.unitTheory != null) {
+                    TabRow(selectedTabIndex = selectedTab, containerColor = Color.White, contentColor = Primary) {
+                        Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("📝 Ejercicio") })
+                        Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📖 Explicación") })
+                    }
+                }
+
+                if (selectedTab == 1 && uiState.unitTheory != null) {
+                    UnitTheoryView(theory = uiState.unitTheory!!, modifier = Modifier)
+                } else {
+                    LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             ) {
                 if (uiState.unitTheory != null) {
                     item { UnitTheoryView(theory = uiState.unitTheory!!); Spacer(Modifier.height(12.dp)) }
@@ -499,7 +513,9 @@ fun UnitExerciseScreen(
                         }
                     }
                 }
-            }
+                } // else selectedTab
+            } // Column
         }
+    }
     }
 }
