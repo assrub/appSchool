@@ -51,7 +51,7 @@ async function moveItem(idx, dir) {
   const a = items.value[idx]; const b = items.value[idx+dir]
   const temp = a.sort_order; a.sort_order = b.sort_order; b.sort_order = temp
   const list = items.value.map(x=>({id:x.id,sort_order:x.sort_order}))
-  await api.put('/admin/topics/reorder', { items: list })
+  await api.put('/admin/topics-reorder', { items: list })
   await fetchData()
 }
 </script>

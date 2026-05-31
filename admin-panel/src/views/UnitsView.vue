@@ -9,8 +9,15 @@
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
 
-    <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
-      <v-table v-else><thead><tr><th>Ord.</th><th>ID</th><th>Título</th><th>Input</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <div class="d-flex mb-2">
+      <v-spacer />
+      <v-btn size="small" variant="tonal" :color="showPreview?'primary':''" @click="showPreview=!showPreview">📱 Vista previa {{ showPreview?'▼':'▶' }}</v-btn>
+    </div>
+
+    <v-row>
+      <v-col :cols="showPreview?7:12">
+        <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
+          <v-table v-else><thead><tr><th>Ord.</th><th>ID</th><th>Título</th><th>Input</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody><tr v-for="(u,idx) in items" :key="u.id">
           <td><v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx===0" @click="moveItem(idx,-1)" /><v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx===items.length-1" @click="moveItem(idx,1)" /></td>
           <td class="font-weight-medium">{{ u.id }}</td><td>{{ u.title }}</td><td><v-chip :color="u.input_mode==='tap'?'green':'orange'" size="small" variant="tonal">{{ u.input_mode==='tap'?'Tocar':'Escribir' }}</v-chip></td><td><v-chip :color="u.is_locked?'grey':'green'" size="small" variant="tonal">{{ u.is_locked?'🔒':'🔓' }}</v-chip></td>
@@ -22,18 +29,26 @@
               <v-tooltip text="Resetear progreso" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-restart" v-bind="tp" variant="text" size="small" color="orange" @click="confirmReset(u)" /></template></v-tooltip>
               <v-tooltip text="Eliminar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(u)" /></template></v-tooltip>
             </td></tr></tbody></v-table>
-      <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay unidades.</v-card-text>
-    </v-card>
+          <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay unidades.</v-card-text>
+        </v-card>
+      </v-col>
+      <v-col v-if="showPreview && items.length" cols="5" class="d-flex align-start justify-center">
+        <MobilePreview :html="listPreviewHtml" />
+      </v-col>
+    </v-row>
 
     <v-dialog v-model="dialog" max-width="850"><v-card rounded="lg"><v-card-title>{{ editing?'Editar':'Nueva' }} Unidad</v-card-title>
       <v-card-text>
         <v-row>
           <v-col cols="7">
-            <v-text-field v-model="form.id" label="ID" :disabled="!!editing" variant="outlined" class="mb-2" /><v-text-field v-model="form.title" label="Título" variant="outlined" class="mb-2" /><v-select v-model="form.input_mode" label="Modo por defecto" :items="[{title:'🖐️ Tap',value:'tap'},{title:'⌨️ Type',value:'type'}]" variant="outlined" class="mb-2" /><v-textarea v-model="form.explanation" label="Explicación" variant="outlined" rows="2" class="mb-3" />
+            <v-text-field v-model="form.id" label="ID" :disabled="!!editing" variant="outlined" class="mb-2" />
+            <v-text-field v-model="form.title" label="Título" variant="outlined" class="mb-2" />
+            <v-select v-model="form.input_mode" label="Modo" :items="[{title:'🖐️ Tap',value:'tap'},{title:'⌨️ Type',value:'type'}]" variant="outlined" class="mb-2" />
+            <v-textarea v-model="form.explanation" label="Explicación" variant="outlined" rows="2" class="mb-3" />
             <v-label class="mb-1">🔊 Sonido de acierto</v-label>
-            <div class="d-flex align-center mb-2"><v-text-field v-model="form.sound_correct_url" placeholder="URL o subir archivo..." variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-play" variant="text" size="small" color="success" @click="previewSound(form.sound_correct_url)" /><v-btn icon="mdi-upload" variant="text" size="small" color="primary" @click="triggerUpload('correct')" /><v-btn icon="mdi-close" variant="text" size="small" color="grey" @click="form.sound_correct_url=''" /></div>
+            <div class="d-flex align-center mb-2"><v-text-field v-model="form.sound_correct_url" placeholder="URL o subir..." variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-play" variant="text" size="small" color="success" @click="previewSound(form.sound_correct_url)" /><v-btn icon="mdi-upload" variant="text" size="small" color="primary" @click="triggerUpload('correct')" /><v-btn icon="mdi-close" variant="text" size="small" color="grey" @click="form.sound_correct_url=''" /></div>
             <v-label class="mb-1">🔊 Sonido de error</v-label>
-            <div class="d-flex align-center"><v-text-field v-model="form.sound_incorrect_url" placeholder="URL o subir archivo..." variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-play" variant="text" size="small" color="success" @click="previewSound(form.sound_incorrect_url)" /><v-btn icon="mdi-upload" variant="text" size="small" color="primary" @click="triggerUpload('incorrect')" /><v-btn icon="mdi-close" variant="text" size="small" color="grey" @click="form.sound_incorrect_url=''" /></div>
+            <div class="d-flex align-center"><v-text-field v-model="form.sound_incorrect_url" placeholder="URL o subir..." variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-play" variant="text" size="small" color="success" @click="previewSound(form.sound_incorrect_url)" /><v-btn icon="mdi-upload" variant="text" size="small" color="primary" @click="triggerUpload('incorrect')" /><v-btn icon="mdi-close" variant="text" size="small" color="grey" @click="form.sound_incorrect_url=''" /></div>
           </v-col>
           <v-col cols="5" class="d-flex align-center justify-center">
             <MobilePreview :html="previewHtml" />
@@ -58,6 +73,8 @@ const items = ref([]); const loading = ref(true); const error = ref('')
 const dialog = ref(false); const deleteDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null)
 const form = ref({ id:'', title:'', topic_id:topicId, exercise_type:'fill-blank', input_mode:'tap', explanation:'', sound_correct_url:'', sound_incorrect_url:'' })
 const uploadType = ref('')
+const viewMode = ref('table')
+const showPreview = ref(false)
 const previewHtml = computed(() => {
   const icon = form.value.id ? '✏️' : '📝'
   const title = form.value.title || 'Nombre de la unidad'
@@ -78,6 +95,25 @@ const previewHtml = computed(() => {
   </div>`
 })
 
+const listPreviewHtml = computed(() => {
+  if (!items.value.length) return '<p style="color:#999;text-align:center;padding:20px">Sin unidades</p>'
+  return items.value.map(u => {
+    const icon = u.id ? '✏️' : '📝'
+    const title = u.title || u.id
+    const mode = u.input_mode === 'tap' ? '🖐️ Tap' : '⌨️ Type'
+    const locked = u.is_locked
+    return `<div style="display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid #eee">
+      <div style="font-size:28px">${locked?'🔒':icon}</div>
+      <div style="flex:1">
+        <div style="font-weight:bold;font-size:14px">${title}</div>
+        <div style="font-size:11px;color:#999">${mode}</div>
+        <div style="height:4px;border-radius:2px;background:#e0e0e0;margin-top:4px"><div style="width:${Math.random()*100}%;height:100%;border-radius:2px;background:#4CAF50"></div></div>
+      </div>
+      <div style="font-size:20px">${locked?'🔒':'→'}</div>
+    </div>`
+  }).join('')
+})
+
 async function fetchData() { loading.value=true; error.value=''; try { const [u,t]=await Promise.all([api.get(`/admin/topics/${topicId}/units`),api.get(`/admin/topics/${topicId}`)]); items.value=u.data; topicName.value=t.data.name||topicId; subjectId.value=t.data.subject_id } catch(e) { error.value=e.response?.data?.detail||'Error' } finally { loading.value=false } }
 watch(() => route.params, fetchData, { immediate: true })
 
@@ -95,7 +131,7 @@ async function moveItem(idx, dir) {
   const temp = a.sort_order; a.sort_order = b.sort_order; b.sort_order = temp
   const list = items.value.map(x=>({id:x.id,sort_order:x.sort_order}))
   try {
-    await api.put('/admin/units/reorder', { items: list })
+    await api.put('/admin/units-reorder', { items: list })
     await fetchData()
   } catch (e) {
     alert('Error al reordenar: ' + (e.response?.data?.detail || e.message))

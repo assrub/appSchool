@@ -470,7 +470,7 @@ async def delete_item(
 
 # ── Reorder ────────────────────────────────────────────────
 
-@router.put("/items/reorder", response_model=MessageResponse)
+@router.put("/items-reorder", response_model=MessageResponse)
 async def reorder_items(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     for it in data.items:
         await db.execute(update(ExerciseItem).where(ExerciseItem.id == it["id"]).values(sort_order=it["sort_order"]))
@@ -478,7 +478,7 @@ async def reorder_items(data: ReorderRequest, db: AsyncSession = Depends(get_db)
     return MessageResponse(message="Reordered")
 
 
-@router.put("/blocks/reorder", response_model=MessageResponse)
+@router.put("/blocks-reorder", response_model=MessageResponse)
 async def reorder_blocks(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     for it in data.items:
         await db.execute(update(ExerciseBlock).where(ExerciseBlock.id == it["id"]).values(sort_order=it["sort_order"]))
@@ -486,7 +486,7 @@ async def reorder_blocks(data: ReorderRequest, db: AsyncSession = Depends(get_db
     return MessageResponse(message="Reordered")
 
 
-@router.put("/units/reorder", response_model=MessageResponse)
+@router.put("/units-reorder", response_model=MessageResponse)
 async def reorder_units(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     for it in data.items:
         unit = await db.get(ExerciseUnit, it["id"])
@@ -496,7 +496,7 @@ async def reorder_units(data: ReorderRequest, db: AsyncSession = Depends(get_db)
     return MessageResponse(message="Reordered")
 
 
-@router.put("/topics/reorder", response_model=MessageResponse)
+@router.put("/topics-reorder", response_model=MessageResponse)
 async def reorder_topics(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     for it in data.items:
         await db.execute(update(Topic).where(Topic.id == it["id"]).values(sort_order=it["sort_order"]))
