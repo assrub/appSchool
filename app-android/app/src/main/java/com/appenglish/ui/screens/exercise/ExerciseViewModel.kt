@@ -89,6 +89,7 @@ class UnitExerciseViewModel @Inject constructor(
     fun loadUnit() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
             contentRepository.getTopic(topicId).fold(
                 onSuccess = { response ->
                     val unitDto = response.units.find { it.id == unitId }
@@ -141,6 +142,9 @@ class UnitExerciseViewModel @Inject constructor(
                 },
                 onFailure = { e -> _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error") }
             )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = "Error: ${e.message}")
+            }
         }
     }
 
