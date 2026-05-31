@@ -121,7 +121,7 @@ function previewSound(url) { if(!url) return; const a=new Audio(url); a.play() }
 function confirmDelete(u) { toDelete.value=u; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/units/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
 async function toggleLock(unit,lock) { try { await api.put(`/admin/units/${unit.id}/${lock?'lock':'unlock'}`); await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } }
-async function confirmReset(unit) { if(!confirm(`¿Resetear progreso de "${unit.title}"?`)) return; await api.delete(`/admin/progress/android-default/${topicId}/${unit.id}`); alert('Reseteado') }
+async function confirmReset(unit) { if(!confirm(`¿Resetear progreso de "${unit.title}" para TODOS los usuarios?`)) return; await api.delete(`/admin/progress/${topicId}/${unit.id}/reset-all-users`); alert('Reseteado para todos los usuarios') }
 async function topicAction(action) { const labels={'lock-all':'Bloquear','unlock-all':'Desbloquear','reset-all':'Resetear'}; if(!confirm(`¿${labels[action]} todas las unidades?`)) return; await api.post(`/admin/topics/${topicId}/${action}`); await fetchData(); alert('Hecho') }
 async function moveItem(idx, dir) {
   const a = items.value[idx]; const b = items.value[idx+dir]

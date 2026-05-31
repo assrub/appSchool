@@ -131,61 +131,6 @@
           ]
         },
         {
-          "title": "PASO 2 Entorno, mascotas y plurales mixtos (Usa am / is / are)",
-          "items": [
-            {
-              "sentence": "I ______a happy student.",
-              "answer": "am",
-              "hint": "AM → Solo YO"
-            },
-            {
-              "sentence": "You ______my best friend.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "He ______in the office.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "She ______a doctor.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "It ______sunny today.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "We ______from London.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "They ______at the library.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "Claudia ______very intelligent.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Manuel ______my father.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Natalia ______at school.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            }
-          ]
-        },
-        {
           "title": "PASO 3 Estados físicos, clima y objetos del hogar (Usa am / is / are)",
           "items": [
             {

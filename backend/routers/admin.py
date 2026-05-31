@@ -276,14 +276,43 @@ async def unlock_unit(unit_id: str, db: AsyncSession = Depends(get_db), admin: d
     return UnitResponse.model_validate(unit)
 
 
-@router.delete("/progress/{device_id}/{topic_id}/{unit_id}", response_model=MessageResponse)
-async def reset_unit_progress(device_id: str, topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+@router.delete("/progress/{user_id}/{topic_id}/{unit_id}", response_model=MessageResponse)
+async def reset_unit_progress(user_id: int, topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     from sqlalchemy import delete as sqldelete
-    from models import Progress, AnswerHistory
-    await db.execute(sqldelete(Progress).where(Progress.user_id == device_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))
-    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.user_id == device_id, AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
+    await db.execute(sqldelete(Progress).where(Progress.user_id == user_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))
+    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.user_id == user_id, AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
     await db.commit()
-    return MessageResponse(message="Progress reset")
+    return MessageResponse(message="Progress reset for user")
+
+
+@router.delete("/progress/{topic_id}/{unit_id}/reset-all-users", response_model=MessageResponse)
+async def reset_all_users_progress(topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from sqlalchemy import delete as sqldelete
+    await db.execute(sqldelete(Progress).where(Progress.topic_id == topic_id, Progress.unit_id == unit_id))
+    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
+    await db.commit()
+    return MessageResponse(message="Progress reset for all users")
+
+
+@router.get("/users/progress-summary")
+async def get_users_progress_summary(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    users_result = await db.execute(select(AppUser).where(AppUser.is_active == True))
+    users = users_result.scalars().all()
+    result = []
+    for user in users:
+        progress_result = await db.execute(select(Progress).where(Progress.user_id == user.id))
+        progress_rows = progress_result.scalars().all()
+        total_units = len(progress_rows)
+        completed_units = sum(1 for p in progress_rows if p.completed)
+        result.append({
+            "userId": user.id,
+            "username": user.username,
+            "displayName": user.display_name,
+            "totalUnits": total_units,
+            "completedUnits": completed_units,
+            "percentComplete": round((completed_units / total_units * 100) if total_units > 0 else 0, 1),
+        })
+    return result
 
 
 @router.post("/topics/{topic_id}/reset-all", response_model=MessageResponse)
