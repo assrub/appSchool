@@ -3,13 +3,14 @@
     <div class="d-flex align-center mb-6"><div><v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/units/${unitId}/blocks`" class="mb-2">Bloques</v-btn><h1 class="text-h4">Ejercicios</h1><p class="text-grey">{{ blockTitle }}</p></div><v-spacer /><v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">Nuevo</v-btn></div>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
     <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
-      <v-table v-else><thead><tr><th>#</th><th>Tipo</th><th>Input</th><th>Contenido</th><th>Respuesta</th><th></th></tr></thead>
+      <v-table v-else><thead><tr><th>#</th><th>Tipo</th><th>Input</th><th>Contenido</th><th>Resp.</th><th>Ops</th><th></th></tr></thead>
         <tbody><tr v-for="(i,idx) in items" :key="i.id">
           <td><v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx===0" @click="moveItem(idx,-1)" /><v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx===items.length-1" @click="moveItem(idx,1)" /></td>
           <td><v-chip size="x-small" color="primary" variant="tonal">{{ i.item_type }}</v-chip></td>
           <td><v-chip v-if="i.input_mode" :color="i.input_mode==='tap'?'green':'orange'" size="x-small" variant="tonal">{{ i.input_mode==='tap'?'Tap':'Type' }}</v-chip><span v-else class="text-caption">hereda</span></td>
-          <td style="max-width:250px" class="text-truncate">{{ i.sentence||i.question||'-' }}</td>
-          <td>{{ i.answer||'-' }}</td>
+          <td style="max-width:200px" class="text-truncate">{{ i.sentence||i.question||'-' }}</td>
+          <td>{{ i.answer||'-' }}<span v-if="i.answers?.length" class="text-caption text-green"> +{{ i.answers.length }}</span></td>
+          <td><span v-if="i.options?.length" class="text-caption">{{ i.options.length }} ops</span><span v-else class="text-caption text-grey"></span></td>
           <td><v-btn icon="mdi-pencil" variant="text" size="x-small" color="primary" @click="openDialog(i)" /><v-btn icon="mdi-delete" variant="text" size="x-small" color="error" @click="confirmDelete(i)" /></td>
         </tr></tbody></v-table>
       <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay ejercicios.</v-card-text>
@@ -22,7 +23,6 @@
         <v-select v-model="form.item_type" label="Tipo" :items="itemTypes" variant="outlined" class="mb-3" />
         <v-select v-model="form.input_mode" label="Modo" :items="inputModes" variant="outlined" class="mb-3" clearable hint="Vacío = hereda de la unidad" persistent-hint />
         <template v-if="form.item_type==='fill-blank'">
-          <v-alert variant="text" color="info" density="compact" class="mb-3" icon="mdi-information">💡 <strong>Guía:</strong> Usá <code>______</code> para marcar dónde va el blank. Podés poner varias respuestas correctas (ej: "I am" y "I'm"). Si el modo es Tap, definí qué opciones ve el nene.</v-alert>
           <v-text-field v-model="form.sentence" label="Frase (usá ______)" variant="outlined" class="mb-3" />
 
           <v-label class="font-weight-bold mb-1">Respuesta/s correcta/s</v-label>
