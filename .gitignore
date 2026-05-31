@@ -8,6 +8,7 @@ __pycache__/
 
 # Android
 *.apk
+!backend/uploads/*.apk
 *.keystore
 *.jks
 build/
