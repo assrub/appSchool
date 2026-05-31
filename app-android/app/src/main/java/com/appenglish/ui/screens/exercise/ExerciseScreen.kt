@@ -362,38 +362,7 @@ fun UnitExerciseScreen(
                                     }
                                 }
 
-                                // Fixed-height feedback area (reserved space)
-                                Box(modifier = Modifier.fillMaxWidth().height(70.dp)) {
-                                    val feedback = uiState.feedback
-                                    if (feedback != null) {
-                                        Column {
-                                            Card(
-                                                shape = RoundedCornerShape(12.dp),
-                                                colors = CardDefaults.cardColors(containerColor = if (feedback.isCorrect) Color(0xFFE8F5E9) else Color(0xFFFFEBEE))
-                                            ) {
-                                                Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
-                                                    Text(feedback.message, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = if (feedback.isCorrect) CorrectGreen else IncorrectRed)
-                                                    if (feedback.isCorrect && currentItem.hint != null) {
-                                                        Text("💡 ${currentItem.hint}", style = MaterialTheme.typography.bodySmall, color = HintColor)
-                                                    }
-                                                    if (uiState.showAcceptButton) {
-                                                        Spacer(Modifier.height(8.dp))
-                                                        Button(
-                                                            onClick = { viewModel.onAcceptClick() },
-                                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
-                                                            shape = RoundedCornerShape(8.dp),
-                                                            modifier = Modifier.fillMaxWidth()
-                                                        ) {
-                                                            Text("Aceptar", color = Color.White)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Audio playing indicator (reserved space)
+                                // Audio playing indicator
                                 if (uiState.playingFullAudio) {
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                                         CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Primary)
@@ -401,23 +370,70 @@ fun UnitExerciseScreen(
                                         Text("🔊 Reproduciendo...", style = MaterialTheme.typography.bodySmall, color = Primary)
                                     }
                                 }
-
-                                // Always-visible "Siguiente" button
-                                Spacer(Modifier.height(12.dp))
-                                Button(
-                                    onClick = { viewModel.nextItem() },
-                                    enabled = uiState.readyForNext,
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Primary,
-                                        disabledContainerColor = Color(0xFFE0E0E0),
-                                        disabledContentColor = Color(0xFF9E9E9E)
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Siguiente →", color = if (uiState.readyForNext) Color.White else Color(0xFF9E9E9E))
-                                }
                             }
+                        }
+
+                        // ── Congratulations modal (correct answer) ──
+                        if (uiState.isCorrect == true && uiState.showingAnswer) {
+                            val isRetry = uiState.retryMode
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = {},
+                                confirmButton = {
+                                    Button(
+                                        onClick = {
+                                            if (isRetry) viewModel.retryNextAfterCorrect()
+                                            else viewModel.nextItem()
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) { Text(if (uiState.readyForNext) "Siguiente →" else "🎉 Continuar", color = Color.White) }
+                                },
+                                title = {
+                                    Text("🎉 ¡Muy bien!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = CorrectGreen)
+                                },
+                                text = {
+                                    Column {
+                                        val fullSentence = currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer)
+                                        Text(fullSentence, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                                        if (currentItem.hint != null) {
+                                            Spacer(Modifier.height(4.dp))
+                                            Text("💡 ${currentItem.hint}", style = MaterialTheme.typography.bodyMedium, color = HintColor)
+                                        }
+                                    }
+                                },
+                                containerColor = Color.White,
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+
+                        // ── Error modal (wrong answer) ──
+                        if (uiState.showAcceptButton) {
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = {},
+                                confirmButton = {
+                                    Button(
+                                        onClick = { viewModel.onAcceptClick() },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) { Text("Aceptar →", color = Color.White) }
+                                },
+                                title = {
+                                    Text("❌ Incorrecto", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = IncorrectRed)
+                                },
+                                text = {
+                                    Column {
+                                        Text("Respondiste: ${uiState.userInput}", style = MaterialTheme.typography.bodyMedium)
+                                        Spacer(Modifier.height(4.dp))
+                                        val answerToShow = if (uiState.retryMode) {
+                                            val wrong = uiState.wrongItems.getOrNull(uiState.retryIndex)
+                                            wrong?.correctAnswer ?: currentItem?.answer ?: ""
+                                        } else currentItem?.answer ?: ""
+                                        Text("Respuesta correcta: $answerToShow", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = Primary)
+                                    }
+                                },
+                                containerColor = Color.White,
+                                shape = RoundedCornerShape(20.dp)
+                            )
                         }
 
                         // Translation area (reserved space with animated visibility)

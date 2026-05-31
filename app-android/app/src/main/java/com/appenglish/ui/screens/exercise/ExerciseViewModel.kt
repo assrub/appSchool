@@ -240,27 +240,32 @@ class UnitExerciseViewModel @Inject constructor(
             remainingWrongs.removeAt(state.retryIndex)
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = true,
-                feedback = Feedback("¡Corregido! ✅", true),
+                showingAnswer = true,
                 wrongItems = remainingWrongs, score = state.score + 1, completedItems = state.completedItems + 1
             )
-            viewModelScope.launch {
-                delay(800)
-                val nextIdx = state.retryIndex
-                if (nextIdx < remainingWrongs.size) {
-                    _uiState.value = _uiState.value.copy(retryIndex = nextIdx, userInput = "", feedback = null, isCorrect = null, showingAnswer = false, playingFullAudio = false, readyForNext = false)
-                } else {
-                    _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false)
-                    saveProgress(completed = true)
-                }
-            }
+            // Don't auto-advance — wait for user to tap modal button
         } else {
             val app = getApplication<Application>()
             viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundIncorrectUrl) }
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = false,
-                feedback = Feedback("❌ La respuesta era: ${wrong.correctAnswer}", false),
                 showAcceptButton = true
             )
+        }
+    }
+
+    fun retryNextAfterCorrect() {
+        val state = _uiState.value
+        val nextIdx = state.retryIndex
+        if (nextIdx < state.wrongItems.size) {
+            _uiState.value = state.copy(
+                retryIndex = nextIdx,
+                userInput = "", isCorrect = null, showingAnswer = false,
+                playingFullAudio = false, readyForNext = false, showAcceptButton = false
+            )
+        } else {
+            _uiState.value = state.copy(isFinished = true, retryMode = false)
+            saveProgress(completed = true)
         }
     }
 

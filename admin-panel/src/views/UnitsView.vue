@@ -24,7 +24,12 @@
     </v-card>
 
     <v-dialog v-model="dialog" max-width="500"><v-card rounded="lg"><v-card-title>{{ editing?'Editar':'Nueva' }} Unidad</v-card-title>
-      <v-card-text><v-text-field v-model="form.id" label="ID" :disabled="!!editing" variant="outlined" class="mb-2" /><v-text-field v-model="form.title" label="Título" variant="outlined" class="mb-2" /><v-select v-model="form.exercise_type" label="Tipo" :items="['fill-blank','multiple-choice','reorder','listening','matching','true-false']" variant="outlined" class="mb-2" /><v-select v-model="form.input_mode" label="Modo" :items="[{title:'🖐️ Tap',value:'tap'},{title:'⌨️ Type',value:'type'}]" variant="outlined" class="mb-2" /><v-textarea v-model="form.explanation" label="Explicación" variant="outlined" rows="2" /></v-card-text>
+      <v-card-text><v-text-field v-model="form.id" label="ID" :disabled="!!editing" variant="outlined" class="mb-2" /><v-text-field v-model="form.title" label="Título" variant="outlined" class="mb-2" /><v-select v-model="form.exercise_type" label="Tipo" :items="['fill-blank','multiple-choice','reorder','listening','matching','true-false']" variant="outlined" class="mb-2" /><v-select v-model="form.input_mode" label="Modo" :items="[{title:'🖐️ Tap',value:'tap'},{title:'⌨️ Type',value:'type'}]" variant="outlined" class="mb-2" /><v-textarea v-model="form.explanation" label="Explicación" variant="outlined" rows="2" class="mb-3" />
+        <v-label class="mb-1">🔊 Sonido de acierto</v-label>
+        <div class="d-flex align-center mb-2"><v-text-field v-model="form.sound_correct_url" placeholder="URL o subir archivo..." variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-play" variant="text" size="small" color="success" @click="previewSound(form.sound_correct_url)" /><v-btn icon="mdi-upload" variant="text" size="small" color="primary" @click="triggerUpload('correct')" /><v-btn icon="mdi-close" variant="text" size="small" color="grey" @click="form.sound_correct_url=''" /></div>
+        <v-label class="mb-1">🔊 Sonido de error</v-label>
+        <div class="d-flex align-center"><v-text-field v-model="form.sound_incorrect_url" placeholder="URL o subir archivo..." variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-play" variant="text" size="small" color="success" @click="previewSound(form.sound_incorrect_url)" /><v-btn icon="mdi-upload" variant="text" size="small" color="primary" @click="triggerUpload('incorrect')" /><v-btn icon="mdi-close" variant="text" size="small" color="grey" @click="form.sound_incorrect_url=''" /></div>
+      </v-card-text>
       <v-card-actions><v-spacer /><v-btn variant="text" @click="dialog=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" @click="save">{{ editing?'Guardar':'Crear' }}</v-btn></v-card-actions></v-card>
     </v-dialog>
     <v-dialog v-model="deleteDialog" max-width="400"><v-card rounded="lg"><v-card-title>¿Eliminar?</v-card-title><v-card-text>"{{ toDelete?.title }}" se eliminará con sus bloques y ejercicios.</v-card-text><v-card-actions><v-spacer /><v-btn variant="text" @click="deleteDialog=false">Cancelar</v-btn><v-btn color="error" @click="doDelete">Eliminar</v-btn></v-card-actions></v-card></v-dialog>
@@ -40,13 +45,16 @@ const route = useRoute()
 const topicId = route.params.topicId; const subjectId = ref(''); const topicName = ref('')
 const items = ref([]); const loading = ref(true); const error = ref('')
 const dialog = ref(false); const deleteDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null)
-const form = ref({ id:'', title:'', topic_id:topicId, exercise_type:'fill-blank', input_mode:'tap', explanation:'' })
+const form = ref({ id:'', title:'', topic_id:topicId, exercise_type:'fill-blank', input_mode:'tap', explanation:'', sound_correct_url:'', sound_incorrect_url:'' })
+const uploadType = ref('')
 
 async function fetchData() { loading.value=true; error.value=''; try { const [u,t]=await Promise.all([api.get(`/admin/topics/${topicId}/units`),api.get(`/admin/topics/${topicId}`)]); items.value=u.data; topicName.value=t.data.name||topicId; subjectId.value=t.data.subject_id } catch(e) { error.value=e.response?.data?.detail||'Error' } finally { loading.value=false } }
 watch(() => route.params, fetchData, { immediate: true })
 
-function openDialog(unit=null) { editing.value=unit; form.value=unit?{...unit,topic_id:topicId}:{id:'',title:'',topic_id:topicId,exercise_type:'fill-blank',input_mode:'tap',explanation:''}; dialog.value=true }
+function openDialog(unit=null) { editing.value=unit; form.value=unit?{...unit,topic_id:topicId}:{id:'',title:'',topic_id:topicId,exercise_type:'fill-blank',input_mode:'tap',explanation:'',sound_correct_url:'',sound_incorrect_url:''}; dialog.value=true }
 async function save() { saving.value=true; try { if(editing.value) await api.put(`/admin/units/${editing.value.id}`,form.value); else await api.post('/admin/units',form.value); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
+function triggerUpload(type) { uploadType.value=type; const el=document.createElement('input'); el.type='file'; el.accept='audio/*'; el.onchange=async(e)=>{ const f=e.target.files[0]; if(!f) return; const fd=new FormData(); fd.append('file',f); const {data}=await api.post('/admin/upload',fd,{headers:{'Content-Type':'multipart/form-data'}}); if(type==='correct') form.value.sound_correct_url=data.url; else form.value.sound_incorrect_url=data.url }; el.click() }
+function previewSound(url) { if(!url) return; const a=new Audio(url); a.play() }
 function confirmDelete(u) { toDelete.value=u; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/units/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
 async function toggleLock(unit,lock) { try { await api.put(`/admin/units/${unit.id}/${lock?'lock':'unlock'}`); await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } }
