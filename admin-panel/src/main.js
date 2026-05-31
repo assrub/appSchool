@@ -18,9 +18,19 @@ const vuetify = createVuetify({
         colors: {
           primary: '#4CAF50',
           secondary: '#2196F3',
+          success: '#4CAF50',
+          warning: '#FFA726',
+          error: '#E53935',
+          info: '#2196F3',
         },
       },
     },
+  },
+  defaults: {
+    VBtn: { rounded: 'lg' },
+    VCard: { rounded: 'lg' },
+    VTextField: { variant: 'outlined', density: 'comfortable' },
+    VSelect: { variant: 'outlined', density: 'comfortable' },
   },
 })
 

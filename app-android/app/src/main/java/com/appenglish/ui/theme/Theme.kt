@@ -3,6 +3,7 @@ package com.appenglish.ui.theme
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -21,9 +22,23 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = OnSurfaceVariant
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = Primary,
+    onPrimary = OnPrimary,
+    secondary = Secondary,
+    background = DarkBackground,
+    surface = DarkSurface,
+    error = Error,
+    onSurface = DarkOnSurface,
+    onSurfaceVariant = DarkOnSurfaceVariant
+)
+
 @Composable
-fun AppEnglishTheme(content: @Composable () -> Unit) {
-    val colorScheme = LightColorScheme
+fun AppEnglishTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val view = LocalView.current
 
     if (!view.isInEditMode) {
@@ -37,6 +52,7 @@ fun AppEnglishTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }

@@ -12,9 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,9 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.TopicSummary
-import com.appenglish.ui.components.BottomNavBar
-import com.appenglish.ui.components.BottomNavTab
 import com.appenglish.ui.theme.Primary
+import com.appenglish.ui.theme.WarningOrange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,9 +51,6 @@ fun TopicsScreen(
     viewModel: TopicsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
 
     Scaffold(
         topBar = {
@@ -95,7 +92,7 @@ fun TopicsScreen(
 fun TopicCard(topic: TopicSummary, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -103,16 +100,39 @@ fun TopicCard(topic: TopicSummary, onClick: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(topic.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("Dificultad: ${"★".repeat(topic.difficulty)}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    repeat(topic.difficulty) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = WarningOrange,
+                            modifier = Modifier.height(14.dp)
+                        )
+                    }
+                    if (topic.difficulty < 5) {
+                        repeat(5 - topic.difficulty) {
+                            Icon(
+                                Icons.Default.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFE0E0E0),
+                                modifier = Modifier.height(14.dp)
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.height(6.dp))
                 LinearProgressIndicator(
                     progress = { (topic.percentComplete / 100.0).toFloat() },
                     modifier = Modifier.fillMaxWidth().height(6.dp),
                     color = Primary, trackColor = Color(0xFFE0E0E0)
                 )
-                Text("${topic.completedUnits}/${topic.totalUnits} unidades", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Text("${topic.completedUnits}/${topic.totalUnits} unidades", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text(if (topic.isLocked) "🔒" else "→", fontSize = 20.sp, color = if (topic.isLocked) Color.Gray else Primary)
+            if (topic.isLocked) {
+                Icon(Icons.Default.Lock, contentDescription = "Bloqueado", tint = Color.Gray)
+            } else {
+                Text("→", fontSize = 20.sp, color = Primary)
+            }
         }
     }
 }

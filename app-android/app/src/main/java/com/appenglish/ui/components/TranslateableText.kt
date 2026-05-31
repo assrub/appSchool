@@ -6,6 +6,7 @@ import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import android.speech.tts.TextToSpeech
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.appenglish.ui.theme.CorrectBackground
+import com.appenglish.ui.theme.InfoBlue
 import com.appenglish.ui.theme.Primary
 import com.appenglish.util.ApiConfig
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +104,7 @@ fun TranslateableText(
             val cleanWord = word.trimEnd('.', ',', '!', '?', ';', ':')
 
             if (isUnderscoreWord(word)) {
-                withStyle(SpanStyle(color = Color(0xFFBDBDBD), fontSize = fontSize.sp, fontWeight = FontWeight.Bold)) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = fontSize.sp, fontWeight = FontWeight.Bold)) {
                     append(cleanWord)
                 }
             } else {
@@ -164,9 +165,9 @@ fun TranslateableText(
                 properties = PopupProperties(focusable = false)
             ) {
                 Card(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                    colors = CardDefaults.cardColors(containerColor = CorrectBackground),
                     modifier = Modifier.fillMaxWidth(0.9f)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -213,7 +214,7 @@ fun TranslateableText(
                                 onClick = { popupVisible = false; selectedWord = null; translation = null },
                                 modifier = Modifier.width(32.dp).height(32.dp)
                             ) {
-                                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.Gray, modifier = Modifier.height(20.dp).width(20.dp))
+                                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.height(20.dp).width(20.dp))
                             }
                         }
                         if (!isTranslating && translation != null && onDictionarySave != null) {

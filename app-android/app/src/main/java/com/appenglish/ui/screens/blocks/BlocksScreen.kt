@@ -11,17 +11,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -42,8 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.ui.theme.Primary
+import com.appenglish.ui.theme.SurfaceVariant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,9 +52,6 @@ fun BlocksScreen(
     viewModel: BlocksViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
 
     Scaffold(
         topBar = {
@@ -84,8 +80,8 @@ fun BlocksScreen(
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 if (uiState.topicTheory != null) {
                     TabRow(selectedTabIndex = selectedTab, containerColor = Color.White, contentColor = Primary) {
-                        Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("📋 Bloques") })
-                        Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📖 Explicación") })
+                        Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Ejercicios") })
+                        Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Teoría") })
                     }
                 }
 
@@ -96,23 +92,25 @@ fun BlocksScreen(
                     )
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                itemsIndexed(uiState.blocks) { idx, block ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth().clickable { onBlockClick(uiState.topicId, viewModel.getUnitId) },
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("📋 ${block.title}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                Text("${block.items.size} ejercicios", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        items(uiState.blocks) { block ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onBlockClick(uiState.topicId, viewModel.getUnitId()) },
+                                shape = MaterialTheme.shapes.large,
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                        Text("${block.items.size} ejercicios", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Icon(Icons.Default.PlayArrow, contentDescription = "Ir", tint = Primary)
+                                }
                             }
-                            Text("→", fontSize = 20.sp, color = Primary)
-            }
-                } // closes else of selectedTab
-            } // closes Column
-        }
-                    Spacer(Modifier.height(6.dp))
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
                 }
             }
         }

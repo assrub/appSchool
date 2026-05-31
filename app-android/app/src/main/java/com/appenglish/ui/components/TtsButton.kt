@@ -11,6 +11,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.appenglish.util.ApiConfig
@@ -89,12 +89,12 @@ fun TtsButton(
             }
         },
         modifier = modifier.size(40.dp),
-        colors = IconButtonDefaults.iconButtonColors(contentColor = Color(0xFF4CAF50))
+        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)
     ) {
         if (isPlaying) {
             CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
-                color = Color(0xFF4CAF50),
+                color = MaterialTheme.colorScheme.primary,
                 strokeWidth = 2.dp
             )
         } else {
