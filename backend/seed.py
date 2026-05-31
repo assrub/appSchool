@@ -9,8 +9,9 @@ from database import async_session, init_db, engine
 from models import (
     Subject, Topic, TopicTheory, TheorySection,
     ExerciseUnit, UnitTheory, UnitTheorySection,
-    ExerciseBlock, ExerciseItem,
+    ExerciseBlock, ExerciseItem, AdminUser,
 )
+from services.auth_service import hash_password
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONTENT_DIR = os.path.join(BASE_DIR, "content")
@@ -26,6 +27,16 @@ async def seed():
         if result.scalar_one_or_none():
             print("Already seeded, skipping.")
             return
+
+        # Create default admin user
+        admin_check = await db.execute(select(AdminUser).where(AdminUser.username == "admin"))
+        if not admin_check.scalar_one_or_none():
+            admin = AdminUser(
+                username="admin",
+                password_hash=hash_password("admin123"),
+            )
+            db.add(admin)
+            print("Created admin user: admin / admin123")
 
         # Load subjects.json
         subjects_path = os.path.join(CONTENT_DIR, "subjects.json")

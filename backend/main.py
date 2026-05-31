@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
 from routers import content, tts, translate, progress, dictionary
+from routers import auth, admin
 
 
 @asynccontextmanager
@@ -28,6 +29,8 @@ app.include_router(tts.router, prefix="/api/v1/tts", tags=["TTS"])
 app.include_router(translate.router, prefix="/api/v1/translate", tags=["Translate"])
 app.include_router(progress.router, prefix="/api/v1/progress", tags=["Progress"])
 app.include_router(dictionary.router, prefix="/api/v1/dictionary", tags=["Dictionary"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 
 
 @app.get("/")
