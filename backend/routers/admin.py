@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from database import get_db
 from dependencies import get_current_admin
-from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, Progress, AnswerHistory, StudySession, DictionaryEntry
+from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, Progress, AnswerHistory, StudySession, DictionaryEntry, AppUser
 from schemas.admin import (
     SubjectCreate, SubjectUpdate, SubjectResponse as AdminSubjectResponse,
     TopicCreate, TopicUpdate, TopicResponse as AdminTopicResponse,
@@ -296,23 +296,26 @@ async def reset_all_users_progress(topic_id: str, unit_id: str, db: AsyncSession
 
 @router.get("/users/progress-summary")
 async def get_users_progress_summary(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    users_result = await db.execute(select(AppUser).where(AppUser.is_active == True))
-    users = users_result.scalars().all()
-    result = []
-    for user in users:
-        progress_result = await db.execute(select(Progress).where(Progress.user_id == user.id))
-        progress_rows = progress_result.scalars().all()
-        total_units = len(progress_rows)
-        completed_units = sum(1 for p in progress_rows if p.completed)
-        result.append({
-            "userId": user.id,
-            "username": user.username,
-            "displayName": user.display_name,
-            "totalUnits": total_units,
-            "completedUnits": completed_units,
-            "percentComplete": round((completed_units / total_units * 100) if total_units > 0 else 0, 1),
-        })
-    return result
+    try:
+        users_result = await db.execute(select(AppUser).where(AppUser.is_active == True))
+        users = users_result.scalars().all()
+        result = []
+        for user in users:
+            progress_result = await db.execute(select(Progress).where(Progress.user_id == user.id))
+            progress_rows = progress_result.scalars().all()
+            total_units = len(progress_rows)
+            completed_units = sum(1 for p in progress_rows if p.completed)
+            result.append({
+                "userId": user.id,
+                "username": user.username,
+                "displayName": user.display_name,
+                "totalUnits": total_units,
+                "completedUnits": completed_units,
+                "percentComplete": round((completed_units / total_units * 100) if total_units > 0 else 0, 1),
+            })
+        return result
+    except Exception as e:
+        return [{"userId": 0, "username": "error", "displayName": str(e), "totalUnits": 0, "completedUnits": 0, "percentComplete": 0}]
 
 
 @router.post("/topics/{topic_id}/reset-all", response_model=MessageResponse)
