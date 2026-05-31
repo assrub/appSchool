@@ -33,11 +33,6 @@ async def seed():
             "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS shuffle BOOLEAN DEFAULT FALSE",
             "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS answers JSONB",
             "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS input_mode VARCHAR(10)",
-            # device_id -> user_id migration for progress-related tables
-            "ALTER TABLE progress RENAME COLUMN device_id TO user_id",
-            "ALTER TABLE answer_history RENAME COLUMN device_id TO user_id",
-            "ALTER TABLE dictionary_entries RENAME COLUMN device_id TO user_id",
-            "ALTER TABLE study_sessions RENAME COLUMN device_id TO user_id",
         ]
         for m in migrations:
             try:
@@ -45,7 +40,29 @@ async def seed():
                 await db.commit()
             except Exception:
                 await db.rollback()
-                pass
+
+        # Convert device_id -> user_id with type change (VARCHAR -> INTEGER)
+        id_migrations = [
+            # Drop old + new columns, then recreate with correct type
+            "ALTER TABLE progress DROP COLUMN IF EXISTS device_id",
+            "ALTER TABLE progress DROP COLUMN IF EXISTS user_id",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
+            "ALTER TABLE answer_history DROP COLUMN IF EXISTS device_id",
+            "ALTER TABLE answer_history DROP COLUMN IF EXISTS user_id",
+            "ALTER TABLE answer_history ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
+            "ALTER TABLE dictionary_entries DROP COLUMN IF EXISTS device_id",
+            "ALTER TABLE dictionary_entries DROP COLUMN IF EXISTS user_id",
+            "ALTER TABLE dictionary_entries ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
+            "ALTER TABLE study_sessions DROP COLUMN IF EXISTS device_id",
+            "ALTER TABLE study_sessions DROP COLUMN IF EXISTS user_id",
+            "ALTER TABLE study_sessions ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
+        ]
+        for m in id_migrations:
+            try:
+                await db.execute(text(m))
+                await db.commit()
+            except Exception:
+                await db.rollback()
 
         # Remove old data and re-seed
         await db.execute(sqldelete(ExerciseItem))
