@@ -8,6 +8,7 @@ import TopicsView from '../views/TopicsView.vue'
 import UnitsView from '../views/UnitsView.vue'
 import BlocksView from '../views/BlocksView.vue'
 import ItemsView from '../views/ItemsView.vue'
+import TheoryEditor from '../views/TheoryEditor.vue'
 
 const routes = [
   {
@@ -27,6 +28,7 @@ const routes = [
       { path: 'topics/:topicId/units', name: 'units', component: UnitsView, props: true },
       { path: 'units/:unitId/blocks', name: 'blocks', component: BlocksView, props: true },
       { path: 'blocks/:blockId/items', name: 'items', component: ItemsView, props: true },
+      { path: 'theory/:type/:id', name: 'theoryEdit', component: TheoryEditor, props: true },
     ],
   },
 ]

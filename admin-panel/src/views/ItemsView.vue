@@ -18,6 +18,7 @@
           <tr>
             <th>#</th>
             <th>Tipo</th>
+            <th>Input</th>
             <th>Contenido</th>
             <th>Respuesta</th>
             <th>Acciones</th>
@@ -29,13 +30,17 @@
             <td>
               <v-chip size="small" color="primary" variant="tonal">{{ i.item_type }}</v-chip>
             </td>
+            <td>
+              <v-chip v-if="i.input_mode" :color="i.input_mode==='tap'?'green':'orange'" size="small" variant="tonal">{{ i.input_mode==='tap'?'🖐️':'⌨️' }}</v-chip>
+              <span v-else class="text-grey text-caption">hereda</span>
+            </td>
             <td class="text-truncate" style="max-width:300px">
               {{ i.sentence || i.question || (i.words && i.words.join(' ')) || '-' }}
             </td>
             <td>{{ i.answer || (i.correct_order && i.correct_order.join(' ')) || '-' }}</td>
             <td>
-              <v-btn icon="mdi-pencil" variant="text" size="small" color="primary" @click="openDialog(i)" />
-              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="confirmDelete(i)" />
+              <v-tooltip text="Editar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(i)" /></template></v-tooltip>
+              <v-tooltip text="Eliminar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(i)" /></template></v-tooltip>
             </td>
           </tr>
         </tbody>
@@ -51,11 +56,20 @@
         <v-card-title>{{ editing ? 'Editar' : 'Nuevo' }} Ejercicio</v-card-title>
         <v-card-text>
           <v-select v-model="form.item_type" label="Tipo de ejercicio" :items="itemTypes" variant="outlined" class="mb-3" />
+          <v-select v-model="form.input_mode" label="Modo de respuesta" :items="inputModes" variant="outlined" class="mb-3" clearable hint="Vacío = hereda de la unidad" persistent-hint />
 
           <!-- fill-blank -->
           <template v-if="form.item_type === 'fill-blank'">
             <v-text-field v-model="form.sentence" label="Frase (usá ______ para el blank)" variant="outlined" class="mb-2" />
-            <v-text-field v-model="form.answer" label="Respuesta correcta" variant="outlined" class="mb-2" />
+            <v-text-field v-model="form.answer" label="Respuesta correcta (principal)" variant="outlined" class="mb-2" />
+            <div class="mb-2">
+              <div class="text-caption text-grey mb-1">Respuestas alternativas (opcional)</div>
+              <div v-for="(a,i) in answersList" :key="i" class="d-flex align-center mb-1">
+                <v-text-field v-model="answersList[i]" variant="outlined" density="compact" hide-details class="mr-1" />
+                <v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="answersList.splice(i,1)" />
+              </div>
+              <v-btn size="x-small" variant="outlined" @click="answersList.push('')">+ respuesta alternativa</v-btn>
+            </div>
             <v-text-field v-model="form.hint" label="Pista (opcional)" variant="outlined" />
           </template>
 
@@ -144,6 +158,11 @@ const saving = ref(false)
 const toDelete = ref(null)
 
 const itemTypes = ['fill-blank', 'multiple-choice', 'reorder', 'listening', 'matching', 'true-false']
+const inputModes = [
+  { title: '🖐️ Tocar opciones', value: 'tap' },
+  { title: '⌨️ Escribir respuesta', value: 'type' },
+]
+const answersList = ref([])
 
 const form = ref({
   block_id: Number(blockId),
@@ -186,9 +205,9 @@ function openDialog(item = null) {
       block_id: Number(blockId),
       item_type: item.item_type,
       sentence: item.sentence || '', answer: item.answer || '',
-      hint: item.hint || '', question: item.question || '',
+      answers: item.answers, hint: item.hint || '', question: item.question || '',
       options: item.options, words: item.words, correct_order: item.correct_order,
-      audio_url: item.audio_url || '',
+      audio_url: item.audio_url || '', input_mode: item.input_mode || null,
       pairs: item.pairs, is_correct_boolean: item.is_correct_boolean,
       sort_order: item.sort_order || 0,
     }
@@ -196,17 +215,19 @@ function openDialog(item = null) {
     formPairs.value = item.pairs || [{ left: '', right: '' }]
     wordsText.value = (item.words || []).join('\n')
     correctOrderText.value = (item.correct_order || []).join(' ')
+    answersList.value = item.answers || []
   } else {
     form.value = {
       block_id: Number(blockId), item_type: 'fill-blank',
-      sentence: '', answer: '', hint: '', question: '',
-      options: null, words: null, correct_order: null,
+      sentence: '', answer: '', answers: null, hint: '', question: '',
+      options: null, words: null, correct_order: null, input_mode: null,
       audio_url: '', pairs: null, is_correct_boolean: null, sort_order: 0,
     }
     formOptions.value = ['', '', '']
     formPairs.value = [{ left: '', right: '' }]
     wordsText.value = ''
     correctOrderText.value = ''
+    answersList.value = []
   }
   dialog.value = true
 }
@@ -215,17 +236,12 @@ async function saveItem() {
   saving.value = true
   try {
     const payload = { ...form.value, block_id: Number(blockId) }
+    const filtered = answersList.value.filter(a => a.trim())
+    payload.answers = filtered.length > 0 ? filtered : null
 
-    if (payload.item_type === 'multiple-choice') {
-      payload.options = formOptions.value.filter(o => o.trim())
-    }
-    if (payload.item_type === 'reorder') {
-      payload.words = wordsText.value.split('\n').map(w => w.trim()).filter(w => w)
-      payload.correct_order = correctOrderText.value.split(' ').filter(w => w)
-    }
-    if (payload.item_type === 'matching') {
-      payload.pairs = formPairs.value.filter(p => p.left.trim() || p.right.trim())
-    }
+    if (payload.item_type === 'multiple-choice') payload.options = formOptions.value.filter(o => o.trim())
+    if (payload.item_type === 'reorder') { payload.words = wordsText.value.split('\n').map(w => w.trim()).filter(w => w); payload.correct_order = correctOrderText.value.split(' ').filter(w => w) }
+    if (payload.item_type === 'matching') payload.pairs = formPairs.value.filter(p => p.left.trim() || p.right.trim())
 
     if (editing.value) await api.put(`/admin/items/${editing.value.id}`, payload)
     else await api.post('/admin/items', payload)

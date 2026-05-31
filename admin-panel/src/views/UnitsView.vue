@@ -52,12 +52,12 @@
               </v-chip>
             </td>
             <td>
-              <v-btn icon="mdi-pencil" variant="text" size="small" color="primary" @click="openDialog(u)" />
-              <v-btn icon="mdi-list-box-outline" variant="text" size="small" color="secondary" :to="`/units/${u.id}/blocks`" />
-              <v-btn v-if="!u.is_locked" icon="mdi-lock" variant="text" size="small" color="warning" @click="toggleLock(u, true)" />
-              <v-btn v-else icon="mdi-lock-open" variant="text" size="small" color="success" @click="toggleLock(u, false)" />
-              <v-btn icon="mdi-restart" variant="text" size="small" color="orange" @click="confirmReset(u)" />
-              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="confirmDelete(u)" />
+              <v-tooltip text="Editar unidad" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(u)" /></template></v-tooltip>
+              <v-tooltip text="Ver bloques de ejercicios" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-list-box-outline" v-bind="tp" variant="text" size="small" color="secondary" :to="`/units/${u.id}/blocks`" /></template></v-tooltip>
+              <v-tooltip text="Editar teoría de esta unidad" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="`/theory/unit/${u.id}`" /></template></v-tooltip>
+              <v-tooltip :text="u.is_locked?'Desbloquear':'Bloquear'" location="top"><template #activator="{ props: tp }"><v-btn v-if="!u.is_locked" icon="mdi-lock" v-bind="tp" variant="text" size="small" color="warning" @click="toggleLock(u, true)" /><v-btn v-else icon="mdi-lock-open" v-bind="tp" variant="text" size="small" color="success" @click="toggleLock(u, false)" /></template></v-tooltip>
+              <v-tooltip text="Resetear progreso (el nene empieza de cero)" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-restart" v-bind="tp" variant="text" size="small" color="orange" @click="confirmReset(u)" /></template></v-tooltip>
+              <v-tooltip text="Eliminar unidad" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(u)" /></template></v-tooltip>
             </td>
           </tr>
         </tbody>

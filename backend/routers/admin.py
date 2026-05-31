@@ -1,18 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
 from database import get_db
 from dependencies import get_current_admin
-from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem
+from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo
 from schemas.admin import (
     SubjectCreate, SubjectUpdate, SubjectResponse as AdminSubjectResponse,
     TopicCreate, TopicUpdate, TopicResponse as AdminTopicResponse,
-    MessageResponse,
+    MessageResponse, ReorderRequest,
     UnitCreate, UnitUpdate, UnitResponse,
     BlockCreate, BlockUpdate, BlockResponse,
     ItemCreate, ItemUpdate, ItemResponse,
+    TheorySaveRequest, VideoCreate,
 )
 
 router = APIRouter()
@@ -465,3 +466,148 @@ async def delete_item(
     await db.delete(item)
     await db.commit()
     return MessageResponse(message="Item deleted")
+
+
+# ── Reorder ────────────────────────────────────────────────
+
+@router.put("/items/reorder", response_model=MessageResponse)
+async def reorder_items(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    for it in data.items:
+        await db.execute(update(ExerciseItem).where(ExerciseItem.id == it["id"]).values(sort_order=it["sort_order"]))
+    await db.commit()
+    return MessageResponse(message="Reordered")
+
+
+@router.put("/blocks/reorder", response_model=MessageResponse)
+async def reorder_blocks(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    for it in data.items:
+        await db.execute(update(ExerciseBlock).where(ExerciseBlock.id == it["id"]).values(sort_order=it["sort_order"]))
+    await db.commit()
+    return MessageResponse(message="Reordered")
+
+
+@router.put("/units/reorder", response_model=MessageResponse)
+async def reorder_units(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    for it in data.items:
+        await db.execute(update(ExerciseUnit).where(ExerciseUnit.id == it["id"]).values(sort_order=it["sort_order"]))
+    await db.commit()
+    return MessageResponse(message="Reordered")
+
+
+@router.put("/topics/reorder", response_model=MessageResponse)
+async def reorder_topics(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    for it in data.items:
+        await db.execute(update(Topic).where(Topic.id == it["id"]).values(sort_order=it["sort_order"]))
+    await db.commit()
+    return MessageResponse(message="Reordered")
+
+
+# ── Theory (Topic) ─────────────────────────────────────────
+
+@router.get("/topics/{topic_id}/theory", response_model=TheorySaveRequest)
+async def get_topic_theory(topic_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(TopicTheory).where(TopicTheory.topic_id == topic_id).options(selectinload(TopicTheory.sections)))
+    theory = result.scalar_one_or_none()
+    if not theory:
+        return TheorySaveRequest()
+    return TheorySaveRequest(
+        text=theory.text,
+        sections=[{"title": s.title, "text": s.text, "examples": s.examples or []} for s in (theory.sections or [])],
+        table_headers=theory.table_headers,
+        table_rows=theory.table_rows,
+        tips=theory.tips,
+    )
+
+
+@router.put("/topics/{topic_id}/theory", response_model=MessageResponse)
+async def save_topic_theory(topic_id: str, data: TheorySaveRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(TopicTheory).where(TopicTheory.topic_id == topic_id))
+    theory = result.scalar_one_or_none()
+    if not theory:
+        theory = TopicTheory(topic_id=topic_id, text=data.text)
+        db.add(theory)
+        await db.flush()
+    else:
+        theory.text = data.text
+        theory.table_headers = data.table_headers
+        theory.table_rows = data.table_rows
+        theory.tips = data.tips
+
+    await db.execute(delete(TheorySection).where(TheorySection.theory_id == theory.id))
+    for idx, s in enumerate(data.sections):
+        db.add(TheorySection(theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
+
+    theory.table_headers = data.table_headers
+    theory.table_rows = data.table_rows
+    theory.tips = data.tips
+    await db.commit()
+    return MessageResponse(message="Theory saved")
+
+
+# ── Theory (Unit) ──────────────────────────────────────────
+
+@router.get("/units/{unit_id}/theory", response_model=TheorySaveRequest)
+async def get_unit_theory(unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(UnitTheory).where(UnitTheory.unit_id == unit_id).options(selectinload(UnitTheory.sections)))
+    theory = result.scalar_one_or_none()
+    if not theory: return TheorySaveRequest()
+    return TheorySaveRequest(text=theory.text, sections=[{"title": s.title, "text": s.text, "examples": s.examples or []} for s in (theory.sections or [])], table_headers=theory.table_headers, table_rows=theory.table_rows, tips=theory.tips)
+
+
+@router.put("/units/{unit_id}/theory", response_model=MessageResponse)
+async def save_unit_theory(unit_id: str, data: TheorySaveRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(UnitTheory).where(UnitTheory.unit_id == unit_id))
+    theory = result.scalar_one_or_none()
+    if not theory:
+        theory = UnitTheory(unit_id=unit_id, text=data.text)
+        db.add(theory)
+        await db.flush()
+    else:
+        theory.text = data.text
+
+    await db.execute(delete(UnitTheorySection).where(UnitTheorySection.unit_theory_id == theory.id))
+    for idx, s in enumerate(data.sections):
+        db.add(UnitTheorySection(unit_theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
+
+    theory.table_headers = data.table_headers
+    theory.table_rows = data.table_rows
+    theory.tips = data.tips
+    await db.commit()
+    return MessageResponse(message="Theory saved")
+
+
+# ── Videos ─────────────────────────────────────────────────
+
+@router.get("/topics/{topic_id}/videos", response_model=list[dict])
+async def list_videos(topic_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(TheoryVideo).where(TheoryVideo.topic_id == topic_id).order_by(TheoryVideo.sort_order))
+    return [{"id": v.id, "title": v.title, "url": v.url, "description": v.description, "sort_order": v.sort_order} for v in result.scalars().all()]
+
+
+@router.post("/topics/{topic_id}/videos")
+async def add_video(topic_id: str, data: VideoCreate, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    video = TheoryVideo(topic_id=topic_id, title=data.title, url=data.url, description=data.description)
+    db.add(video)
+    await db.commit()
+    await db.refresh(video)
+    return {"id": video.id, "title": video.title, "url": video.url}
+
+
+@router.put("/videos/{video_id}")
+async def update_video(video_id: int, data: VideoCreate, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    video = await db.get(TheoryVideo, video_id)
+    if not video: raise HTTPException(status_code=404)
+    video.title = data.title
+    video.url = data.url
+    video.description = data.description
+    await db.commit()
+    return {"id": video.id, "title": video.title, "url": video.url}
+
+
+@router.delete("/videos/{video_id}", response_model=MessageResponse)
+async def delete_video(video_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    video = await db.get(TheoryVideo, video_id)
+    if not video: raise HTTPException(status_code=404)
+    await db.delete(video)
+    await db.commit()
+    return MessageResponse(message="Video deleted")

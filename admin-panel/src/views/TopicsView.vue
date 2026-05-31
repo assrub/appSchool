@@ -37,9 +37,10 @@
               </v-chip>
             </td>
             <td>
-              <v-btn icon="mdi-dumbbell" variant="text" size="small" color="warning" :to="`/topics/${t.id}/units`" />
-              <v-btn icon="mdi-pencil" variant="text" size="small" color="primary" @click="openDialog(t)" />
-              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="confirmDelete(t)" />
+              <v-tooltip text="Ver unidades de ejercicio" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-dumbbell" v-bind="tp" variant="text" size="small" color="warning" :to="`/topics/${t.id}/units`" /></template></v-tooltip>
+              <v-tooltip text="Editar teoría y videos" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="`/theory/topic/${t.id}`" /></template></v-tooltip>
+              <v-tooltip text="Editar tema" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(t)" /></template></v-tooltip>
+              <v-tooltip text="Desactivar tema" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(t)" /></template></v-tooltip>
             </td>
           </tr>
         </tbody>
