@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,17 +25,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,13 +39,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.ui.theme.Primary
-import com.appenglish.ui.theme.SurfaceVariant
+import com.appenglish.ui.theme.WarningBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BlocksScreen(
     onBackClick: () -> Unit,
     onBlockClick: (String, String) -> Unit,
+    onTheoryClick: (String) -> Unit,
     viewModel: BlocksViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -61,6 +58,13 @@ fun BlocksScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White)
+                    }
+                },
+                actions = {
+                    if (uiState.topicTheory != null) {
+                        IconButton(onClick = { onTheoryClick(uiState.topicId) }) {
+                            Icon(Icons.Default.MenuBook, "Ver teoría", tint = Color.White)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
@@ -76,40 +80,49 @@ fun BlocksScreen(
                 Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
             }
         } else {
-            var selectedTab by remember { mutableStateOf(0) }
-
-            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (uiState.topicTheory != null) {
-                    TabRow(selectedTabIndex = selectedTab, containerColor = Color.White, contentColor = Primary) {
-                        Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Ejercicios") })
-                        Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Teoría") })
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onTheoryClick(uiState.topicId) },
+                            shape = MaterialTheme.shapes.large,
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("📖", fontSize = 24.sp)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("Ver teoría", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Primary)
+                                    Text("${uiState.topicTheory!!.blocks.size} secciones", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                }
+                                Icon(Icons.Default.MenuBook, contentDescription = null, tint = Primary)
+                            }
+                        }
                     }
+                    item { Spacer(modifier = Modifier.height(4.dp)) }
                 }
 
-                if (selectedTab == 1 && uiState.topicTheory != null) {
-                    com.appenglish.ui.screens.topic.UnitTheoryView(
-                        theory = uiState.topicTheory!!,
+                items(uiState.blocks) { block ->
+                    Card(
                         modifier = Modifier
-                    )
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(uiState.blocks) { block ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onBlockClick(uiState.topicId, viewModel.getUnitId) },
-                                shape = MaterialTheme.shapes.large,
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
-                            ) {
-                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Column(Modifier.weight(1f)) {
-                                        Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                        Text("${block.items.size} ejercicios", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    Icon(Icons.Default.PlayArrow, contentDescription = "Ir", tint = Primary)
-                                }
+                            .fillMaxWidth()
+                            .clickable { onBlockClick(uiState.topicId, viewModel.getUnitId) },
+                        shape = MaterialTheme.shapes.large,
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text("${block.items.size} ejercicios", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Ir", tint = Primary)
                         }
                     }
                 }

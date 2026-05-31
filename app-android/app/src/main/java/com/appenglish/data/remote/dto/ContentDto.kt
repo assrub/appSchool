@@ -48,6 +48,7 @@ data class TopicResponse(
 
 data class TheoryDto(
     val text: String,
+    val blocks: List<TheoryBlockDto>?,
     val table: TableDto?,
     val tips: List<TipDto>
 )

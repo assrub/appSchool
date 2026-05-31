@@ -94,8 +94,17 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
 
     theory_dto = None
     if topic.theory:
+        import json
+        blocks = None
+        try:
+            parsed = json.loads(topic.theory.text or "")
+            if isinstance(parsed, list):
+                blocks = parsed
+        except:
+            pass
         theory_dto = TheoryDto(
-            text=topic.theory.text,
+            text=topic.theory.text if not blocks else "",
+            blocks=blocks,
             table=TableDto(
                 headers=topic.theory.table_headers or [],
                 rows=topic.theory.table_rows or [],

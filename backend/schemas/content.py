@@ -14,6 +14,7 @@ class TableDto(BaseModel):
 
 class TheoryDto(BaseModel):
     text: str
+    blocks: list[dict] | None = None
     table: TableDto | None = None
     tips: list[TipDto] = []
 

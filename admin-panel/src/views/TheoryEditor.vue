@@ -21,46 +21,55 @@
     <v-row v-if="!loading">
       <v-col cols="12" md="8">
         <v-card rounded="lg" elevation="2">
-          <v-tabs v-model="currentTab" color="primary" slider-color="primary">
-            <v-tab v-for="(b, i) in blocks" :key="i" :value="i" class="text-lowercase">
-              {{ b.title || `Sección ${i + 1}` }}
-              <v-btn
-                v-if="blocks.length > 1"
-                icon="mdi-close"
-                variant="text"
-                size="x-small"
-                class="ml-1"
-                @click.stop="confirmRemoveBlock(i)"
-              />
-            </v-tab>
-            <v-tab value="add" @click="addBlock">
-              <v-icon>mdi-plus</v-icon>
-            </v-tab>
-          </v-tabs>
+          <div class="pa-3 border-b d-flex align-center">
+            <span class="text-overline mr-4">Bloques de teoría ({{ blocks.length }})</span>
+            <v-btn size="x-small" variant="tonal" prepend-icon="mdi-plus" color="success" @click="addBlock">
+              Agregar bloque
+            </v-btn>
+          </div>
 
-          <v-card-text v-if="currentBlock" class="pt-4">
-            <v-text-field
-              v-model="currentBlock.title"
-              label="Título de la sección"
-              variant="outlined"
-              class="mb-4"
-              density="comfortable"
-              hide-details
-              :placeholder="`Sección ${currentTab + 1}`"
-            />
+          <div v-if="blocks.length === 0" class="text-center text-grey py-8">
+            <v-icon size="48" class="mb-2">mdi-book-open-page-variant-outline</v-icon>
+            <p>Agregá un bloque de teoría</p>
+          </div>
 
-            <RichTextEditor v-model="currentBlock.html" />
+          <v-expansion-panels v-model="openPanels" multiple variant="accordion">
+            <v-expansion-panel v-for="(block, i) in blocks" :key="i">
+              <v-expansion-panel-title>
+                <div class="d-flex align-center flex-grow-1">
+                  <span class="text-grey text-caption mr-2">#{{ i + 1 }}</span>
+                  <v-text-field
+                    v-model="block.title"
+                    variant="plain"
+                    density="compact"
+                    hide-details
+                    :placeholder="`Título sección ${i + 1}`"
+                    class="flex-grow-1"
+                    style="max-width: 300px"
+                  />
+                  <v-chip size="x-small" variant="tonal" class="ml-2">
+                    {{ block.html ? block.html.replace(/<[^>]*>/g, '').length : 0 }} chars
+                  </v-chip>
+                </div>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <div class="pt-2">
+                  <RichTextEditor v-model="block.html" />
+                </div>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
 
-            <v-divider class="my-4" />
+          <v-divider v-if="type === 'topic'" class="my-4" />
 
-            <div class="d-flex align-center mb-2">
+          <v-card-text v-if="type === 'topic'">
+            <div class="d-flex align-center mb-3">
               <v-icon size="20" class="mr-2">mdi-lightbulb-outline</v-icon>
-              <span class="text-subtitle-2 font-weight-medium">Tips y consejos</span>
+              <span class="text-subtitle-2 font-weight-medium">Tips y consejos (aparecen al final)</span>
             </div>
-
-            <div v-for="(tip, i) in currentBlock.tips" :key="i" class="mb-2">
+            <div v-for="(tip, i) in globalTips" :key="i" class="mb-2">
               <v-text-field
-                v-model="currentBlock.tips[i]"
+                v-model="globalTips[i]"
                 variant="outlined"
                 density="compact"
                 hide-details
@@ -68,78 +77,35 @@
                 class="mb-1"
               >
                 <template #prepend-inner>
-                  <v-icon size="small" color="warning">mdi-alert</v-icon>
+                  <v-icon size="small" color="warning">mdi-lightbulb</v-icon>
                 </template>
                 <template #append-inner>
-                  <v-btn
-                    icon="mdi-close"
-                    variant="text"
-                    size="x-small"
-                    color="grey"
-                    @click="removeTip(i)"
-                  />
+                  <v-btn icon="mdi-close" variant="text" size="x-small" color="grey" @click="removeGlobalTip(i)" />
                 </template>
               </v-text-field>
             </div>
-            <v-btn
-              variant="text"
-              size="small"
-              prepend-icon="mdi-plus"
-              @click="addTip"
-              class="mt-1"
-            >
+            <v-btn variant="text" size="small" prepend-icon="mdi-plus" @click="globalTips.push('')" class="mt-1">
               Agregar tip
             </v-btn>
           </v-card-text>
 
-          <v-card-text v-else class="text-center text-grey py-8">
-            <v-icon size="48" class="mb-2">mdi-book-open-page-variant-outline</v-icon>
-            <p>Agregá una sección de teoría con el botón + de arriba</p>
-          </v-card-text>
-        </v-card>
-
-        <v-card v-if="type === 'topic'" rounded="lg" elevation="2" class="mt-4">
-          <v-card-title class="d-flex align-center">
-            <v-icon class="mr-2">mdi-video</v-icon>
-            Videos
-          </v-card-title>
-          <v-card-text>
+          <v-card-text v-if="type === 'topic'">
+            <div class="d-flex align-center mb-3">
+              <v-icon class="mr-2">mdi-video</v-icon>
+              <span class="text-subtitle-2 font-weight-medium">Videos de YouTube</span>
+            </div>
             <v-row v-for="(v, i) in videos" :key="i" class="mb-3" align="center">
               <v-col cols="5">
-                <v-text-field
-                  v-model="v.title"
-                  label="Título"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                />
+                <v-text-field v-model="v.title" label="Título" variant="outlined" density="compact" hide-details />
               </v-col>
               <v-col cols="5">
-                <v-text-field
-                  v-model="v.url"
-                  label="URL de YouTube"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  placeholder="https://youtube.com/..."
-                />
+                <v-text-field v-model="v.url" label="URL de YouTube" variant="outlined" density="compact" hide-details placeholder="https://youtube.com/..." />
               </v-col>
               <v-col cols="2">
-                <v-btn
-                  icon="mdi-delete"
-                  variant="text"
-                  color="error"
-                  @click="removeVideo(i)"
-                />
+                <v-btn icon="mdi-delete" variant="text" color="error" @click="removeVideo(i)" />
               </v-col>
             </v-row>
-            <v-btn
-              variant="tonal"
-              prepend-icon="mdi-plus"
-              @click="addVideo"
-            >
-              Agregar video
-            </v-btn>
+            <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addVideo">Agregar video</v-btn>
           </v-card-text>
         </v-card>
       </v-col>
@@ -161,10 +127,10 @@
       <v-card rounded="lg">
         <v-card-title class="text-error">
           <v-icon class="mr-2">mdi-alert</v-icon>
-          Eliminar sección
+          Eliminar bloque
         </v-card-title>
         <v-card-text>
-          ¿Eliminar "<b>{{ blocks[blockToRemove]?.title || `Sección ${blockToRemove + 1}` }}</b>"?<br />
+          ¿Eliminar el bloque "<b>{{ blocks[blockToRemove]?.title || `Bloque ${blockToRemove + 1}` }}</b>"?<br />
           El contenido se perderá.
         </v-card-text>
         <v-card-actions>
@@ -194,8 +160,9 @@ const type = route.params.type
 const saving = ref(false)
 const loading = ref(true)
 const error = ref('')
-const currentTab = ref(0)
+const openPanels = ref([])
 const blocks = ref([{ title: '', html: '', tips: [] }])
+const globalTips = ref([])
 const videos = ref([])
 
 const removeDialog = ref(false)
@@ -203,7 +170,7 @@ const blockToRemove = ref(0)
 const lastSaved = ref(null)
 let autosaveTimer = null
 
-const currentBlock = computed(() => blocks.value[currentTab.value] || null)
+const currentBlock = computed(() => blocks.value[openPanels.value[0]] || null)
 
 const title = computed(() => type === 'topic' ? 'Teoría del tema' : 'Teoría de la unidad')
 
@@ -218,10 +185,7 @@ const backLabel = computed(() => type === 'topic' ? 'Temas' : 'Unidades')
 const previewHtml = computed(() => {
   return blocks.value.map(b => {
     const title = b.title ? `<h2>${b.title}</h2>` : ''
-    const tips = b.tips?.length
-      ? `<div class="tip-box">${b.tips.map(t => `<div class="tip-item"><span>💡</span><span>${t}</span></div>`).join('')}</div>`
-      : ''
-    return `${title}${b.html || ''}${tips}`
+    return `${title}${b.html || ''}`
   }).join('<hr>')
 })
 
@@ -232,7 +196,7 @@ function goBack() {
 
 function addBlock() {
   blocks.value.push({ title: '', html: '', tips: [] })
-  currentTab.value = blocks.value.length - 1
+  openPanels.value = [blocks.value.length - 1]
 }
 
 function confirmRemoveBlock(i) {
@@ -242,19 +206,23 @@ function confirmRemoveBlock(i) {
 
 function doRemoveBlock() {
   blocks.value.splice(blockToRemove.value, 1)
-  if (currentTab.value >= blocks.value.length) {
-    currentTab.value = Math.max(0, blocks.value.length - 1)
+  if (blocks.value.length === 0) {
+    blocks.value.push({ title: '', html: '', tips: [] })
   }
+  openPanels.value = [Math.min(blockToRemove.value, blocks.value.length - 1)]
   removeDialog.value = false
 }
 
 function addTip() {
-  if (!currentBlock.value.tips) currentBlock.value.tips = []
-  currentBlock.value.tips.push('')
+  globalTips.value.push('')
 }
 
 function removeTip(i) {
-  currentBlock.value.tips.splice(i, 1)
+  globalTips.value.splice(i, 1)
+}
+
+function removeGlobalTip(i) {
+  globalTips.value.splice(i, 1)
 }
 
 function addVideo() {
@@ -275,10 +243,16 @@ async function fetchData() {
         ...b,
         tips: b.tips || []
       }))
+      globalTips.value = data.tips || []
+      openPanels.value = [0]
     } else if (data.text) {
       blocks.value = [{ title: '', html: data.text.replace(/\n/g, '<br>'), tips: [] }]
+      globalTips.value = []
+      openPanels.value = [0]
     } else {
       blocks.value = [{ title: '', html: '', tips: [] }]
+      globalTips.value = []
+      openPanels.value = []
     }
 
     if (type === 'topic') {
@@ -289,8 +263,6 @@ async function fetchData() {
         videos.value = []
       }
     }
-
-    currentTab.value = 0
   } catch (e) {
     error.value = e.response?.data?.detail || 'Error al cargar'
   } finally {
@@ -308,7 +280,7 @@ function scheduleAutosave() {
 async function save(silent = false) {
   if (!silent) saving.value = true
   try {
-    const payload = { blocks: blocks.value }
+    const payload = { blocks: blocks.value, tips: globalTips.value }
     await api.put(`/admin/${type}s/${id}/theory`, payload)
 
     if (type === 'topic' && videos.value.length) {

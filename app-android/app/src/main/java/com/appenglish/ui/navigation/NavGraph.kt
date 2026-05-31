@@ -28,6 +28,7 @@ import com.appenglish.ui.screens.test.FinalTestScreen
 import com.appenglish.ui.screens.dictionary.DictionaryScreen
 import com.appenglish.ui.screens.progress.ProgressScreen
 import com.appenglish.ui.screens.settings.SettingsScreen
+import com.appenglish.ui.screens.theory.TheoryScreen
 
 object Routes {
     const val LOGIN = "login"
@@ -37,6 +38,7 @@ object Routes {
     const val BLOCKS = "blocks/{unitId}"
     const val EXERCISE = "exercise/{topicId}/{unitId}"
     const val TEST = "test/{topicId}"
+    const val THEORY = "theory/{topicId}"
     const val DICTIONARY = "dictionary"
     const val PROGRESS = "progress"
     const val SETTINGS = "settings"
@@ -46,6 +48,7 @@ object Routes {
     fun blocks(unitId: String) = "blocks/$unitId"
     fun exercise(topicId: String, unitId: String) = "exercise/$topicId/$unitId"
     fun test(topicId: String) = "test/$topicId"
+    fun theory(topicId: String) = "theory/$topicId"
 }
 
 @Composable
@@ -134,8 +137,13 @@ fun AppNavGraph() {
             composable(Routes.BLOCKS, arguments = listOf(navArgument("unitId") { type = NavType.StringType })) {
                 BlocksScreen(
                     onBackClick = { navController.popBackStack() },
-                    onBlockClick = { topicId, unitId -> navController.navigate(Routes.exercise(topicId, unitId)) }
+                    onBlockClick = { topicId, unitId -> navController.navigate(Routes.exercise(topicId, unitId)) },
+                    onTheoryClick = { topicId -> navController.navigate(Routes.theory(topicId)) }
                 )
+            }
+
+            composable(Routes.THEORY, arguments = listOf(navArgument("topicId") { type = NavType.StringType })) {
+                TheoryScreen(onBackClick = { navController.popBackStack() })
             }
 
             composable(Routes.EXERCISE, arguments = listOf(navArgument("topicId") { type = NavType.StringType }, navArgument("unitId") { type = NavType.StringType })) {
