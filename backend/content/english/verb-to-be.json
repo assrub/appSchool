@@ -20,51 +20,39 @@
           "I am happy"
         ],
         [
-          "He / She / It (uno solo)",
+          "He / She / It",
           "is",
           "She is a doctor"
         ],
         [
-          "You / We / They (varios o 'tú')",
+          "You / We / They",
           "are",
           "We are friends"
         ],
         [
-          "Un nombre solo: Claudia",
+          "Un nombre solo",
           "is",
           "Claudia is smart"
         ],
         [
-          "Dos nombres: David and Dagui",
+          "Dos o más",
           "are",
-          "They are outside"
+          "David and Dagui are outside"
         ]
       ]
     },
     "tips": [
       {
         "emoji": "👑",
-        "text": "AM → Solo YO. Como un rey solitario"
+        "text": "AM → Solo YO. Como un rey solitario."
       },
       {
         "emoji": "👉",
-        "text": "IS → Apuntas con el dedo a UNO → ¡eso IS!"
+        "text": "IS → Apuntas con el dedo a UNO."
       },
       {
         "emoji": "🚢",
-        "text": "ARE → Una ARmada de MUCHOS barcos"
-      },
-      {
-        "emoji": "❌",
-        "text": "Para negar: am not (I), isn't (uno), aren't (varios)"
-      },
-      {
-        "emoji": "❓",
-        "text": "Para preguntar: cambia verbo y sujeto de lugar"
-      },
-      {
-        "emoji": "✅",
-        "text": "Respuesta corta: Yes/No + pronombre + am/is/are"
+        "text": "ARE → Una ARmada de MUCHOS barcos."
       }
     ]
   },
@@ -73,357 +61,32 @@
       "id": "affirmative",
       "title": "Afirmativo (am / is / are)",
       "exerciseType": "fill-blank",
-      "explanation": "Completa con am, is o are según corresponda. Recuerda: AM → solo YO, IS → uno solo, ARE → varios o YOU.",
-      "blocks": [
-        {
-          "title": "PASO 1 Pronombres personales y familia cercana (Usa am / is / are)",
-          "items": [
-            {
-              "sentence": "I ______a happy student.",
-              "answer": "am",
-              "hint": "AM → Solo YO"
-            },
-            {
-              "sentence": "You ______my best friend.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "He ______in the office.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "She ______ a doctor.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "It ______sunny today.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "We ______from London.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "They ______at the library.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "Claudia ______very intelligent.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Manuel ______my father.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Natalia ______at school.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            }
-          ]
-        },
-        {
-          "title": "PASO 3 Estados físicos, clima y objetos del hogar (Usa am / is / are)",
-          "items": [
-            {
-              "sentence": "I ______thirsty.",
-              "answer": "am",
-              "hint": "AM → Solo YO"
-            },
-            {
-              "sentence": "You ______ready for the test.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "The girl ______beautiful.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "The houses ______white.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "The garden ______full of flowers.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "The keys ______on the floor.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "It ______ten o'clock.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "We ______ready to go.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "He ______a good worker.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "David and Dagui ______outside.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            }
-          ]
-        },
-        {
-          "title": "PASO 4 Repaso final de concordancia y situaciones diarias (Usa am / is / are)",
-          "items": [
-            {
-              "sentence": "I ______t home.",
-              "answer": "am",
-              "hint": "AM → Solo YO"
-            },
-            {
-              "sentence": "The cat ______black and white.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "You ______very kind.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "Natalia and I ______happy.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "The flowers ______pretty.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "It ______a difficult day.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Claudia and Manuel ______at the park.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "The teacher ______in the classroom.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "He ______at the gym.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Everyone ______happy today.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            }
-          ]
-        },
-        {
-          "title": "PASO 5 Completa con la forma correcta am, is o are.",
-          "items": []
-        },
-        {
-          "title": "Parte 1 Pronombres personales",
-          "items": [
-            {
-              "sentence": "I ______a student.",
-              "answer": "am",
-              "hint": "AM → Solo YO"
-            },
-            {
-              "sentence": "You ______my best friend.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "He ______at school today.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "She ______very happy.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "We ______from Spain.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            }
-          ]
-        },
-        {
-          "title": "Parte 2 La familia de Claudia",
-          "items": [
-            {
-              "sentence": "Claudia ______learning English.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Manuel ______at work.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Vanesa and Natalia ______sisters.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "My brother Natalia ______tall.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Manuel and Vanesa ______parents.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            }
-          ]
-        },
-        {
-          "title": "Parte 3 David y Dagui",
-          "items": [
-            {
-              "sentence": "David ______a small dog.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Dagui ______very fast.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "The dogs ______in the garden.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "David and Dagui ______happy pets.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "It ______a beautiful day.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            }
-          ]
-        },
-        {
-          "title": "Parte 4 Plurales y Objetos",
-          "items": [
-            {
-              "sentence": "The books ______on the table.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "The car ______blue.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "My friends ______at the cinema.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "The weather ______cold today.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "They ______teachers.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            }
-          ]
-        },
-        {
-          "title": "Parte 5 Repaso Mixto",
-          "items": [
-            {
-              "sentence": "I ______tired.",
-              "answer": "am",
-              "hint": "AM → Solo YO"
-            },
-            {
-              "sentence": "You and I  ______friends.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            },
-            {
-              "sentence": "The house ______big.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "Everyone ______here.",
-              "answer": "is",
-              "hint": "IS → Uno solo"
-            },
-            {
-              "sentence": "The children ______playing.",
-              "answer": "are",
-              "hint": "ARE → Varios o YOU"
-            }
-          ]
-        }
-      ],
+      "explanation": "Completá con am, is o are. Empezá tocando las respuestas y después escribí.",
+      "inputMode": "tap",
       "theory": {
-        "text": "En inglés, para decir cómo es o cómo está algo, usamos el verbo TO BE. Es muy importante porque es el verbo más usado de todo el inglés.",
+        "text": "En inglés, para decir cómo es o cómo está algo, usamos el verbo TO BE. Tiene 3 formas.",
         "sections": [
           {
             "title": "¿Cuándo usar AM?",
-            "text": "Solo se usa con I (yo). Es como un rey solitario: ¡nadie más lo usa!",
+            "text": "Solo con I (yo). Es como un rey solitario.",
             "examples": [
               "I am happy.",
-              "I am a student.",
-              "I am from Argentina."
+              "I am a student."
             ]
           },
           {
             "title": "¿Cuándo usar IS?",
-            "text": "Se usa cuando hablamos de UNA sola persona, animal o cosa. He (él), She (ella), It (eso).",
+            "text": "Con He (él), She (ella), It (eso) o un nombre solo.",
             "examples": [
               "She is a doctor.",
-              "He is at school.",
-              "It is sunny today.",
               "Claudia is smart."
             ]
           },
           {
             "title": "¿Cuándo usar ARE?",
-            "text": "Se usa para YOU (tú/ustedes), WE (nosotros) y THEY (ellos/ellas). También con DOS o MÁS personas o cosas.",
+            "text": "Con You, We, They y plurales.",
             "examples": [
               "We are friends.",
-              "They are happy.",
-              "You are my best friend.",
               "David and Dagui are outside."
             ]
           }
@@ -436,612 +99,697 @@
           ],
           "rows": [
             [
-              "I (yo)",
+              "I",
               "am",
               "I am happy"
             ],
             [
-              "He / She / It",
+              "He/She/It",
               "is",
               "She is a doctor"
             ],
             [
-              "You / We / They",
+              "You/We/They",
               "are",
               "We are friends"
-            ],
-            [
-              "Un nombre solo",
-              "is",
-              "Claudia is smart"
-            ],
-            [
-              "Dos o más",
-              "are",
-              "David and Dagui are outside"
             ]
           ]
         },
         "tips": [
           {
             "emoji": "👑",
-            "text": "AM → Solo YO. Como un rey solitario."
+            "text": "AM → Solo YO"
           },
           {
             "emoji": "👉",
-            "text": "IS → Apuntas con el dedo a UNO. ¡Eso IS!"
+            "text": "IS → Uno solo"
           },
           {
             "emoji": "🚢",
-            "text": "ARE → Una ARmada de MUCHOS barcos."
+            "text": "ARE → Varios"
           }
         ]
-      }
+      },
+      "blocks": [
+        {
+          "title": "PASO 1: Pronombres (tocá la respuesta)",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "I ______ a happy student.",
+              "answer": "am",
+              "input_mode": "tap",
+              "hint": "AM → Solo YO 👑",
+              "answers": [
+                "I am",
+                "I'm"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "You ______ my best friend.",
+              "answer": "are",
+              "input_mode": "tap",
+              "hint": "ARE → Para you"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "He ______ in the office.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "She ______ a doctor.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "It ______ sunny today.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "We ______ from London.",
+              "answer": "are",
+              "input_mode": "tap",
+              "hint": "ARE → Varios"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "They ______ at the library.",
+              "answer": "are",
+              "input_mode": "tap",
+              "hint": "ARE → Ellos"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Claudia ______ very intelligent.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Nombre solo"
+            }
+          ]
+        },
+        {
+          "title": "PASO 2: Familia y objetos (tocá la respuesta)",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "Manuel ______ my father.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Natalia ______ at school.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The cat ______ black and white.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The flowers ______ pretty.",
+              "answer": "are",
+              "input_mode": "tap",
+              "hint": "ARE → Plural"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "David and Dagui ______ outside.",
+              "answer": "are",
+              "input_mode": "tap",
+              "hint": "ARE → Dos nombres"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The teacher ______ in the classroom.",
+              "answer": "is",
+              "input_mode": "tap",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The children ______ playing.",
+              "answer": "are",
+              "input_mode": "tap",
+              "hint": "ARE → Plural (children)"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "You and I ______ friends.",
+              "answer": "are",
+              "input_mode": "tap",
+              "hint": "ARE → We"
+            }
+          ]
+        },
+        {
+          "title": "PASO 3: Escribí la respuesta",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "I ______ thirsty.",
+              "answer": "am",
+              "input_mode": "type",
+              "hint": "AM → Solo YO"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "You ______ ready for the test.",
+              "answer": "are",
+              "input_mode": "type",
+              "hint": "ARE → Para you"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The girl ______ beautiful.",
+              "answer": "is",
+              "input_mode": "type",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The houses ______ white.",
+              "answer": "are",
+              "input_mode": "type",
+              "hint": "ARE → Plural"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The garden ______ full of flowers.",
+              "answer": "is",
+              "input_mode": "type",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The keys ______ on the floor.",
+              "answer": "are",
+              "input_mode": "type",
+              "hint": "ARE → Plural (keys)"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "It ______ ten o'clock.",
+              "answer": "is",
+              "input_mode": "type",
+              "hint": "IS → It"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "We ______ ready to go.",
+              "answer": "are",
+              "input_mode": "type",
+              "hint": "ARE → We"
+            }
+          ]
+        },
+        {
+          "title": "PASO 3: Elegí la opción correcta",
+          "items": [
+            {
+              "type": "multiple-choice",
+              "question": "¿Cómo se dice 'Ella es doctora'?",
+              "options": [
+                "She is a doctor",
+                "She are a doctor",
+                "She am a doctor"
+              ],
+              "answer": "She is a doctor"
+            },
+            {
+              "type": "multiple-choice",
+              "question": "¿Cómo se dice 'Ellos están en la biblioteca'?",
+              "options": [
+                "They is at the library",
+                "They are at the library",
+                "They am at the library"
+              ],
+              "answer": "They are at the library"
+            },
+            {
+              "type": "multiple-choice",
+              "question": "¿Cuál es correcta?",
+              "options": [
+                "I are a student",
+                "I am a student",
+                "I is a student"
+              ],
+              "answer": "I am a student"
+            },
+            {
+              "type": "multiple-choice",
+              "question": "¿Cuál es correcta?",
+              "options": [
+                "We is happy",
+                "We am happy",
+                "We are happy"
+              ],
+              "answer": "We are happy"
+            }
+          ]
+        },
+        {
+          "title": "PASO 4: Escribí la respuesta (repaso)",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "The books ______ on the table.",
+              "answer": "are",
+              "input_mode": "type",
+              "hint": "ARE → Plural"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The car ______ blue.",
+              "answer": "is",
+              "input_mode": "type",
+              "hint": "IS → Uno solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "My friends ______ at the cinema.",
+              "answer": "are",
+              "input_mode": "type",
+              "hint": "ARE → Plural"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The weather ______ cold today.",
+              "answer": "is",
+              "input_mode": "type",
+              "hint": "IS → It"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Everyone ______ here.",
+              "answer": "is",
+              "input_mode": "type",
+              "hint": "IS → Everyone = singular"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Natalia and I ______ happy.",
+              "answer": "are",
+              "input_mode": "type",
+              "hint": "ARE → Nosotros"
+            }
+          ]
+        },
+        {
+          "title": "PASO 4: Ordená las palabras",
+          "items": [
+            {
+              "type": "reorder",
+              "words": [
+                "am",
+                "I",
+                "happy"
+              ],
+              "correct_order": [
+                "I",
+                "am",
+                "happy"
+              ],
+              "hint": "Empieza con I"
+            },
+            {
+              "type": "reorder",
+              "words": [
+                "is",
+                "She",
+                "doctor",
+                "a"
+              ],
+              "correct_order": [
+                "She",
+                "is",
+                "a",
+                "doctor"
+              ],
+              "hint": "Empieza con She"
+            },
+            {
+              "type": "reorder",
+              "words": [
+                "friends",
+                "We",
+                "are"
+              ],
+              "correct_order": [
+                "We",
+                "are",
+                "friends"
+              ],
+              "hint": "Empieza con We"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "negative",
       "title": "Negativo (am not / isn't / aren't)",
       "exerciseType": "fill-blank",
-      "explanation": "Para decir NO SOY, NO ESTOY, NO ES... solo añade NOT después de am, is, are. I am not → no se encoge. He is not = isn't. You are not = aren't.",
-      "blocks": [
-        {
-          "title": "BLOQUE 1 Negación básica con pronombres y familia (Usa am not / isn't / aren't)",
-          "items": [
-            {
-              "sentence": "I ______ a doctor.",
-              "answer": "am not",
-              "hint": "am not → Solo para I"
-            },
-            {
-              "sentence": "You ______ my student.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "He ______ at school.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "She ______ sad today.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "It ______ Monday.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "We ______ at home.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "They ______ from Germany.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "Claudia ______ tired.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "Manuel ______ angry.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "Natalia ______ hungry.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 2 Negación de estados, objetos y mascotas (Usa am not / isn't / aren't)",
-          "items": [
-            {
-              "sentence": "Vanesa ______ at work.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "David ______ a cat.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "Dagui ______ a big dog.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "The car ______ expensive.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "The books ______ boring.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "I ______ at the park.",
-              "answer": "am not",
-              "hint": "am not → Solo para I"
-            },
-            {
-              "sentence": "You ______ late.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "He ______ a pilot.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "She ______ my sister.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "We ______ ready.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 3 Situaciones de tiempo, clima y lugares (Usa am not / isn't / aren't)",
-          "items": [
-            {
-              "sentence": "It ______ raining.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "They ______ my brothers.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "The keys ______ on the table.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "The window ______ closed.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "Claudia and I ______ cousins.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "David and Dagui ______ scared.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "Manuel and Vanesa ______ here.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "The weather ______ good.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "I ______ cold.",
-              "answer": "am not",
-              "hint": "am not → Solo para I"
-            },
-            {
-              "sentence": "You ______ old.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 4 Plurales complejos y repaso general negativo (Usa am not / isn't / aren't)",
-          "items": [
-            {
-              "sentence": "The flowers ______ blue.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "The house ______ small.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "Natalia ______ short.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "The children ______ loud.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "It ______ difficult.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "We ______ late for the bus.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "He ______ thirsty.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            },
-            {
-              "sentence": "The apples ______ green.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "They ______ at the library.",
-              "answer": "aren't",
-              "hint": "aren't = are + not → Varios o YOU"
-            },
-            {
-              "sentence": "Everyone ______ at the party.",
-              "answer": "isn't",
-              "hint": "isn't = is + not → Uno solo"
-            }
-          ]
-        }
-      ],
+      "explanation": "Para negar, agregá NOT. I am not (no se acorta), isn't = is+not, aren't = are+not.",
+      "inputMode": "tap",
       "theory": {
-        "text": "Para decir que algo NO ES o NO ESTÁ, solo tenemos que agregar la palabra NOT después de am, is o are. ¡Es muy fácil!",
+        "text": "Para decir que algo NO ES o NO ESTÁ, solo agregá NOT.",
         "sections": [
           {
-            "title": "Negar con I (yo)",
-            "text": "I + am + not = I am not. Esta forma NO se puede acortar. Siempre se dice completo.",
+            "title": "I + am not",
+            "text": "Solo para I. No se acorta.",
             "examples": [
               "I am not a doctor.",
-              "I am not tired.",
-              "I am not at home."
+              "I am not tired."
             ]
           },
           {
-            "title": "Negar con He / She / It",
-            "text": "is + not se puede acortar a isn't. Las dos formas son correctas.",
+            "title": "is + not = isn't",
+            "text": "Para He, She, It o un nombre solo.",
             "examples": [
-              "He is not at school. = He isn't at school.",
-              "She is not sad. = She isn't sad.",
-              "It is not Monday. = It isn't Monday."
+              "He isn't at school.",
+              "She isn't sad."
             ]
           },
           {
-            "title": "Negar con You / We / They",
-            "text": "are + not se puede acortar a aren't. Las dos formas son correctas.",
+            "title": "are + not = aren't",
+            "text": "Para You, We, They o plurales.",
             "examples": [
-              "You are not late. = You aren't late.",
-              "We are not at home. = We aren't at home.",
-              "They are not from Germany. = They aren't from Germany."
+              "They aren't here.",
+              "We aren't ready."
             ]
           }
         ],
         "table": {
           "headers": [
-            "Forma larga",
-            "Forma corta",
-            "Sujeto"
+            "Forma",
+            "Negación corta"
           ],
           "rows": [
             [
               "am not",
-              "am not (no se acorta)",
-              "I"
+              "am not (no se acorta)"
             ],
             [
               "is not",
-              "isn't",
-              "He / She / It"
+              "isn't"
             ],
             [
               "are not",
-              "aren't",
-              "You / We / They"
+              "aren't"
             ]
           ]
         },
         "tips": [
           {
-            "emoji": "🚫",
-            "text": "am not → Solo para I. NUNCA se acorta."
+            "emoji": "❌",
+            "text": "am not → Solo I"
           },
           {
             "emoji": "✂️",
-            "text": "isn't = is + not. Se usa para UNO solo."
+            "text": "isn't = is+not"
           },
           {
             "emoji": "✂️",
-            "text": "aren't = are + not. Se usa para VARIOS o YOU."
+            "text": "aren't = are+not"
           }
         ]
-      }
+      },
+      "blocks": [
+        {
+          "title": "PASO 1: Negá la frase (tocá la respuesta)",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "I ______ a doctor.",
+              "answer": "am not",
+              "input_mode": "tap",
+              "hint": "I + am not (no se acorta)"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "You ______ my student.",
+              "answer": "aren't",
+              "input_mode": "tap",
+              "hint": "You + aren't"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "He ______ at school.",
+              "answer": "isn't",
+              "input_mode": "tap",
+              "hint": "He + isn't"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "She ______ sad today.",
+              "answer": "isn't",
+              "input_mode": "tap",
+              "hint": "She + isn't",
+              "answers": [
+                "is not",
+                "isn't"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "It ______ Monday.",
+              "answer": "isn't",
+              "input_mode": "tap",
+              "hint": "It + isn't"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "We ______ at home.",
+              "answer": "aren't",
+              "input_mode": "tap",
+              "hint": "We + aren't"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "They ______ from Germany.",
+              "answer": "aren't",
+              "input_mode": "tap",
+              "hint": "They + aren't"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Claudia ______ tired.",
+              "answer": "isn't",
+              "input_mode": "tap",
+              "hint": "Claudia + isn't"
+            }
+          ]
+        },
+        {
+          "title": "PASO 2: Escribí la respuesta",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "The car ______ expensive.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": "isn't = is not"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The books ______ boring.",
+              "answer": "aren't",
+              "input_mode": "type",
+              "hint": "aren't = are not"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "I ______ at the park.",
+              "answer": "am not",
+              "input_mode": "type",
+              "hint": "am not → Solo para I"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "You ______ late.",
+              "answer": "aren't",
+              "input_mode": "type",
+              "hint": "aren't → YOU"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "He ______ a pilot.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": "isn't → UNO solo"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "She ______ my sister.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": "isn't → She"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "We ______ ready.",
+              "answer": "aren't",
+              "input_mode": "type",
+              "hint": "aren't → We"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "They ______ my brothers.",
+              "answer": "aren't",
+              "input_mode": "type",
+              "hint": "aren't → They"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "It ______ raining.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": "isn't → It"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The window ______ closed.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": "isn't → UNO solo"
+            }
+          ]
+        },
+        {
+          "title": "PASO 3: Repaso (escribí la respuesta) + multiple choice",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "The children ______ loud.",
+              "answer": "aren't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Everyone ______ at the party.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The flowers ______ blue.",
+              "answer": "aren't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The house ______ small.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Natalia ______ short.",
+              "answer": "isn't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "The apples ______ green.",
+              "answer": "aren't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "multiple-choice",
+              "question": "¿Cuál es la forma negativa de 'He is happy'?",
+              "options": [
+                "He isn't happy",
+                "He am not happy",
+                "He aren't happy"
+              ],
+              "answer": "He isn't happy"
+            },
+            {
+              "type": "multiple-choice",
+              "question": "¿Cuál es la forma negativa de 'We are friends'?",
+              "options": [
+                "We isn't friends",
+                "We am not friends",
+                "We aren't friends"
+              ],
+              "answer": "We aren't friends"
+            },
+            {
+              "type": "multiple-choice",
+              "question": "¿Cómo se niega 'I am tired'?",
+              "options": [
+                "I isn't tired",
+                "I am not tired",
+                "I aren't tired"
+              ],
+              "answer": "I am not tired"
+            },
+            {
+              "type": "multiple-choice",
+              "question": "¿Cuál es correcta?",
+              "options": [
+                "They isn't here",
+                "They am not here",
+                "They aren't here"
+              ],
+              "answer": "They aren't here"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "interrogative",
       "title": "Interrogativo (Am / Is / Are ...?)",
       "exerciseType": "fill-blank",
-      "explanation": "Para hacer preguntas, cambia el verbo (am/is/are) y el sujeto de lugar. Empieza con el verbo. Ejemplo: You are happy → Are you happy?",
-      "blocks": [
-        {
-          "title": "BLOQUE 1 Preguntas básicas con sujetos personales (Usa Am / Is / Are)",
-          "items": [
-            {
-              "sentence": "______ I late for the meeting?",
-              "answer": "Am",
-              "hint": "Am → Yo"
-            },
-            {
-              "sentence": "______ you my new classmate?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ he at home right now?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ she your sister?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ it cold outside?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ we ready to start?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ they from Italy?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ Claudia in the office?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ Manuel your father?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ Natalia a good student?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 2 Preguntas sobre la familia y mascotas (Usa Am / Is / Are)",
-          "items": [
-            {
-              "sentence": "______ Vanesa at the supermarket?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ David a friendly dog?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ Dagui hungry today?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ the car in the garage?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ the books on the shelf?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ you and I on the same team?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ the windows broken?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ your brother Natalia tall?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ Manuel and Vanesa happy?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ the sky gray today?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 3 Preguntas sobre objetos, clima y lugares (Usa Am / Is / Are)",
-          "items": [
-            {
-              "sentence": "______ I the winner?",
-              "answer": "Am",
-              "hint": "Am → Yo"
-            },
-            {
-              "sentence": "______ you sure about this?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ the girl in the photo beautiful?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ the houses very old?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ the garden full of water?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ the keys in your pocket?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ it ten o'clock yet?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ we late for school?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ he a famous doctor?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ David and Dagui in the garden?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 4 Plurales y repaso general interrogativo (Usa Am / Is / Are)",
-          "items": [
-            {
-              "sentence": "______ I in the right place?",
-              "answer": "Am",
-              "hint": "Am → Yo"
-            },
-            {
-              "sentence": "______ the cat on the roof?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ you from Spain?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ Natalia and I sisters?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ the flowers for me?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ it a difficult exercise?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ Claudia and Manuel busy?",
-              "answer": "Are",
-              "hint": "Are → Varios/YOU"
-            },
-            {
-              "sentence": "______ the teacher in the classroom?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ he your best friend?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            },
-            {
-              "sentence": "______ everyone here now?",
-              "answer": "Is",
-              "hint": "Is → Uno solo"
-            }
-          ]
-        }
-      ],
+      "explanation": "Para preguntar, poné el verbo primero: Am / Is / Are + sujeto + ?",
+      "inputMode": "tap",
       "theory": {
-        "text": "Para hacer preguntas en inglés, solo tenés que dar vuelta el orden: poné el verbo (Am / Is / Are) primero, y después el sujeto. ¡Como un espejo!",
+        "text": "Para hacer preguntas, das vuelta el orden: verbo primero, sujeto después.",
         "sections": [
           {
-            "title": "Cómo formar preguntas",
-            "text": "En una afirmación decís 'You are happy'. En una pregunta decís 'Are you happy?'. El verbo pasa al principio y siempre terminás con signo de pregunta (?).",
-            "examples": [
-              "You are happy. → Are you happy?",
-              "He is at home. → Is he at home?",
-              "I am late. → Am I late?"
-            ]
-          },
-          {
             "title": "Preguntas con Am",
-            "text": "Am va SOLO con I. Preguntás sobre vos mismo.",
+            "text": "Solo con I.",
             "examples": [
-              "Am I late?",
-              "Am I the winner?",
-              "Am I in the right place?"
+              "Am I late?"
             ]
           },
           {
             "title": "Preguntas con Is",
-            "text": "Is va con He, She, It o un nombre solo.",
+            "text": "Con He, She, It o un nombre solo.",
             "examples": [
               "Is he at home?",
-              "Is she your sister?",
-              "Is it cold?",
               "Is Claudia happy?"
             ]
           },
           {
             "title": "Preguntas con Are",
-            "text": "Are va con You, We, They o varios nombres.",
+            "text": "Con You, We, They o plurales.",
             "examples": [
               "Are you ready?",
-              "Are we late?",
-              "Are they from Italy?",
-              "Are David and Dagui happy?"
+              "Are they from Italy?"
             ]
           }
         ],
@@ -1062,282 +810,287 @@
             [
               "You are happy",
               "Are you happy?"
-            ],
-            [
-              "We are friends",
-              "Are we friends?"
             ]
           ]
         },
         "tips": [
           {
             "emoji": "🪞",
-            "text": "Es como un espejo: das vuelta verbo y sujeto."
+            "text": "Das vuelta verbo y sujeto"
           },
           {
             "emoji": "❓",
-            "text": "Siempre terminá con signo de pregunta (?)"
+            "text": "Siempre con ?"
           },
           {
             "emoji": "🔤",
-            "text": "Am para I, Is para uno solo, Are para varios"
+            "text": "Am→I, Is→uno, Are→varios"
           }
         ]
-      }
+      },
+      "blocks": [
+        {
+          "title": "PASO 1: Formá la pregunta (tocá la respuesta)",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "______ I late for the meeting?",
+              "answer": "Am",
+              "input_mode": "tap",
+              "hint": "Am → Solo para I"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ you my new classmate?",
+              "answer": "Are",
+              "input_mode": "tap",
+              "hint": "Are → YOU"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ he at home right now?",
+              "answer": "Is",
+              "input_mode": "tap",
+              "hint": "Is → He"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ she your sister?",
+              "answer": "Is",
+              "input_mode": "tap",
+              "hint": "Is → She"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ it cold outside?",
+              "answer": "Is",
+              "input_mode": "tap",
+              "hint": "Is → It"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ we ready to start?",
+              "answer": "Are",
+              "input_mode": "tap",
+              "hint": "Are → We"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ they from Italy?",
+              "answer": "Are",
+              "input_mode": "tap",
+              "hint": "Are → They"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ Claudia in the office?",
+              "answer": "Is",
+              "input_mode": "tap",
+              "hint": "Is → Nombre solo"
+            }
+          ]
+        },
+        {
+          "title": "PASO 2: Escribí la pregunta",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "______ Manuel your father?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ Natalia a good student?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ the car in the garage?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ the books on the shelf?",
+              "answer": "Are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ the windows broken?",
+              "answer": "Are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ Manuel and Vanesa happy?",
+              "answer": "Are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ David and Dagui in the garden?",
+              "answer": "Are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ everyone here now?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ I the winner?",
+              "answer": "Am",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ you sure about this?",
+              "answer": "Are",
+              "input_mode": "type",
+              "hint": ""
+            }
+          ]
+        },
+        {
+          "title": "PASO 3: Repaso (escribí) + ordenar",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "______ the flowers for me?",
+              "answer": "Are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ it a difficult exercise?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ the teacher in the classroom?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ he your best friend?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ we late for school?",
+              "answer": "Are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "______ he a famous doctor?",
+              "answer": "Is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "reorder",
+              "words": [
+                "Are",
+                "you",
+                "happy",
+                "?"
+              ],
+              "correct_order": [
+                "Are",
+                "you",
+                "happy",
+                "?"
+              ],
+              "hint": "Empieza con Are"
+            },
+            {
+              "type": "reorder",
+              "words": [
+                "Is",
+                "she",
+                "doctor",
+                "a",
+                "?"
+              ],
+              "correct_order": [
+                "Is",
+                "she",
+                "a",
+                "doctor",
+                "?"
+              ],
+              "hint": "Empieza con Is"
+            },
+            {
+              "type": "reorder",
+              "words": [
+                "Am",
+                "I",
+                "late",
+                "?"
+              ],
+              "correct_order": [
+                "Am",
+                "I",
+                "late",
+                "?"
+              ],
+              "hint": "Empieza con Am"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "short-answers",
       "title": "Respuestas cortas (Yes/No)",
       "exerciseType": "fill-blank",
-      "explanation": "Para responder sin repetir toda la frase, usas: Yes + pronombre + am/is/are o No + pronombre + am not/isn't/aren't. El pronombre debe concordar con el sujeto de la pregunta.",
-      "blocks": [
-        {
-          "title": "BLOQUE 1 Respuestas cortas afirmativas y negativas básicas",
-          "items": [
-            {
-              "sentence": "Are you a student? — Yes, ________________",
-              "answer": "I am",
-              "hint": "Are you...? → Yes, I am / No, I'm not"
-            },
-            {
-              "sentence": "Is he your brother? — No, ________________",
-              "answer": "he isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are they from Spain? — Yes, ________________",
-              "answer": "they are",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is it cold today? — No, ________________",
-              "answer": "it isn't",
-              "hint": "Is it...? → Yes, it is / No, it isn't"
-            },
-            {
-              "sentence": "Is Claudia at home? — Yes, ________________",
-              "answer": "she is",
-              "hint": "Is she...? → Yes, she is / No, she isn't"
-            },
-            {
-              "sentence": "Are we late? — No, ________________",
-              "answer": "we aren't",
-              "hint": "Are we...? → Yes, we are / No, we aren't"
-            },
-            {
-              "sentence": "Is Manuel a doctor? — No, ________________",
-              "answer": "he isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are the books new? — Yes, ________________",
-              "answer": "they are",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is Natalia happy? — Yes, ________________",
-              "answer": "she is",
-              "hint": "Is she...? → Yes, she is / No, she isn't"
-            },
-            {
-              "sentence": "Is the car blue? — No, ________________",
-              "answer": "it isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 2 Respuestas sobre familia, amigos y mascotas",
-          "items": [
-            {
-              "sentence": "Are you and I friends? — Yes, ________________",
-              "answer": "we are",
-              "hint": "Are you...? → Yes, I am / No, I'm not"
-            },
-            {
-              "sentence": "Is David a dog? — Yes, ________________",
-              "answer": "he is",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is Vanesa in the kitchen? — No, ________________",
-              "answer": "she isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are the children hungry? — Yes, ________________",
-              "answer": "they are",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Am I late? — No, ________________",
-              "answer": "I'm not",
-              "hint": "Am I...? → Yes, I am / No, I'm not"
-            },
-            {
-              "sentence": "Is Dagui a cat? — No, ________________",
-              "answer": "he isn't",
-              "hint": "Is it...? → Yes, it is / No, it isn't"
-            },
-            {
-              "sentence": "Are the windows open? — No, ________________",
-              "answer": "they aren't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is your father Manuel? — Yes, ________________",
-              "answer": "he is",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are you tired? — No, ________________",
-              "answer": "I'm not",
-              "hint": "Are you...? → Yes, I am / No, I'm not"
-            },
-            {
-              "sentence": "Is it ten o'clock? — Yes, ________________",
-              "answer": "it is",
-              "hint": "Is it...? → Yes, it is / No, it isn't"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 3 Respuestas sobre estados, objetos y tiempo",
-          "items": [
-            {
-              "sentence": "Are Natalia and I sisters? — Yes, ________________",
-              "answer": "we are",
-              "hint": "Is she...? → Yes, she is / No, she isn't"
-            },
-            {
-              "sentence": "Is the house big? — No, ________________",
-              "answer": "it isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Am I the winner? — Yes, ________________",
-              "answer": "I am",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is she beautiful? — Yes,________________",
-              "answer": "she is",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are the keys here? — No,________________",
-              "answer": "they aren't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is everyone ready? — Yes, ________________",
-              "answer": "they are",
-              "hint": ""
-            },
-            {
-              "sentence": "Is he a pilot? — No, ________________",
-              "answer": "he isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are we from London? — Yes, ________________",
-              "answer": "we are",
-              "hint": "Are we...? → Yes, we are / No, we aren't"
-            },
-            {
-              "sentence": "Is the sky blue? — Yes, ________________",
-              "answer": "it is",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are David and Dagui tired? — No, ________________",
-              "answer": "they aren't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            }
-          ]
-        },
-        {
-          "title": "BLOQUE 4 Plurales y repaso final de respuestas cortas",
-          "items": [
-            {
-              "sentence": "Is the teacher angry? — No, ________________",
-              "answer": "he isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are you sure? — Yes, ________________",
-              "answer": "I am",
-              "hint": "Are you...? → Yes, I am / No, I'm not"
-            },
-            {
-              "sentence": "Is it raining? — No, ________________",
-              "answer": "it isn't",
-              "hint": "Is it...? → Yes, it is / No, it isn't"
-            },
-            {
-              "sentence": "Are the apples sweet? — Yes, ________________",
-              "answer": "they are",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is Natalia your brother? — No, ________________",
-              "answer": "she isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are you from France? — No, ________________",
-              "answer": "I'm not",
-              "hint": "Are you...? → Yes, I am / No, I'm not"
-            },
-            {
-              "sentence": "Is Manuel at work? — Yes, ________________",
-              "answer": "he is",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is the cat black? — No, ________________",
-              "answer": "it isn't",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Are we in the right place? — Yes, ________________",
-              "answer": "we are",
-              "hint": "Is he...? → Yes, he is / No, he isn't"
-            },
-            {
-              "sentence": "Is it easy? — Yes, ________________",
-              "answer": "it is",
-              "hint": "Is it...? → Yes, it is / No, it isn't"
-            }
-          ]
-        }
-      ],
+      "explanation": "Respondé con Yes/No + pronombre + verbo. No hace falta repetir toda la frase.",
+      "inputMode": "tap",
       "theory": {
-        "text": "Cuando alguien te hace una pregunta, no hace falta repetir toda la frase. Podés responder cortito con Yes o No, el pronombre y el verbo.",
+        "text": "Para responder sin repetir, usás Yes o No con el pronombre y el verbo.",
         "sections": [
           {
-            "title": "Respuestas con Yes",
-            "text": "Si la respuesta es SÍ, usás: Yes + pronombre + verbo.",
+            "title": "Yes + pronombre + verbo",
+            "text": "Para respuestas afirmativas.",
             "examples": [
-              "Are you a student? → Yes, I am.",
-              "Is he your brother? → Yes, he is.",
-              "Are they happy? → Yes, they are."
+              "Are you a student? → Yes, I am."
             ]
           },
           {
-            "title": "Respuestas con No",
-            "text": "Si la respuesta es NO, usás: No + pronombre + verbo con not.",
+            "title": "No + pronombre + verbo + not",
+            "text": "Para respuestas negativas.",
             "examples": [
-              "Is it cold? → No, it isn't.",
-              "Are we late? → No, we aren't.",
-              "Am I late? → No, I'm not."
+              "Is it cold? → No, it isn't."
             ]
           },
           {
             "title": "¿Qué pronombre usar?",
-            "text": "El pronombre debe coincidir con el sujeto de la pregunta. Si preguntan por 'he', respondés con 'he'. Si preguntan por 'you', respondés con 'I'.",
+            "text": "Usá el mismo pronombre del sujeto. Are you → I.",
             "examples": [
-              "Is he at home? → Yes, he is.",
               "Are you tired? → Yes, I am."
             ]
           }
@@ -1353,7 +1106,7 @@
               "Yes, I am / No, I'm not"
             ],
             [
-              "Is he / she / it...?",
+              "Is he/she/it...?",
               "Yes, he/she/it is / No, he/she/it isn't"
             ],
             [
@@ -1378,13 +1131,256 @@
           {
             "emoji": "❌",
             "text": "No + pronombre + am not/isn't/aren't"
-          },
-          {
-            "emoji": "🔄",
-            "text": "Are you...? → Yes, I am. (you en pregunta = I en respuesta)"
           }
         ]
-      }
+      },
+      "blocks": [
+        {
+          "title": "PASO 1: Respondé corto (tocá la respuesta)",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "Are you a student? — Yes, ________________",
+              "answer": "I am",
+              "input_mode": "tap",
+              "hint": "Are you → I am",
+              "answers": [
+                "I am",
+                "he is",
+                "they are"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is he your brother? — No, ________________",
+              "answer": "he isn't",
+              "input_mode": "tap",
+              "hint": "Is he → he isn't",
+              "answers": [
+                "he isn't",
+                "I'm not",
+                "they aren't"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are they from Spain? — Yes, ________________",
+              "answer": "they are",
+              "input_mode": "tap",
+              "hint": "Are they → they are",
+              "answers": [
+                "they are",
+                "he is",
+                "I am"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is it cold today? — No, ________________",
+              "answer": "it isn't",
+              "input_mode": "tap",
+              "hint": "Is it → it isn't",
+              "answers": [
+                "it isn't",
+                "I'm not",
+                "he isn't"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is Claudia at home? — Yes, ________________",
+              "answer": "she is",
+              "input_mode": "tap",
+              "hint": "Is Claudia → she is",
+              "answers": [
+                "she is",
+                "it is",
+                "they are"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are we late? — No, ________________",
+              "answer": "we aren't",
+              "input_mode": "tap",
+              "hint": "Are we → we aren't",
+              "answers": [
+                "we aren't",
+                "I'm not",
+                "they aren't"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is Manuel a doctor? — No, ________________",
+              "answer": "he isn't",
+              "input_mode": "tap",
+              "hint": "Is Manuel → he isn't",
+              "answers": [
+                "he isn't",
+                "she isn't",
+                "it isn't"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are the books new? — Yes, ________________",
+              "answer": "they are",
+              "input_mode": "tap",
+              "hint": "Are the books → they are",
+              "answers": [
+                "they are",
+                "he is",
+                "we are"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "PASO 2: Escribí la respuesta",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "Is Natalia happy? — Yes, ________________",
+              "answer": "she is",
+              "input_mode": "type",
+              "hint": "Is she → she is"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is the car blue? — No, ________________",
+              "answer": "it isn't",
+              "input_mode": "type",
+              "hint": "Is it → it isn't"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are you and I friends? — Yes, ________________",
+              "answer": "we are",
+              "input_mode": "type",
+              "hint": "You and I = we"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is David a dog? — Yes, ________________",
+              "answer": "he is",
+              "input_mode": "type",
+              "hint": "Is David → he is"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Am I late? — No, ________________",
+              "answer": "I'm not",
+              "input_mode": "type",
+              "hint": "Am I → I'm not",
+              "answers": [
+                "I am not",
+                "I'm not"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are the children hungry? — Yes, ________________",
+              "answer": "they are",
+              "input_mode": "type",
+              "hint": "Are children → they are"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are the windows open? — No, ________________",
+              "answer": "they aren't",
+              "input_mode": "type",
+              "hint": "Are windows → they aren't"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is your father Manuel? — Yes, ________________",
+              "answer": "he is",
+              "input_mode": "type",
+              "hint": "Is father → he is"
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are you tired? — No, ________________",
+              "answer": "I'm not",
+              "input_mode": "type",
+              "hint": "Are you → I'm not",
+              "answers": [
+                "I am not",
+                "I'm not"
+              ]
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is it ten o'clock? — Yes, ________________",
+              "answer": "it is",
+              "input_mode": "type",
+              "hint": "Is it → it is"
+            }
+          ]
+        },
+        {
+          "title": "PASO 3: Repaso (escribí)",
+          "items": [
+            {
+              "type": "fill-blank",
+              "sentence": "Is the house big? — No, ________________",
+              "answer": "it isn't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is she beautiful? — Yes, ________________",
+              "answer": "she is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is everyone ready? — Yes, ________________",
+              "answer": "they are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is he a pilot? — No, ________________",
+              "answer": "he isn't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are we from London? — Yes, ________________",
+              "answer": "we are",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is the sky blue? — Yes, ________________",
+              "answer": "it is",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Are David and Dagui tired? — No, ________________",
+              "answer": "they aren't",
+              "input_mode": "type",
+              "hint": ""
+            },
+            {
+              "type": "fill-blank",
+              "sentence": "Is it easy? — Yes, ________________",
+              "answer": "it is",
+              "input_mode": "type",
+              "hint": ""
+            }
+          ]
+        }
+      ]
     }
   ],
   "testConfig": {

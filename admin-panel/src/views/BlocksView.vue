@@ -5,8 +5,10 @@
     <v-row>
       <v-col cols="7">
         <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
-      <v-table v-else><thead><tr><th>#</th><th>Título</th><th>🔀</th><th>Ejercicios</th><th>Acciones</th></tr></thead>
-        <tbody><tr v-for="b in items" :key="b.id"><td>{{ b.id }}</td><td>{{ b.title }}</td><td><v-chip v-if="b.shuffle" size="small" color="warning" variant="tonal">Mezclado</v-chip></td><td><v-btn variant="text" color="secondary" size="small" :to="`/blocks/${b.id}/items`">Ver ejercicios</v-btn></td>
+      <v-table v-else><thead><tr><th>Ord.</th><th>#</th><th>Título</th><th>🔀</th><th>Ejercicios</th><th>Acciones</th></tr></thead>
+        <tbody><tr v-for="(b,idx) in items" :key="b.id">
+          <td><v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx===0" @click="moveItem(idx,-1)" /><v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx===items.length-1" @click="moveItem(idx,1)" /></td>
+          <td>{{ b.id }}</td><td>{{ b.title }}</td><td><v-chip v-if="b.shuffle" size="small" color="warning" variant="tonal">Mezclado</v-chip></td><td><v-btn variant="text" color="secondary" size="small" :to="`/blocks/${b.id}/items`">Ver ejercicios</v-btn></td>
             <td>
               <v-tooltip text="Editar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(b)" /></template></v-tooltip>
               <v-tooltip text="Eliminar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(b)" /></template></v-tooltip>
@@ -44,4 +46,10 @@ function openDialog(block=null) { editing.value=block; form.value=block?{...bloc
 async function save() { saving.value=true; try { if(editing.value) await api.put(`/admin/blocks/${editing.value.id}`,form.value); else await api.post('/admin/blocks',form.value); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
 function confirmDelete(b) { toDelete.value=b; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/blocks/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
+async function moveItem(idx, dir) {
+  const a = items.value[idx]; const b = items.value[idx+dir]
+  const tmp = a.sort_order; a.sort_order = b.sort_order; b.sort_order = tmp
+  await api.put('/admin/blocks-reorder', { items: items.value.map(x=>({id:x.id,sort_order:x.sort_order})) })
+  await fetchData()
+}
 </script>

@@ -3,8 +3,9 @@
     <div class="d-flex align-center mb-6"><div><v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/units/${unitId}/blocks`" class="mb-2">Bloques</v-btn><h1 class="text-h4">Ejercicios</h1><p class="text-grey">{{ blockTitle }}</p></div><v-spacer /><v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">Nuevo</v-btn></div>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
     <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
-      <v-table v-else><thead><tr><th>Tipo</th><th>Input</th><th>Contenido</th><th>Respuesta</th><th></th></tr></thead>
-        <tbody><tr v-for="i in items" :key="i.id">
+      <v-table v-else><thead><tr><th>#</th><th>Tipo</th><th>Input</th><th>Contenido</th><th>Respuesta</th><th></th></tr></thead>
+        <tbody><tr v-for="(i,idx) in items" :key="i.id">
+          <td><v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx===0" @click="moveItem(idx,-1)" /><v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx===items.length-1" @click="moveItem(idx,1)" /></td>
           <td><v-chip size="x-small" color="primary" variant="tonal">{{ i.item_type }}</v-chip></td>
           <td><v-chip v-if="i.input_mode" :color="i.input_mode==='tap'?'green':'orange'" size="x-small" variant="tonal">{{ i.input_mode==='tap'?'Tap':'Type' }}</v-chip><span v-else class="text-caption">hereda</span></td>
           <td style="max-width:250px" class="text-truncate">{{ i.sentence||i.question||'-' }}</td>
@@ -121,4 +122,10 @@ function openDialog(item=null) { editing.value=item
 async function save() { saving.value=true; try { const p={...form.value,block_id:Number(blockId)}; const a=answersList.value.filter(x=>x.trim()); p.answers=a.length>0?a:null; if(p.item_type==='fill-blank'){ const o=optionsList.value.filter(x=>x.trim()); p.options=o.length>0?o:null } if(p.item_type==='multiple-choice') p.options=formOptions.value.filter(o=>o.trim()); if(p.item_type==='reorder'){ p.words=wordsText.value.split('\n').map(w=>w.trim()).filter(w=>w); p.correct_order=correctOrderText.value.split(' ').filter(w=>w) } if(p.item_type==='matching') p.pairs=formPairs.value.filter(x=>x.left.trim()||x.right.trim()); if(editing.value) await api.put(`/admin/items/${editing.value.id}`,p); else await api.post('/admin/items',p); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
 function confirmDelete(i) { toDelete.value=i; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/items/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
+async function moveItem(idx, dir) {
+  const a = items.value[idx]; const b = items.value[idx+dir]
+  const tmp = a.sort_order; a.sort_order = b.sort_order; b.sort_order = tmp
+  await api.put('/admin/items-reorder', { items: items.value.map(x=>({id:x.id,sort_order:x.sort_order})) })
+  await fetchData()
+}
 </script>

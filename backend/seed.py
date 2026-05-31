@@ -64,18 +64,25 @@ async def seed():
             except Exception:
                 await db.rollback()
 
-        # Remove old data and re-seed
-        await db.execute(sqldelete(ExerciseItem))
-        await db.execute(sqldelete(ExerciseBlock))
-        await db.execute(sqldelete(UnitTheorySection))
-        await db.execute(sqldelete(UnitTheory))
-        await db.execute(sqldelete(ExerciseUnit))
-        await db.execute(sqldelete(TheoryVideo))
-        await db.execute(sqldelete(TheorySection))
-        await db.execute(sqldelete(TopicTheory))
-        await db.execute(sqldelete(Topic))
-        await db.execute(sqldelete(Subject))
-        await db.commit()
+        # Remove old data and re-seed (TRUNCATE resets auto-increment IDs)
+        truncates = [
+            "TRUNCATE exercise_items RESTART IDENTITY CASCADE",
+            "TRUNCATE exercise_blocks RESTART IDENTITY CASCADE",
+            "TRUNCATE unit_theory_sections RESTART IDENTITY CASCADE",
+            "TRUNCATE unit_theory RESTART IDENTITY CASCADE",
+            "TRUNCATE exercise_units RESTART IDENTITY CASCADE",
+            "TRUNCATE theory_videos RESTART IDENTITY CASCADE",
+            "TRUNCATE theory_sections RESTART IDENTITY CASCADE",
+            "TRUNCATE topic_theory RESTART IDENTITY CASCADE",
+            "TRUNCATE topics RESTART IDENTITY CASCADE",
+            "TRUNCATE subjects RESTART IDENTITY CASCADE",
+        ]
+        for t in truncates:
+            try:
+                await db.execute(text(t))
+                await db.commit()
+            except Exception:
+                await db.rollback()
 
         # Create default admin user
         admin_check = await db.execute(select(AdminUser).where(AdminUser.username == "admin"))
