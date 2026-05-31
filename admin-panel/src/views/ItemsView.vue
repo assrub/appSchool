@@ -19,10 +19,17 @@
         <v-select v-model="form.item_type" label="Tipo" :items="itemTypes" variant="outlined" class="mb-3" />
         <v-select v-model="form.input_mode" label="Modo" :items="inputModes" variant="outlined" class="mb-3" clearable hint="Vacío = hereda de la unidad" persistent-hint />
         <template v-if="form.item_type==='fill-blank'">
-          <v-text-field v-model="form.sentence" label="Frase (usá ______)" variant="outlined" class="mb-2" />
-          <v-text-field v-model="form.answer" label="Respuesta" variant="outlined" class="mb-2" />
-          <div class="mb-2"><div class="text-caption mb-1">Alternativas</div><div v-for="(a,i) in answersList" :key="i" class="d-flex align-center mb-1"><v-text-field v-model="answersList[i]" variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="answersList.splice(i,1)" /></div><v-btn size="x-small" variant="outlined" @click="answersList.push('')">+ alternativa</v-btn></div>
-          <v-text-field v-model="form.hint" label="Pista" variant="outlined" />
+          <v-alert variant="text" color="info" density="compact" class="mb-3" icon="mdi-information">💡 <strong>Guía:</strong> Usá <code>______</code> para marcar dónde va el blank. Podés poner varias respuestas correctas (ej: "I am" y "I'm"). Si el modo es Tap, definí qué opciones ve el nene.</v-alert>
+          <v-text-field v-model="form.sentence" label="Frase (usá ______)" variant="outlined" class="mb-3" />
+
+          <v-label class="font-weight-bold mb-1">Respuesta/s correcta/s</v-label>
+          <v-text-field v-model="form.answer" label="Principal" variant="outlined" density="compact" class="mb-2" hide-details />
+          <div class="mb-3"><div class="text-caption">Alternativas (opcional — otras respuestas válidas)</div><div v-for="(a,i) in answersList" :key="i" class="d-flex align-center mb-1"><v-text-field v-model="answersList[i]" variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="answersList.splice(i,1)" /></div><v-btn size="x-small" variant="outlined" class="mt-1" @click="answersList.push('')">+ alternativa</v-btn></div>
+
+          <v-label class="font-weight-bold mb-1">Opciones visibles (modo Tap)</v-label>
+          <div class="mb-3"><div class="text-caption">Botones que el nene ve. Si dejás vacío, se generan automáticas.</div><div v-for="(o,i) in optionsList" :key="i" class="d-flex align-center mb-1"><v-text-field v-model="optionsList[i]" variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="optionsList.splice(i,1)" /></div><v-btn size="x-small" variant="outlined" class="mt-1" @click="optionsList.push('')">+ opción</v-btn></div>
+
+          <v-text-field v-model="form.hint" label="Pista (opcional)" variant="outlined" />
         </template>
         <template v-else-if="form.item_type==='multiple-choice'">
           <v-text-field v-model="form.question" label="Pregunta" variant="outlined" class="mb-2" />
@@ -54,6 +61,7 @@ const dialog = ref(false); const deleteDialog = ref(false); const editing = ref(
 const itemTypes = ['fill-blank','multiple-choice','reorder','listening','matching','true-false']
 const inputModes = [{title:'🖐️ Tap',value:'tap'},{title:'⌨️ Type',value:'type'}]
 const answersList = ref([])
+const optionsList = ref([])
 const formOptions = ref(['','',''])
 const formPairs = ref([{left:'',right:''},{left:'',right:''}])
 const wordsText = ref('')
@@ -64,12 +72,12 @@ async function fetchData() { loading.value=true; error.value=''; try { const r=a
 watch(() => route.params, fetchData, { immediate: true })
 
 function openDialog(item=null) { editing.value=item
-  if(item){ form.value={...item}; answersList.value=item.answers||[]; formOptions.value=item.options||['','','']; formPairs.value=item.pairs||[{left:'',right:''}]; wordsText.value=(item.words||[]).join('\n'); correctOrderText.value=(item.correct_order||[]).join(' ') }
-  else { form.value={block_id:Number(blockId),item_type:'fill-blank',sentence:'',answer:'',answers:null,hint:'',question:'',options:null,words:null,correct_order:null,input_mode:null,audio_url:'',pairs:null,is_correct_boolean:null,sort_order:0}; answersList.value=[]; formOptions.value=['','','']; formPairs.value=[{left:'',right:''}]; wordsText.value=''; correctOrderText.value='' }
+  if(item){ form.value={...item}; answersList.value=item.answers||[]; optionsList.value=item.options||[]; formOptions.value=item.options||['','','']; formPairs.value=item.pairs||[{left:'',right:''}]; wordsText.value=(item.words||[]).join('\n'); correctOrderText.value=(item.correct_order||[]).join(' ') }
+  else { form.value={block_id:Number(blockId),item_type:'fill-blank',sentence:'',answer:'',answers:null,hint:'',question:'',options:null,words:null,correct_order:null,input_mode:null,audio_url:'',pairs:null,is_correct_boolean:null,sort_order:0}; answersList.value=[]; optionsList.value=[]; formOptions.value=['','','']; formPairs.value=[{left:'',right:''}]; wordsText.value=''; correctOrderText.value='' }
   dialog.value=true
 }
 
-async function save() { saving.value=true; try { const p={...form.value,block_id:Number(blockId)}; const a=answersList.value.filter(x=>x.trim()); p.answers=a.length>0?a:null; if(p.item_type==='multiple-choice') p.options=formOptions.value.filter(o=>o.trim()); if(p.item_type==='reorder'){ p.words=wordsText.value.split('\n').map(w=>w.trim()).filter(w=>w); p.correct_order=correctOrderText.value.split(' ').filter(w=>w) } if(p.item_type==='matching') p.pairs=formPairs.value.filter(x=>x.left.trim()||x.right.trim()); if(editing.value) await api.put(`/admin/items/${editing.value.id}`,p); else await api.post('/admin/items',p); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
+async function save() { saving.value=true; try { const p={...form.value,block_id:Number(blockId)}; const a=answersList.value.filter(x=>x.trim()); p.answers=a.length>0?a:null; if(p.item_type==='fill-blank'){ const o=optionsList.value.filter(x=>x.trim()); p.options=o.length>0?o:null } if(p.item_type==='multiple-choice') p.options=formOptions.value.filter(o=>o.trim()); if(p.item_type==='reorder'){ p.words=wordsText.value.split('\n').map(w=>w.trim()).filter(w=>w); p.correct_order=correctOrderText.value.split(' ').filter(w=>w) } if(p.item_type==='matching') p.pairs=formPairs.value.filter(x=>x.left.trim()||x.right.trim()); if(editing.value) await api.put(`/admin/items/${editing.value.id}`,p); else await api.post('/admin/items',p); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
 function confirmDelete(i) { toDelete.value=i; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/items/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
 </script>
