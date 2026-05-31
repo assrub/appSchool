@@ -32,7 +32,7 @@ class UpdateManager @Inject constructor() {
             try {
                 val client = OkHttpClient()
                 val request = Request.Builder()
-                    .url("${ApiConfig.BASE_URL}../version")
+                    .url("${ApiConfig.BASE_URL}version")
                     .build()
                 val response = client.newCall(request).execute()
                 if (!response.isSuccessful) { checkingVersion = false; return@Thread }

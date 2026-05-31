@@ -27,6 +27,7 @@ import com.appenglish.ui.screens.exercise.UnitExerciseScreen
 import com.appenglish.ui.screens.test.FinalTestScreen
 import com.appenglish.ui.screens.dictionary.DictionaryScreen
 import com.appenglish.ui.screens.progress.ProgressScreen
+import com.appenglish.ui.screens.settings.SettingsScreen
 
 object Routes {
     const val LOGIN = "login"
@@ -38,6 +39,7 @@ object Routes {
     const val TEST = "test/{topicId}"
     const val DICTIONARY = "dictionary"
     const val PROGRESS = "progress"
+    const val SETTINGS = "settings"
 
     fun topicsList(subjectId: String) = "topics/$subjectId"
     fun unitsList(topicId: String) = "units/$topicId"
@@ -62,6 +64,7 @@ fun AppNavGraph() {
                         currentRoute in listOf(Routes.SUBJECTS, Routes.TOPICS_LIST, Routes.UNITS_LIST, Routes.BLOCKS, Routes.EXERCISE, Routes.TEST) -> BottomNavTab.HOME
                         currentRoute == Routes.DICTIONARY -> BottomNavTab.DICTIONARY
                         currentRoute == Routes.PROGRESS -> BottomNavTab.PROGRESS
+                        currentRoute == Routes.SETTINGS -> BottomNavTab.SETTINGS
                         else -> BottomNavTab.HOME
                     },
                     onTabClick = { tab ->
@@ -78,6 +81,11 @@ fun AppNavGraph() {
                             }
                             BottomNavTab.PROGRESS -> {
                                 navController.navigate(Routes.PROGRESS) {
+                                    popUpTo(Routes.SUBJECTS)
+                                }
+                            }
+                            BottomNavTab.SETTINGS -> {
+                                navController.navigate(Routes.SETTINGS) {
                                     popUpTo(Routes.SUBJECTS)
                                 }
                             }
@@ -152,6 +160,16 @@ fun AppNavGraph() {
 
             composable(Routes.PROGRESS) {
                 ProgressScreen(onBackClick = { navController.popBackStack() })
+            }
+
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onLogout = {
+                        AuthInterceptor.clearSession(navController.context)
+                        navController.navigate(Routes.LOGIN) { popUpTo(0) { inclusive = true } }
+                    }
+                )
             }
         }
     }
