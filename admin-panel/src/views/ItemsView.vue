@@ -81,8 +81,13 @@ const previewExerciseHtml = computed(() => {
   if (t === 'fill-blank') {
     const s = form.value.sentence || '...'
     const opts = optionsList.value.filter(o => o.trim())
+    const mode = form.value.input_mode || 'tap'
+    const blankHtml = s.replace(/_+/g, '<span style="border-bottom:2px dashed #999;padding:2px 12px;margin:0 4px">______</span>')
+    if (mode === 'type') {
+      return `<p style="font-size:18px;text-align:center">${blankHtml}</p><div style="border:1px solid #ddd;border-radius:8px;padding:10px;margin-top:12px;text-align:center;color:#ccc;font-size:14px">Escribí tu respuesta...</div><div style="text-align:center;margin-top:8px"><span style="background:#4CAF50;color:white;padding:8px 24px;border-radius:8px;font-size:14px;display:inline-block">Corregir</span></div>`
+    }
     const btns = opts.length ? opts : ['am', 'is', 'are']
-    return `<p style="font-size:18px;text-align:center">${s.replace(/_+/g, '<span style="border-bottom:2px dashed #999;padding:2px 12px;margin:0 4px">______</span>')}</p><div style="display:flex;gap:8px;justify-content:center;margin-top:12px">${btns.map(o => `<span style="background:#f5f5f5;border-radius:8px;padding:8px 16px;font-weight:bold;font-size:16px">${o}</span>`).join('')}</div>`
+    return `<p style="font-size:18px;text-align:center">${blankHtml}</p><div style="display:flex;gap:8px;justify-content:center;margin-top:12px">${btns.map(o => `<span style="background:#f5f5f5;border-radius:8px;padding:8px 16px;font-weight:bold;font-size:16px">${o}</span>`).join('')}</div>`
   }
   if (t === 'multiple-choice') {
     const q = form.value.question || 'Pregunta...'
