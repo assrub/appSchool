@@ -220,6 +220,7 @@ async def _seed_topic(db, topic_data: dict, subject_id: str):
                     item_type=item_data.get("type", "fill-blank"),
                     sentence=item_data.get("sentence", ""),
                     answer=item_data.get("answer", ""),
+                    answers=item_data.get("answers"),
                     hint=item_data.get("hint"),
                     question=item_data.get("question"),
                     options=item_data.get("options"),
@@ -228,6 +229,7 @@ async def _seed_topic(db, topic_data: dict, subject_id: str):
                     audio_url=item_data.get("audioUrl"),
                     pairs=item_data.get("pairs"),
                     is_correct_boolean=item_data.get("isCorrect"),
+                    input_mode=item_data.get("input_mode"),
                 )
                 db.add(item)
 
