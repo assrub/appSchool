@@ -1,6 +1,5 @@
 package com.appenglish.ui.screens.subjects
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,15 +11,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,23 +32,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.Subject
-import com.appenglish.ui.components.BottomNavBar
-import com.appenglish.ui.components.BottomNavTab
 import com.appenglish.ui.theme.Primary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectsScreen(
     onSubjectClick: (String) -> Unit,
-    onDictionaryClick: () -> Unit,
-    onProgressClick: () -> Unit,
-    onLogout: () -> Unit,
     viewModel: SubjectsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -57,25 +51,9 @@ fun SubjectsScreen(
             TopAppBar(
                 title = { Text("AppEnglish", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Primary,
-                    titleContentColor = Color.White
-                ),
-                actions = {
-                    Text(
-                        "Diccionario",
-                        color = Color.White,
-                        modifier = Modifier
-                            .clickable(onClick = onDictionaryClick)
-                            .padding(8.dp)
-                    )
-                    Text(
-                        "Progreso",
-                        color = Color.White,
-                        modifier = Modifier
-                            .clickable(onClick = onProgressClick)
-                            .padding(end = 16.dp, top = 8.dp, bottom = 8.dp)
-                    )
-                }
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { padding ->
@@ -84,7 +62,7 @@ fun SubjectsScreen(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Primary)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (uiState.error != null) {
             Box(
@@ -96,7 +74,7 @@ fun SubjectsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Reintentar",
-                        color = Primary,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.clickable { viewModel.loadSubjects() }
                     )
                 }
@@ -107,14 +85,45 @@ fun SubjectsScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(uiState.subjects) { subject ->
-                    SubjectCard(
-                        subject = subject,
-                        onClick = { onSubjectClick(subject.id) }
-                    )
+                if (uiState.subjects.isEmpty()) {
+                    item {
+                        EmptyState()
+                    }
+                } else {
+                    items(uiState.subjects) { subject ->
+                        SubjectCard(
+                            subject = subject,
+                            onClick = { onSubjectClick(subject.id) }
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyState() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "📚",
+            style = MaterialTheme.typography.displayLarge
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "No hay materias disponibles",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Contacta a tu administrador",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -125,17 +134,33 @@ fun SubjectCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(subject.icon, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(subject.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("${subject.topicsCount} temas", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                Text(
+                    subject.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "${subject.topicsCount} temas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Text("→", fontSize = 24.sp, color = Primary)
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Ir",
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

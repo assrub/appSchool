@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,14 +35,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.Unit as DomainUnit
+import com.appenglish.ui.theme.CorrectBackground
 import com.appenglish.ui.theme.CorrectGreen
-import com.appenglish.ui.theme.Primary
+import com.appenglish.ui.theme.SurfaceVariant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,9 +52,6 @@ fun UnitsScreen(
     viewModel: UnitsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
 
     Scaffold(
         topBar = {
@@ -60,54 +59,101 @@ fun UnitsScreen(
                 title = { Text(uiState.topicName, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            "Volver",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { padding ->
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Primary)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (uiState.error != null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
             }
+        } else if (uiState.units.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("📝", style = MaterialTheme.typography.displayLarge)
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "No hay unidades disponibles",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         } else {
             val allComplete = uiState.units.all { it.percent >= 100.0 }
-            val icons = listOf("✏️", "❌", "❓", "✅")
+            val unitIcons = listOf("✏️", "❌", "❓", "✅")
 
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-                items(uiState.units.size) { idx ->
-                    val u = uiState.units[idx]
+                itemsIndexed(uiState.units) { idx, u ->
                     Card(
-                        modifier = Modifier.fillMaxWidth()
-                            .then(if (!u.isLocked) Modifier.clickable { onUnitClick(u.id, u.id) } else Modifier),
-                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (!u.isLocked) Modifier.clickable { onUnitClick(u.id, u.id) }
+                                else Modifier
+                            ),
+                        shape = MaterialTheme.shapes.large,
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = if (u.percent >= 100.0) Color(0xFFE8F5E9) else Color.White)
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (u.percent >= 100.0) CorrectBackground else MaterialTheme.colorScheme.surface
+                        )
                     ) {
-                        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(icons.getOrElse(idx) { "📝" }, fontSize = 28.sp)
+                        Row(
+                            Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(unitIcons.getOrElse(idx % unitIcons.size) { "📝" }, style = MaterialTheme.typography.headlineMedium)
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(u.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text(u.exerciseType, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Text(
+                                    u.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    u.exerciseType,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 Spacer(Modifier.height(6.dp))
                                 LinearProgressIndicator(
                                     progress = { (u.percent / 100.0).toFloat() },
                                     modifier = Modifier.fillMaxWidth().height(6.dp),
-                                    color = if (u.percent >= 100.0) CorrectGreen else Primary,
-                                    trackColor = Color(0xFFE0E0E0)
+                                    color = if (u.percent >= 100.0) CorrectGreen else MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
-                                Text("${u.completedItems}/${u.totalItems} items", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                Text(
+                                    "${u.completedItems}/${u.totalItems} items",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                            Text(
-                                if (u.isLocked) "🔒" else if (u.percent >= 100.0) "✅" else "→",
-                                fontSize = 22.sp,
-                                color = if (u.isLocked) Color.Gray else if (u.percent >= 100.0) CorrectGreen else Primary
+                            Icon(
+                                imageVector = when {
+                                    u.isLocked -> Icons.Default.Lock
+                                    u.percent >= 100.0 -> Icons.Default.CheckCircle
+                                    else -> Icons.Default.PlayArrow
+                                },
+                                contentDescription = null,
+                                tint = when {
+                                    u.isLocked -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    u.percent >= 100.0 -> CorrectGreen
+                                    else -> MaterialTheme.colorScheme.primary
+                                }
                             )
                         }
                     }
@@ -116,20 +162,47 @@ fun UnitsScreen(
 
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth()
-                            .then(if (allComplete) Modifier.clickable { onTestClick(uiState.units.firstOrNull()?.id ?: "") } else Modifier),
-                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (allComplete) Modifier.clickable { onTestClick(uiState.units.firstOrNull()?.id ?: "") }
+                                else Modifier
+                            ),
+                        shape = MaterialTheme.shapes.large,
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = if (allComplete) Color(0xFFE8F5E9) else Color(0xFFF5F5F5))
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (allComplete) CorrectBackground else SurfaceVariant
+                        )
                     ) {
-                        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("🧪", fontSize = 28.sp)
+                        Row(
+                            Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Science,
+                                contentDescription = null,
+                                tint = if (allComplete) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.height(28.dp).width(28.dp)
+                            )
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("Test Final", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = if (allComplete) Primary else Color.Gray)
-                                Text(if (allComplete) "¡Listo!" else "Completá todas las unidades", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Text(
+                                    "Test Final",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (allComplete) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    if (allComplete) "¡Listo!" else "Completá todas las unidades",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                            Text(if (allComplete) "→" else "🔒", fontSize = 22.sp, color = if (allComplete) Primary else Color.Gray)
+                            Icon(
+                                imageVector = if (allComplete) Icons.Default.PlayArrow else Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = if (allComplete) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
