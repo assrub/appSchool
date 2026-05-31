@@ -1,5 +1,7 @@
 package com.appenglish.ui.screens.progress
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,16 +11,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowDown
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,12 +38,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.appenglish.data.local.entity.ProgressEntity
 import com.appenglish.ui.theme.CorrectBackground
 import com.appenglish.ui.theme.CorrectGreen
 
@@ -47,6 +56,7 @@ fun ProgressScreen(
     viewModel: ProgressViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val subjectProgress by viewModel.subjectProgress.collectAsState()
 
     Scaffold(
         topBar = {
@@ -84,92 +94,16 @@ fun ProgressScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    Text(
-                        "Resumen",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val totalCompleted = uiState.progressEntries.filter { it.completed }.size
-                    val totalUnits = uiState.progressEntries.size
-                    val overallPercent = if (totalUnits > 0) (totalCompleted.toFloat() / totalUnits * 100).toInt() else 0
-
-                    Card(
-                        shape = MaterialTheme.shapes.large,
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "$overallPercent%",
-                                        style = MaterialTheme.typography.displaySmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        "$totalCompleted de $totalUnits unidades completadas",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Text(
-                                    "📊",
-                                    style = MaterialTheme.typography.displayMedium
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(
-                                progress = {
-                                    if (totalUnits > 0) totalCompleted.toFloat() / totalUnits else 0f
-                                },
-                                modifier = Modifier.fillMaxWidth().height(8.dp),
-                                color = CorrectGreen,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        }
-                    }
+                    SummaryCard(progressEntries = uiState.progressEntries)
                 }
 
-                if (uiState.progressEntries.isEmpty()) {
+                if (subjectProgress.isEmpty()) {
                     item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("📈", style = MaterialTheme.typography.displayLarge)
-                                Spacer(Modifier.height(16.dp))
-                                Text(
-                                    "Sin progreso registrado",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    "¡Comenzá a estudiar para ver tu progreso!",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        EmptyProgressState()
                     }
                 } else {
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "Detalle por Unidad",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    items(uiState.progressEntries) { entry ->
-                        ProgressItem(entry)
+                    items(subjectProgress) { subjectProgressItem ->
+                        SubjectProgressCard(subjectProgressItem)
                     }
                 }
             }
@@ -178,53 +112,215 @@ fun ProgressScreen(
 }
 
 @Composable
-fun ProgressItem(entry: ProgressEntity) {
+private fun SummaryCard(progressEntries: List<com.appenglish.data.local.entity.ProgressEntity>) {
+    val totalCompleted = progressEntries.filter { it.completed }.size
+    val totalUnits = progressEntries.size
+    val overallPercent = if (totalUnits > 0) (totalCompleted.toFloat() / totalUnits * 100).toInt() else 0
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (entry.completed) CorrectBackground else MaterialTheme.colorScheme.surface
-        )
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "$overallPercent%",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "$totalCompleted de $totalUnits unidades completadas",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            LinearProgressIndicator(
+                progress = { if (totalUnits > 0) totalCompleted.toFloat() / totalUnits else 0f },
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = CorrectGreen,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyProgressState() {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("📈", style = MaterialTheme.typography.displayLarge)
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "Sin progreso registrado",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "¡Comenzá a estudiar para ver tu progreso!",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SubjectProgressCard(subjectProgress: SubjectProgress) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(subjectProgress.subject.icon, style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        subjectProgress.subject.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    val completedTopics = subjectProgress.topics.count { tp ->
+                        tp.units.isNotEmpty() && tp.units.all { it.progress?.completed == true }
+                    }
+                    Text(
+                        "$completedTopics/${subjectProgress.topics.size} temas",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    if (expanded) Icons.AutoMirrored.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = if (expanded) "Colapsar" else "Expandir",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            AnimatedVisibility(visible = expanded) {
+                Column {
+                    Divider()
+                    subjectProgress.topics.forEach { topicProgress ->
+                        TopicProgressItem(topicProgress)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopicProgressItem(topicProgress: TopicProgress) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = if (entry.completed) Icons.Default.CheckCircle else Icons.Default.Schedule,
-                contentDescription = null,
-                tint = if (entry.completed) CorrectGreen else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(12.dp))
+            Text(topicProgress.topic.icon, style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    entry.topicId.replace("-", " ").replaceFirstChar { it.uppercase() },
+                    topicProgress.topic.name,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                val completedUnits = topicProgress.units.count { it.progress?.completed == true }
                 Text(
-                    entry.unitId.replace("-", " ").replaceFirstChar { it.uppercase() },
+                    "$completedUnits/${topicProgress.units.size} unidades",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            if (topicProgress.units.isNotEmpty()) {
+                Icon(
+                    if (expanded) Icons.AutoMirrored.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(start = 24.dp, end = 16.dp, bottom = 12.dp)) {
+                topicProgress.units.forEach { unit ->
+                    UnitProgressItem(unit)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnitProgressItem(unit: UnitProgress) {
+    val progress = unit.progress
+    val isCompleted = progress?.completed == true
+    val percent = if (progress != null && progress.totalItems > 0) {
+        (progress.completedItems.toFloat() / progress.totalItems * 100).toInt()
+    } else 0
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.Schedule,
+            contentDescription = null,
+            tint = if (isCompleted) CorrectGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                unit.unitTitle,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = if (percent > 0) FontWeight.Medium else FontWeight.Normal
+            )
+            if (progress != null) {
                 LinearProgressIndicator(
-                    progress = {
-                        if (entry.totalItems > 0) entry.completedItems.toFloat() / entry.totalItems else 0f
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp)
-                        .padding(top = 4.dp),
-                    color = if (entry.completed) CorrectGreen else MaterialTheme.colorScheme.primary,
+                    progress = { progress.completedItems.toFloat() / progress.totalItems.coerceAtLeast(1) },
+                    modifier = Modifier.fillMaxWidth().height(3.dp),
+                    color = if (isCompleted) CorrectGreen else MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
+        }
+        Spacer(Modifier.width(8.dp))
+        if (progress != null) {
             Text(
-                "${entry.score}/${entry.totalItems}",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = if (entry.completed) CorrectGreen else MaterialTheme.colorScheme.primary
+                "${progress.score}/${progress.totalItems}",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isCompleted) CorrectGreen else MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
             )
         }
     }

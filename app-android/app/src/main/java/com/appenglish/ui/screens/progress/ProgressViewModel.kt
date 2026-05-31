@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,6 +22,22 @@ data class ProgressUiState(
     val error: String? = null
 )
 
+data class SubjectProgress(
+    val subject: Subject,
+    val topics: List<TopicProgress>
+)
+
+data class TopicProgress(
+    val topic: TopicSummary,
+    val units: List<UnitProgress>
+)
+
+data class UnitProgress(
+    val unitId: String,
+    val unitTitle: String,
+    val progress: ProgressEntity?
+)
+
 @HiltViewModel
 class ProgressViewModel @Inject constructor(
     private val contentRepository: ContentRepository,
@@ -29,6 +46,9 @@ class ProgressViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ProgressUiState())
     val uiState: StateFlow<ProgressUiState> = _uiState.asStateFlow()
+
+    private val _subjectProgress = MutableStateFlow<List<SubjectProgress>>(emptyList())
+    val subjectProgress: StateFlow<List<SubjectProgress>> = _subjectProgress.asStateFlow()
 
     init {
         loadData()
@@ -53,15 +73,39 @@ class ProgressViewModel @Inject constructor(
                         )
                     }
                     _uiState.value = _uiState.value.copy(isLoading = false, subjects = subjects)
+
+                    val entries = progressRepository.observeAllProgress().first()
+                    val subjectProgressList = buildSubjectProgress(subjects, entries)
+                    _subjectProgress.value = subjectProgressList
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
             )
+        }
+    }
 
-            progressRepository.observeAllProgress().collect { entries ->
-                _uiState.value = _uiState.value.copy(progressEntries = entries)
-            }
+    private fun buildSubjectProgress(
+        subjects: List<Subject>,
+        entries: List<ProgressEntity>
+    ): List<SubjectProgress> {
+        return subjects.map { subject ->
+            SubjectProgress(
+                subject = subject,
+                topics = subject.topics.map { topic ->
+                    val topicEntries = entries.filter { it.topicId == topic.id }
+                    TopicProgress(
+                        topic = topic,
+                        units = topicEntries.map { entry ->
+                            UnitProgress(
+                                unitId = entry.unitId,
+                                unitTitle = entry.unitId.replace("-", " ").replaceFirstChar { it.uppercase() },
+                                progress = entry
+                            )
+                        }
+                    )
+                }
+            )
         }
     }
 }

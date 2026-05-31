@@ -21,6 +21,11 @@ const routes = [
         component: () => import('../views/DashboardView.vue'),
       },
       {
+        path: 'editor',
+        name: 'editor',
+        component: () => import('../views/ContentEditorView.vue'),
+      },
+      {
         path: 'subjects',
         name: 'subjects',
         component: () => import('../views/SubjectsView.vue'),
