@@ -60,6 +60,11 @@ const routes = [
         name: 'progress',
         component: () => import('../views/ProgressView.vue'),
       },
+      {
+        path: 'script',
+        name: 'script',
+        component: () => import('../views/ScriptView.vue'),
+      },
     ],
   },
   {

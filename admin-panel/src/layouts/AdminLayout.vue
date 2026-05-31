@@ -5,6 +5,7 @@
         <v-list-item prepend-icon="mdi-view-dashboard" title="Dashboard" to="/" exact />
         <v-list-item prepend-icon="mdi-bookshelf" title="Materias" to="/subjects" />
         <v-list-item prepend-icon="mdi-chart-bar" title="Progreso" to="/progress" />
+        <v-list-item prepend-icon="mdi-script-text" title="Scripts" to="/script" />
         <v-list-item prepend-icon="mdi-logout" title="Salir" @click="logout" />
       </v-list>
     </v-navigation-drawer>

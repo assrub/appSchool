@@ -700,3 +700,391 @@ async def hard_delete_topic(topic_id: str, db: AsyncSession = Depends(get_db), a
     await db.delete(topic)
     await db.commit()
     return MessageResponse(message="Topic deleted permanently")
+
+
+# ── Script Engine ─────────────────────────────────────────
+
+from pydantic import BaseModel as PydanticBase
+
+class ScriptRequest(PydanticBase):
+    version: str = "1.0"
+    actions: list[dict]
+
+SCRIPT_TEMPLATE = r"""# AppSchool — Formato de Script para IA
+
+## Estructura general
+
+Envía un JSON con esta forma:
+
+```json
+{
+  "version": "1.0",
+  "actions": [ ... ]
+}
+```
+
+Cada acción es un objeto con `"action"` (string) y los campos correspondientes.
+
+---
+
+## Acciones disponibles
+
+### 1. upsert_subject — Crear o actualizar materia
+
+```json
+{
+  "action": "upsert_subject",
+  "id": "english",           // ID único (sin espacios, ej: math, science)
+  "name": "Inglés",           // Nombre visible
+  "icon": "📚",               // Emoji (opcional)
+  "color": "#4CAF50"          // Color HEX (opcional)
+}
+```
+
+### 2. upsert_topic — Crear o actualizar tema
+
+```json
+{
+  "action": "upsert_topic",
+  "id": "verb-to-be",         // ID único (sin espacios)
+  "subject_id": "english",    // ID de la materia padre
+  "name": "Verbo To Be",      // Nombre visible
+  "difficulty": 1,            // 1 a 5 (opcional)
+  "icon": "📝",               // Emoji (opcional)
+  "theory": {                 // Teoría del tema (opcional)
+    "blocks": [
+      {
+        "title": "¿Qué es el verbo to be?",
+        "html": "<h2>El verbo más importante</h2><p>Sirve para decir <b>quién sos</b>, <b>cómo estás</b>...</p>"
+      }
+    ]
+  }
+}
+```
+
+### 3. upsert_unit — Crear o actualizar unidad de ejercicios
+
+```json
+{
+  "action": "upsert_unit",
+  "id": "affirmative",         // ID único
+  "topic_id": "verb-to-be",    // ID del tema padre
+  "title": "Afirmativo (am/is/are)",
+  "input_mode": "tap",         // "tap" = tocar opciones, "type" = escribir
+  "explanation": "Completa con am, is o are",
+  "exercises": [ ... ]         // Lista de ejercicios (ver abajo)
+}
+```
+
+### 4. delete_unit — Eliminar unidad
+```json
+{ "action": "delete_unit", "id": "affirmative" }
+```
+
+### 5. delete_topic — Eliminar tema
+```json
+{ "action": "delete_topic", "id": "verb-to-be" }
+```
+
+### 6. delete_subject — Eliminar materia
+```json
+{ "action": "delete_subject", "id": "english" }
+```
+
+---
+
+## Tipos de ejercicios
+
+Cada unidad puede tener una lista `"exercises"` con bloques de ejercicios:
+
+```json
+{
+  "exercises": [
+    {
+      "title": "PASO 1: Pronombres",   // Título del bloque (opcional)
+      "items": [ ... ]                    // Lista de ejercicios del bloque
+    },
+    {
+      "title": "PASO 2: Familia",
+      "items": [ ... ]
+    }
+  ]
+}
+```
+
+Si no ponés bloques, los ejercicios van directamente en la unidad:
+
+```json
+{
+  "exercises": [
+    { "type": "fill-blank", "sentence": "I ___ happy.", "answer": "am" },
+    { "type": "fill-blank", "sentence": "She ___ a doctor.", "answer": "is" }
+  ]
+}
+```
+
+### fill-blank — Completar el espacio
+
+```json
+{
+  "type": "fill-blank",
+  "sentence": "I ______ a happy student.",   // Usá ______ para el blank
+  "answer": "am",                              // Respuesta correcta principal
+  "answers": ["I am", "I'm"],                  // Otras respuestas válidas (opcional)
+  "options": ["am", "is", "are"],              // Botones visibles en modo tap (opcional)
+  "hint": "AM → Solo YO",                      // Pista (opcional)
+  "input_mode": "tap"                          // "tap" o "type" (opcional, hereda de la unidad)
+}
+```
+
+### multiple-choice — Elegir opción
+
+```json
+{
+  "type": "multiple-choice",
+  "question": "¿Cómo se dice 'yo soy'?",   // La pregunta
+  "options": ["I am", "You are", "He is"],  // Opciones (mínimo 2)
+  "answer": "I am"                           // La correcta (debe estar en options)
+}
+```
+
+### reorder — Ordenar palabras
+
+```json
+{
+  "type": "reorder",
+  "words": ["am", "I", "happy"],             // Palabras desordenadas
+  "correct_order": ["I", "am", "happy"],     // Orden correcto
+  "hint": "Empieza con I"                     // Pista (opcional)
+}
+```
+
+### listening — Escuchar y escribir
+
+```json
+{
+  "type": "listening",
+  "sentence": "She is a doctor",              // La frase que se escucha
+  "audio_url": "/audio/doctor.mp3",           // URL del audio
+  "answer": "She is a doctor"                  // Lo que debe escribir el alumno
+}
+```
+
+### matching — Unir columnas
+
+```json
+{
+  "type": "matching",
+  "pairs": [
+    {"left": "I", "right": "am"},
+    {"left": "She", "right": "is"},
+    {"left": "They", "right": "are"}
+  ]
+}
+```
+
+### true-false — ¿Es correcta la frase?
+
+```json
+{
+  "type": "true-false",
+  "sentence": "I are happy",           // La frase a evaluar
+  "is_correct": false,                  // ¿Es correcta?
+  "answer": "I am happy"               // Corrección (solo si es falsa)
+}
+```
+
+---
+
+## Ejemplo completo: Crear materia + tema + unidad con ejercicios
+
+```json
+{
+  "version": "1.0",
+  "actions": [
+    {
+      "action": "upsert_subject",
+      "id": "english",
+      "name": "Inglés",
+      "icon": "📚",
+      "color": "#4CAF50"
+    },
+    {
+      "action": "upsert_topic",
+      "id": "present-simple",
+      "subject_id": "english",
+      "name": "Present Simple",
+      "difficulty": 2,
+      "icon": "🕐",
+      "theory": {
+        "blocks": [
+          {
+            "title": "¿Cuándo se usa?",
+            "html": "<p>El <b>Present Simple</b> se usa para hablar de <u>rutinas</u> y <u>hechos</u>.</p><ul><li>I wake up at 7am.</li><li>The sun rises in the east.</li></ul>"
+          },
+          {
+            "title": "Reglas",
+            "html": "<table><tr><th>Sujeto</th><th>Verbo</th></tr><tr><td>I/You/We/They</td><td>play</td></tr><tr><td>He/She/It</td><td>plays</td></tr></table>"
+          }
+        ]
+      }
+    },
+    {
+      "action": "upsert_unit",
+      "id": "present-simple-affirm",
+      "topic_id": "present-simple",
+      "title": "Afirmativo",
+      "input_mode": "tap",
+      "explanation": "Completá con la forma correcta del verbo",
+      "exercises": [
+        {
+          "title": "PASO 1: Rutinas diarias",
+          "items": [
+            { "type": "fill-blank", "sentence": "I ______ up at 7am.", "answer": "wake", "hint": "wake up = despertarse" },
+            { "type": "fill-blank", "sentence": "She ______ breakfast at 8am.", "answer": "has", "hint": "have → has con He/She/It" },
+            { "type": "multiple-choice", "question": "¿Cómo se dice 'Él juega al fútbol'?", "options": ["He play football", "He plays football", "He playing football"], "answer": "He plays football" },
+            { "type": "reorder", "words": ["to", "I", "school", "go"], "correct_order": ["I", "go", "to", "school"] }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Tips para crear buen contenido
+
+1. **Usá emojis** en iconos de materias y temas (los chicos los aman)
+2. **Poné hints** en ejercicios difíciles para guiar sin dar la respuesta
+3. **Alterná tipos** de ejercicios para no aburrir (fill-blank, mc, reorder, listening)
+4. **Empezá fácil** (dificultad 1) y subí de a poco
+5. **Usá tablas** en la teoría para comparar (sujeto vs verbo)
+6. **Negritas y colores** en el HTML de teoría para resaltar lo importante
+7. **Ejemplos reales** que el chico pueda relacionar con su vida diaria
+8. **No más de 5 ejercicios por bloque** para mantener la atención
+""".strip()
+
+@router.post("/script")
+async def execute_script(data: ScriptRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    results = []
+    for i, action in enumerate(data.actions):
+        action_type = action.get("action", "")
+        try:
+            if action_type == "upsert_subject":
+                await _upsert_subject(db, action)
+                results.append({"index": i, "status": "ok", "action": action_type, "id": action.get("id")})
+            elif action_type == "upsert_topic":
+                await _upsert_topic(db, action)
+                results.append({"index": i, "status": "ok", "action": action_type, "id": action.get("id")})
+            elif action_type == "upsert_unit":
+                await _upsert_unit(db, action)
+                results.append({"index": i, "status": "ok", "action": action_type, "id": action.get("id")})
+            elif action_type == "delete_unit":
+                unit = await db.get(ExerciseUnit, action["id"])
+                if unit: await db.delete(unit)
+                results.append({"index": i, "status": "ok", "action": action_type, "id": action.get("id")})
+            elif action_type == "delete_topic":
+                topic = await db.get(Topic, action["id"])
+                if topic: await db.delete(topic)
+                results.append({"index": i, "status": "ok", "action": action_type, "id": action.get("id")})
+            elif action_type == "delete_subject":
+                subject = await db.get(Subject, action["id"])
+                if subject: await db.delete(subject)
+                results.append({"index": i, "status": "ok", "action": action_type, "id": action.get("id")})
+            else:
+                results.append({"index": i, "status": "error", "action": action_type, "error": f"Unknown action: {action_type}"})
+        except Exception as e:
+            results.append({"index": i, "status": "error", "action": action_type, "error": str(e)})
+    await db.commit()
+    return {"results": results}
+
+
+@router.get("/script/template")
+async def get_script_template(admin: dict = Depends(get_current_admin)):
+    return {"template": SCRIPT_TEMPLATE}
+
+
+async def _upsert_subject(db: AsyncSession, data: dict):
+    subject = await db.get(Subject, data["id"])
+    if subject:
+        for k in ["name", "icon", "color"]:
+            if k in data: setattr(subject, k, data[k])
+    else:
+        db.add(Subject(id=data["id"], name=data["name"], icon=data.get("icon",""), color=data.get("color","#4CAF50")))
+
+
+async def _upsert_topic(db: AsyncSession, data: dict):
+    topic = await db.get(Topic, data["id"])
+    if not topic:
+        topic = Topic(id=data["id"], subject_id=data["subject_id"], name=data["name"], icon=data.get("icon",""), difficulty=data.get("difficulty",1))
+        db.add(topic)
+        await db.flush()
+    else:
+        for k in ["name", "icon", "difficulty", "subject_id"]:
+            if k in data: setattr(topic, k, data[k])
+
+    theory_data = data.get("theory", {}).get("blocks")
+    if theory_data:
+        theory = (await db.execute(select(TopicTheory).where(TopicTheory.topic_id == data["id"]))).scalar_one_or_none()
+        if not theory:
+            theory = TopicTheory(topic_id=data["id"], text="")
+            db.add(theory)
+            await db.flush()
+        import json
+        theory.text = json.dumps(theory_data, ensure_ascii=False)
+
+        await db.execute(delete(TheorySection).where(TheorySection.theory_id == theory.id))
+        await db.execute(delete(TheoryVideo).where(TheoryVideo.topic_id == data["id"]))
+
+
+async def _upsert_unit(db: AsyncSession, data: dict):
+    unit = await db.get(ExerciseUnit, data["id"])
+    if not unit:
+        unit = ExerciseUnit(id=data["id"], topic_id=data["topic_id"], title=data["name"], input_mode=data.get("input_mode","tap"), explanation=data.get("explanation",""))
+        db.add(unit)
+        await db.flush()
+    else:
+        for k in ["title", "input_mode", "explanation"]:
+            if k in data: setattr(unit, k, data[k])
+
+    exercises = data.get("exercises", [])
+    if exercises:
+        await db.execute(delete(ExerciseItem).where(ExerciseItem.block_id.in_(select(ExerciseBlock.id).where(ExerciseBlock.unit_id == data["id"]))))
+        await db.execute(delete(ExerciseBlock).where(ExerciseBlock.unit_id == data["id"]))
+
+        # exercises can be blocks with items, or flat list of items
+        if isinstance(exercises[0], dict) and "items" in exercises[0]:
+            for block_data in exercises:
+                block = ExerciseBlock(unit_id=data["id"], title=block_data.get("title", ""))
+                db.add(block)
+                await db.flush()
+                for item_data in block_data.get("items", []):
+                    _add_item(db, block.id, item_data)
+        else:
+            block = ExerciseBlock(unit_id=data["id"], title="Ejercicios")
+            db.add(block)
+            await db.flush()
+            for item_data in exercises:
+                _add_item(db, block.id, item_data)
+
+
+def _add_item(db, block_id: int, data: dict):
+    item = ExerciseItem(
+        block_id=block_id,
+        item_type=data.get("type", "fill-blank"),
+        sentence=data.get("sentence", ""),
+        answer=data.get("answer", ""),
+        answers=data.get("answers"),
+        hint=data.get("hint"),
+        question=data.get("question"),
+        options=data.get("options"),
+        words=data.get("words"),
+        correct_order=data.get("correct_order"),
+        audio_url=data.get("audio_url"),
+        pairs=data.get("pairs"),
+        is_correct_boolean=data.get("is_correct"),
+        input_mode=data.get("input_mode"),
+    )
+    db.add(item)
