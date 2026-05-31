@@ -280,8 +280,8 @@ async def unlock_unit(unit_id: str, db: AsyncSession = Depends(get_db), admin: d
 async def reset_unit_progress(device_id: str, topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     from sqlalchemy import delete as sqldelete
     from models import Progress, AnswerHistory
-    await db.execute(sqldelete(Progress).where(Progress.device_id == device_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))
-    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.device_id == device_id, AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
+    await db.execute(sqldelete(Progress).where(Progress.user_id == device_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))
+    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.user_id == device_id, AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
     await db.commit()
     return MessageResponse(message="Progress reset")
 
@@ -653,11 +653,11 @@ async def upload_file(file: UploadFile = File(...), admin: dict = Depends(get_cu
 
 @router.get("/progress/{device_id}/detail")
 async def get_progress_detail(device_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    units_result = await db.execute(select(Progress).where(Progress.device_id == device_id))
+    units_result = await db.execute(select(Progress).where(Progress.user_id == device_id))
     progress_rows = units_result.scalars().all()
 
     errors_result = await db.execute(
-        select(AnswerHistory).where(AnswerHistory.device_id == device_id).order_by(AnswerHistory.answered_at.desc()).limit(50)
+        select(AnswerHistory).where(AnswerHistory.user_id == device_id).order_by(AnswerHistory.answered_at.desc()).limit(50)
     )
     errors = [
         {"id": e.id, "topicId": e.topic_id, "unitId": e.unit_id, "givenAnswer": e.given_answer,
@@ -667,7 +667,7 @@ async def get_progress_detail(device_id: str, db: AsyncSession = Depends(get_db)
     ]
 
     sessions_result = await db.execute(
-        select(StudySession).where(StudySession.device_id == device_id).order_by(StudySession.started_at.desc()).limit(20)
+        select(StudySession).where(StudySession.user_id == device_id).order_by(StudySession.started_at.desc()).limit(20)
     )
     sessions = [
         {"id": s.id, "topicId": s.topic_id, "startedAt": s.started_at.isoformat() if s.started_at else None,

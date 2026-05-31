@@ -22,7 +22,7 @@ async def add_dictionary_entry(
 ):
     result = await db.execute(
         select(DictionaryEntry).where(
-            DictionaryEntry.device_id == request.deviceId,
+            DictionaryEntry.user_id == request.deviceId,
             DictionaryEntry.word == request.word,
         )
     )
@@ -44,7 +44,7 @@ async def add_dictionary_entry(
         )
 
     entry = DictionaryEntry(
-        device_id=request.deviceId,
+        user_id=request.deviceId,
         word=request.word,
         translation=request.translation,
         source_lang=request.sourceLang,
@@ -74,7 +74,7 @@ async def list_dictionary(
 ):
     count_result = await db.execute(
         select(func.count()).select_from(DictionaryEntry).where(
-            DictionaryEntry.device_id == device_id
+            DictionaryEntry.user_id == device_id
         )
     )
     total = count_result.scalar()
@@ -90,7 +90,7 @@ async def list_dictionary(
 
     result = await db.execute(
         select(DictionaryEntry)
-        .where(DictionaryEntry.device_id == device_id)
+        .where(DictionaryEntry.user_id == device_id)
         .order_by(sort_column)
         .offset(offset)
         .limit(limit)
@@ -125,7 +125,7 @@ async def delete_dictionary_entry(
     result = await db.execute(
         select(DictionaryEntry).where(
             DictionaryEntry.id == entry_id,
-            DictionaryEntry.device_id == device_id,
+            DictionaryEntry.user_id == device_id,
         )
     )
     entry = result.scalar_one_or_none()

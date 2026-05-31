@@ -54,7 +54,7 @@ async def sync_progress(
     for entry in request.progress:
         result = await db.execute(
             select(Progress).where(
-                Progress.device_id == request.deviceId,
+                Progress.user_id == request.deviceId,
                 Progress.topic_id == entry.topicId,
                 Progress.unit_id == entry.unitId,
             )
@@ -71,7 +71,7 @@ async def sync_progress(
                 existing.completed_at = entry.completedAt
         else:
             new_progress = Progress(
-                device_id=request.deviceId,
+                user_id=request.deviceId,
                 topic_id=entry.topicId,
                 unit_id=entry.unitId,
                 completed=entry.completed,
@@ -101,7 +101,7 @@ async def get_progress(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Progress).where(Progress.device_id == device_id)
+        select(Progress).where(Progress.user_id == device_id)
     )
     rows = result.scalars().all()
 

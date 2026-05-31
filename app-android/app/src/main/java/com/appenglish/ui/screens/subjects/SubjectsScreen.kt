@@ -21,7 +21,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.Subject
-import com.appenglish.domain.model.TopicSummary
 import com.appenglish.ui.components.BottomNavBar
 import com.appenglish.ui.components.BottomNavTab
 import com.appenglish.ui.theme.Primary
@@ -149,56 +147,6 @@ fun SubjectCard(
                 Text("${subject.topicsCount} temas", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
             }
             Text("→", fontSize = 24.sp, color = Primary)
-        }
-    }
-}
-
-@Composable
-fun TopicItem(
-    topic: TopicSummary,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF1F8E9)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(topic.icon, fontSize = MaterialTheme.typography.titleLarge.fontSize)
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    topic.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                LinearProgressIndicator(
-                    progress = { (topic.percentComplete / 100).toFloat() },
-                    modifier = Modifier.fillMaxWidth().height(6.dp),
-                    color = Primary,
-                    trackColor = Color(0xFFE0E0E0),
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    "${topic.completedUnits}/${topic.totalUnits} unidades",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (topic.isLocked) {
-                Text("🔒", fontSize = MaterialTheme.typography.titleLarge.fontSize)
-            } else {
-                Text("→", fontSize = MaterialTheme.typography.titleLarge.fontSize, color = Primary)
-            }
         }
     }
 }
