@@ -19,9 +19,9 @@ defineProps({ html: { type: String, default: '' } })
 </script>
 
 <style scoped>
-.phone-preview { display: flex; flex-direction: column; align-items: center; }
+.phone-preview { display: inline-flex; flex-direction: column; align-items: center; flex-shrink: 0; }
 .phone-frame {
-  width: 240px; height: 480px;
+   max-width: 240px; width: 240px; height: 480px;
   border: 3px solid #333; border-radius: 24px;
   background: #fff; overflow: hidden;
   position: relative;

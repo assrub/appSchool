@@ -710,7 +710,7 @@ async def get_progress_detail(device_id: str, db: AsyncSession = Depends(get_db)
 
     return {
         "deviceId": device_id,
-        "progress": [{"topicId": p.topic_id, "unitId": p.unit_id, "completed": p.completed, "score": p.score, "totalItems": p.total_items, "completedItems": p.completed_items, "testScore": p.test_score} for p in progress_rows],
+        "progress": [{"topicId": p.topic_id, "unitId": p.unit_id, "completed": p.completed, "score": p.score, "totalItems": p.total_items, "completedItems": p.completed_items, "testScore": p.test_score, "startedAt": p.started_at.isoformat() if p.started_at else None, "completedAt": p.completed_at.isoformat() if p.completed_at else None} for p in progress_rows],
         "errors": errors,
         "sessions": sessions,
     }

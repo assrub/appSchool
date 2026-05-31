@@ -31,13 +31,6 @@
           class="mb-1"
         />
         <v-list-item
-          prepend-icon="mdi-pencil-ruler"
-          title="Editor"
-          to="/editor"
-          rounded="lg"
-          class="mb-1"
-        />
-        <v-list-item
           prepend-icon="mdi-chart-bar"
           title="Progreso"
           to="/progress"
