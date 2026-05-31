@@ -112,15 +112,7 @@ fun AppNavGraph() {
 
             composable(Routes.SUBJECTS) {
                 SubjectsScreen(
-                    onSubjectClick = { subjectId -> navController.navigate(Routes.topicsList(subjectId)) },
-                    onDictionaryClick = { navController.navigate(Routes.DICTIONARY) },
-                    onProgressClick = { navController.navigate(Routes.PROGRESS) },
-                    onLogout = {
-                        AuthInterceptor.clearSession(navController.context)
-                        navController.navigate(Routes.LOGIN) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
+                    onSubjectClick = { subjectId -> navController.navigate(Routes.topicsList(subjectId)) }
                 )
             }
 

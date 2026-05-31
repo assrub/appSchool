@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,7 +45,7 @@ fun SubjectsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
+Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("AppEnglish", fontWeight = FontWeight.Bold) },
@@ -54,6 +53,9 @@ fun SubjectsScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
+            )
+        }
+    )
             )
         }
     ) { padding ->

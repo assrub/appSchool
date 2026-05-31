@@ -1,6 +1,7 @@
 package com.appenglish.ui.screens.blocks
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -91,14 +92,15 @@ fun BlocksScreen(
                         modifier = Modifier
                     )
                 } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(uiState.blocks) { block ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { onBlockClick(uiState.topicId, viewModel.getUnitId()) },
                                 shape = MaterialTheme.shapes.large,
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
                             ) {
                                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
@@ -108,7 +110,6 @@ fun BlocksScreen(
                                     Icon(Icons.Default.PlayArrow, contentDescription = "Ir", tint = Primary)
                                 }
                             }
-                            Spacer(Modifier.height(8.dp))
                         }
                     }
                 }

@@ -36,7 +36,9 @@ class TopicsViewModel @Inject constructor(
 
     fun loadTopics() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            if (_uiState.value.topics.isEmpty()) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
             contentRepository.getSubjects().fold(
                 onSuccess = { response ->
                     val subject = response.subjects.find { it.id == subjectId }

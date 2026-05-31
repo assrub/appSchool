@@ -41,7 +41,9 @@ class UnitsViewModel @Inject constructor(
 
     fun loadUnits() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            if (_uiState.value.units.isEmpty()) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
             contentRepository.getTopic(topicId).fold(
                 onSuccess = { response ->
                     val localProgress = progressRepository.getTopicProgress(topicId)
