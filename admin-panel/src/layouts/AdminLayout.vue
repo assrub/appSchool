@@ -37,7 +37,7 @@ const router = useRouter()
 import { onMounted } from 'vue'
 onMounted(async () => {
   if (!auth.isAuthenticated) { router.push('/login'); return }
-  try { await api.get('/auth/refresh') } catch { auth.logout(); router.push('/login') }
+  try { await api.post('/auth/refresh') } catch { auth.logout(); router.push('/login') }
 })
 
 function logout() {
