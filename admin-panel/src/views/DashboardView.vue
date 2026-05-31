@@ -1,6 +1,7 @@
 <template>
   <div>
     <h1 class="text-h4 mb-6">Dashboard</h1>
+    <v-row><v-col cols="7">
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
       {{ error }}
@@ -46,6 +47,9 @@
         No hay materias todavía. Creá una en "Materias".
       </v-card-text>
     </v-card>
+      </v-col>
+      <v-col cols="5" class="d-flex align-start"><AppPreview /></v-col>
+    </v-row>
   </div>
 </template>
 
@@ -53,6 +57,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
+import AppPreview from '../components/AppPreview.vue'
 
 const route = useRoute()
 const subjects = ref([])

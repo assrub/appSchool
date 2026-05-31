@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.Subject
 import com.appenglish.domain.model.TopicSummary
+import com.appenglish.ui.components.BottomNavBar
+import com.appenglish.ui.components.BottomNavTab
 import com.appenglish.ui.theme.Primary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +75,18 @@ fun SubjectsScreen(
                             .clickable(onClick = onProgressClick)
                             .padding(end = 16.dp, top = 8.dp, bottom = 8.dp)
                     )
+                }
+            )  // closes TopAppBar
+        }, // closes topBar, comma for next param
+        bottomBar = {
+            BottomNavBar(
+                currentTab = BottomNavTab.HOME,
+                onTabClick = { tab ->
+                    when (tab) {
+                        BottomNavTab.DICTIONARY -> onDictionaryClick()
+                        BottomNavTab.PROGRESS -> onProgressClick()
+                        BottomNavTab.HOME -> { /* already home */ }
+                    }
                 }
             )
         }
