@@ -209,9 +209,6 @@ fun UnitExerciseScreen(
                     LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             ) {
-                if (uiState.unitTheory != null) {
-                    item { UnitTheoryView(theory = uiState.unitTheory!!); Spacer(Modifier.height(12.dp)) }
-                }
 
                 item {
                     Text("${uiState.completedItems} / ${uiState.totalItems} items", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

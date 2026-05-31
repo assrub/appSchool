@@ -4,6 +4,8 @@
       <h1 class="text-h4">Materias</h1>
       <v-spacer />
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">Nueva Materia</v-btn>
+      <v-btn variant="tonal" prepend-icon="mdi-export" class="ml-2" @click="exportSubject">Exportar</v-btn>
+      <v-btn variant="tonal" prepend-icon="mdi-import" class="ml-2" @click="importSubject">Importar</v-btn>
     </div>
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
@@ -89,4 +91,30 @@ function confirmDelete(s) { toDelete.value=s; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/subjects/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
 function confirmHardDelete(s) { toHardDelete.value = s; hardDeleteDialog.value = true }
 async function doHardDelete() { await api.delete(`/admin/subjects/${toHardDelete.value.id}/hard`); hardDeleteDialog.value=false; await fetchData() }
+async function exportSubject() {
+  const itemsList = items.value.map(s => s.id).join(', ')
+  const id = prompt(`ID de materia a exportar:\nDisponibles: ${itemsList}`)
+  if (!id) return
+  try {
+    const { data } = await api.get(`/admin/export/${id}`)
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = `${id}.json`; a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) { alert('Error: ' + (e.response?.data?.detail || e.message)) }
+}
+function importSubject() {
+  const el = document.createElement('input'); el.type = 'file'; el.accept = '.json'
+  el.onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return
+    try {
+      const text = await f.text()
+      const data = JSON.parse(text)
+      await api.post('/admin/import', data)
+      alert('Importado: ' + (data.id || data.name || 'OK'))
+      await fetchData()
+    } catch (err) { alert('Error: ' + (err.response?.data?.detail || err.message)) }
+  }
+  el.click()
+}
 </script>

@@ -1156,3 +1156,90 @@ def _add_item(db, block_id: int, data: dict):
         input_mode=data.get("input_mode"),
     )
     db.add(item)
+
+
+# ── Export / Import ────────────────────────────────────────
+
+import json as jsonlib, io
+from fastapi.responses import StreamingResponse
+
+async def _subject_to_dict(db, subject):
+    topics_result = await db.execute(
+        select(Topic).where(Topic.subject_id == subject.id, Topic.is_active == True)
+            .options(selectinload(Topic.theory).selectinload(TopicTheory.sections),
+                     selectinload(Topic.videos),
+                     selectinload(Topic.units).selectinload(ExerciseUnit.theory).selectinload(UnitTheory.sections),
+                     selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.items))
+    )
+    topics = []
+    for topic in topics_result.scalars().all():
+        t = {"id": topic.id, "name": topic.name, "icon": topic.icon or "", "difficulty": topic.difficulty, "sort_order": topic.sort_order}
+        if topic.theory:
+            t["theory"] = {
+                "blocks": [{"title": s.title, "html": s.text, "examples": s.examples or []} for s in (topic.theory.sections or [])],
+                "table_headers": topic.theory.table_headers, "table_rows": topic.theory.table_rows, "tips": topic.theory.tips,
+            }
+        t["units"] = []
+        for unit in topic.units:
+            u = {"id": unit.id, "title": unit.title, "input_mode": unit.input_mode, "explanation": unit.explanation or ""}
+            if unit.theory:
+                u["theory"] = {"text": unit.theory.text, "sections": [{"title": s.title, "text": s.text, "examples": s.examples or []} for s in (unit.theory.sections or [])], "table_headers": unit.theory.table_headers, "table_rows": unit.theory.table_rows, "tips": unit.theory.tips}
+            u["blocks"] = []
+            for block in unit.blocks:
+                b = {"title": block.title, "items": []}
+                for item in block.items:
+                    b["items"].append({"type": item.item_type, "sentence": item.sentence, "answer": item.answer, "answers": item.answers, "hint": item.hint, "question": item.question, "options": item.options, "words": item.words, "correct_order": item.correct_order, "input_mode": item.input_mode})
+                u["blocks"].append(b)
+            t["units"].append(u)
+        topics.append(t)
+    return {"id": subject.id, "name": subject.name, "icon": subject.icon, "color": subject.color, "topics": topics}
+
+
+@router.get("/export/{subject_id}")
+async def export_subject(subject_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    subject = await db.get(Subject, subject_id)
+    if not subject: raise HTTPException(status_code=404)
+    data = await _subject_to_dict(db, subject)
+    return data
+
+
+@router.post("/import")
+async def import_subject(data: dict, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    subject = await db.get(Subject, data["id"])
+    if not subject:
+        subject = Subject(id=data["id"], name=data["name"], icon=data.get("icon",""), color=data.get("color","#4CAF50"))
+        db.add(subject); await db.flush()
+
+    for topic_data in data.get("topics", []):
+        topic = await db.get(Topic, topic_data["id"])
+        if not topic:
+            topic = Topic(id=topic_data["id"], subject_id=data["id"], name=topic_data["name"], icon=topic_data.get("icon",""), difficulty=topic_data.get("difficulty",1), sort_order=topic_data.get("sort_order",0))
+            db.add(topic); await db.flush()
+
+        await db.execute(delete(TheorySection).where(TheorySection.theory_id.in_(select(TopicTheory.id).where(TopicTheory.topic_id == topic_data["id"]))))
+        theory = (await db.execute(select(TopicTheory).where(TopicTheory.topic_id == topic_data["id"]))).scalar_one_or_none()
+        theory_data = topic_data.get("theory", {})
+        if theory_data:
+            if not theory: theory = TopicTheory(topic_id=topic_data["id"], text=""); db.add(theory); await db.flush()
+            theory.table_headers = theory_data.get("table_headers"); theory.table_rows = theory_data.get("table_rows"); theory.tips = theory_data.get("tips")
+            for b in theory_data.get("blocks", []): db.add(TheorySection(theory_id=theory.id, title=b.get("title",""), text=b.get("html",""), examples=b.get("examples",[])))
+
+        await db.execute(delete(ExerciseItem).where(ExerciseItem.block_id.in_(select(ExerciseBlock.id).where(ExerciseBlock.unit_id.in_(select(ExerciseUnit.id).where(ExerciseUnit.topic_id == topic_data["id"]))))))
+        await db.execute(delete(ExerciseBlock).where(ExerciseBlock.unit_id.in_(select(ExerciseUnit.id).where(ExerciseUnit.topic_id == topic_data["id"]))))
+        await db.execute(delete(ExerciseUnit).where(ExerciseUnit.topic_id == topic_data["id"]))
+
+        for unit_data in topic_data.get("units", []):
+            unit = ExerciseUnit(id=unit_data["id"], topic_id=topic_data["id"], title=unit_data["title"], input_mode=unit_data.get("input_mode","tap"), explanation=unit_data.get("explanation",""))
+            db.add(unit); await db.flush()
+            ut_data = unit_data.get("theory", {})
+            if ut_data:
+                ut = UnitTheory(unit_id=unit_data["id"], text=ut_data.get("text",""), table_headers=ut_data.get("table_headers"), table_rows=ut_data.get("table_rows"), tips=ut_data.get("tips"))
+                db.add(ut); await db.flush()
+                for s in ut_data.get("sections", []): db.add(UnitTheorySection(unit_theory_id=ut.id, title=s.get("title",""), text=s.get("text",""), examples=s.get("examples",[])))
+            for block_data in unit_data.get("blocks", []):
+                block = ExerciseBlock(unit_id=unit_data["id"], title=block_data["title"])
+                db.add(block); await db.flush()
+                for item_data in block_data.get("items", []): _add_item(db, block.id, item_data)
+
+    await db.commit()
+    return {"status": "ok", "subject": data["id"]}
