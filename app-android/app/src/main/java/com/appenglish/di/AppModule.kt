@@ -6,6 +6,7 @@ import com.appenglish.data.remote.api.TtsApi
 import com.appenglish.data.remote.api.TranslateApi
 import com.appenglish.data.remote.api.ProgressApi
 import com.appenglish.data.remote.api.DictionaryApi
+import com.appenglish.data.remote.api.AuthInterceptor
 import com.appenglish.data.repository.ContentRepository
 import com.appenglish.data.repository.ProgressRepository
 import com.appenglish.data.repository.DictionaryRepository
@@ -32,6 +33,7 @@ object AppModule {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor())
             .addInterceptor(logging)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

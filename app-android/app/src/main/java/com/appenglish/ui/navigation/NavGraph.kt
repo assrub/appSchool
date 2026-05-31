@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.appenglish.ui.screens.login.LoginScreen
 import com.appenglish.ui.screens.subjects.SubjectsScreen
 import com.appenglish.ui.screens.topic.TopicScreen
 import com.appenglish.ui.screens.exercise.UnitExerciseScreen
@@ -14,24 +15,41 @@ import com.appenglish.ui.screens.dictionary.DictionaryScreen
 import com.appenglish.ui.screens.progress.ProgressScreen
 
 object Routes {
+    const val LOGIN = "login"
     const val SUBJECTS = "subjects"
     const val TOPIC = "topic/{topicId}"
     const val UNIT = "unit/{topicId}/{unitId}"
     const val TEST = "test/{topicId}"
     const val DICTIONARY = "dictionary"
     const val PROGRESS = "progress"
+    const val BLOCKS = "blocks/{unitId}"
+    const val UNITS_LIST = "units/{topicId}"
+    const val TOPICS_LIST = "topics/{subjectId}"
 
     fun topic(topicId: String) = "topic/$topicId"
     fun unit(topicId: String, unitId: String) = "unit/$topicId/$unitId"
     fun test(topicId: String) = "test/$topicId"
+    fun blocks(unitId: String) = "blocks/$unitId"
+    fun unitsList(topicId: String) = "units/$topicId"
+    fun topicsList(subjectId: String) = "topics/$subjectId"
 }
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Routes.SUBJECTS
+        startDestination = Routes.LOGIN
     ) {
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Routes.SUBJECTS) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.SUBJECTS) {
             SubjectsScreen(
                 onTopicClick = { subjectId, topicId ->
