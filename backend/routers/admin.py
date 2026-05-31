@@ -510,12 +510,19 @@ async def get_topic_theory(topic_id: str, db: AsyncSession = Depends(get_db), ad
     theory = result.scalar_one_or_none()
     if not theory:
         return TheorySaveRequest()
+    import json
+    blocks = None
+    try:
+        parsed = json.loads(theory.text)
+        if isinstance(parsed, list): blocks = parsed
+    except: pass
     return TheorySaveRequest(
-        text=theory.text,
+        text=theory.text if not blocks else "",
         sections=[{"title": s.title, "text": s.text, "examples": s.examples or []} for s in (theory.sections or [])],
         table_headers=theory.table_headers,
         table_rows=theory.table_rows,
         tips=theory.tips,
+        blocks=blocks,
     )
 
 
@@ -524,14 +531,15 @@ async def save_topic_theory(topic_id: str, data: TheorySaveRequest, db: AsyncSes
     result = await db.execute(select(TopicTheory).where(TopicTheory.topic_id == topic_id))
     theory = result.scalar_one_or_none()
     if not theory:
-        theory = TopicTheory(topic_id=topic_id, text=data.text)
+        theory = TopicTheory(topic_id=topic_id, text="")
         db.add(theory)
         await db.flush()
+
+    if data.blocks:
+        import json
+        theory.text = json.dumps(data.blocks, ensure_ascii=False)
     else:
         theory.text = data.text
-        theory.table_headers = data.table_headers
-        theory.table_rows = data.table_rows
-        theory.tips = data.tips
 
     await db.execute(delete(TheorySection).where(TheorySection.theory_id == theory.id))
     for idx, s in enumerate(data.sections):
@@ -551,7 +559,13 @@ async def get_unit_theory(unit_id: str, db: AsyncSession = Depends(get_db), admi
     result = await db.execute(select(UnitTheory).where(UnitTheory.unit_id == unit_id).options(selectinload(UnitTheory.sections)))
     theory = result.scalar_one_or_none()
     if not theory: return TheorySaveRequest()
-    return TheorySaveRequest(text=theory.text, sections=[{"title": s.title, "text": s.text, "examples": s.examples or []} for s in (theory.sections or [])], table_headers=theory.table_headers, table_rows=theory.table_rows, tips=theory.tips)
+    import json
+    blocks = None
+    try:
+        parsed = json.loads(theory.text)
+        if isinstance(parsed, list): blocks = parsed
+    except: pass
+    return TheorySaveRequest(text=theory.text if not blocks else "", sections=[{"title": s.title, "text": s.text, "examples": s.examples or []} for s in (theory.sections or [])], table_headers=theory.table_headers, table_rows=theory.table_rows, tips=theory.tips, blocks=blocks)
 
 
 @router.put("/units/{unit_id}/theory", response_model=MessageResponse)
@@ -559,9 +573,13 @@ async def save_unit_theory(unit_id: str, data: TheorySaveRequest, db: AsyncSessi
     result = await db.execute(select(UnitTheory).where(UnitTheory.unit_id == unit_id))
     theory = result.scalar_one_or_none()
     if not theory:
-        theory = UnitTheory(unit_id=unit_id, text=data.text)
+        theory = UnitTheory(unit_id=unit_id, text="")
         db.add(theory)
         await db.flush()
+
+    if data.blocks:
+        import json
+        theory.text = json.dumps(data.blocks, ensure_ascii=False)
     else:
         theory.text = data.text
 
