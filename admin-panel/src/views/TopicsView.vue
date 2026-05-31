@@ -7,7 +7,7 @@
         <tbody><tr v-for="t in items" :key="t.id"><td><span class="text-h5">{{ t.icon }}</span></td><td class="font-weight-medium">{{ t.id }}</td><td>{{ t.name }}</td><td><v-rating :model-value="t.difficulty" length="5" size="20" readonly density="compact" color="amber" /></td><td><v-chip :color="t.is_active?'green':'grey'" size="small" variant="tonal">{{ t.is_active?'Sí':'No' }}</v-chip></td>
             <td>
               <v-tooltip text="Ver unidades" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-dumbbell" v-bind="tp" variant="text" size="small" color="warning" :to="`/topics/${t.id}/units`" /></template></v-tooltip>
-              <v-tooltip text="Editar teoría" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="`/theory/topic/${t.id}`" /></template></v-tooltip>
+              <v-tooltip text="Editar teoría" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="{ path: `/theory/topic/${t.id}`, query: { subjectId } }" /></template></v-tooltip>
               <v-tooltip text="Editar tema" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(t)" /></template></v-tooltip>
               <v-tooltip text="Desactivar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(t)" /></template></v-tooltip>
             </td></tr></tbody></v-table>
