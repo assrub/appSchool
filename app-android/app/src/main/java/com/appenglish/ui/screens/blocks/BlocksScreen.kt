@@ -32,7 +32,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,7 +76,7 @@ fun BlocksScreen(
                 Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
             }
         } else {
-            var selectedTab by remember { mutableIntStateOf(0) }
+            var selectedTab by remember { mutableStateOf(0) }
 
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 if (uiState.topicTheory != null) {

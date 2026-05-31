@@ -26,7 +26,12 @@ class UpdateManager @Inject constructor() {
 
     fun checkForUpdate(context: Context) {
         if (checkingVersion) return
-        val activity = context as? Activity ?: return
+        val activity = context as? Activity
+        if (activity == null) {
+            android.widget.Toast.makeText(context, "No se puede verificar actualización", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        android.widget.Toast.makeText(activity, "Verificando actualización...", android.widget.Toast.LENGTH_SHORT).show()
         checkingVersion = true
 
         Thread {
@@ -36,7 +41,7 @@ class UpdateManager @Inject constructor() {
                     .url("${ApiConfig.BASE_URL}version")
                     .build()
                 val response = client.newCall(request).execute()
-                if (!response.isSuccessful) { checkingVersion = false; return@Thread }
+                if (!response.isSuccessful) return@Thread
 
                 val json = JSONObject(response.body?.string() ?: "")
                 val serverVersion = json.optInt("versionCode", 0)
