@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Tab
@@ -205,10 +204,10 @@ fun UnitExerciseScreen(
                 }
 
                 if (selectedTab == 1 && uiState.unitTheory != null) {
-                    UnitTheoryView(theory = uiState.unitTheory!!, modifier = Modifier.padding(horizontal = 0.dp))
+                    UnitTheoryView(theory = uiState.unitTheory!!, modifier = Modifier)
                 } else {
                     LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             ) {
                 if (uiState.unitTheory != null) {
                     item { UnitTheoryView(theory = uiState.unitTheory!!); Spacer(Modifier.height(12.dp)) }
@@ -507,16 +506,16 @@ fun UnitExerciseScreen(
                                             Text("Traducción:", style = MaterialTheme.typography.labelSmall, color = Color(0xFF1565C0))
                                             Spacer(Modifier.height(2.dp))
                                             Text(translatedText!!, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-                } // closes if-else (selectedTab)
-            } // closes Column
-            }
-        }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+                }
+                } // closes else (selectedTab)
+            } // closes Column
             }
         }
-    }
 }
