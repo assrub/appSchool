@@ -97,6 +97,11 @@ class UnitExerciseViewModel @Inject constructor(
                     val blocks = unitDto.blocks.map { b -> ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint, it.itemType, it.inputMode, it.answers, it.options) }) }
                     val totalItems = blocks.sumOf { it.items.size }
 
+                    // Load saved progress from local DB
+                    val savedProgress = progressRepository.getProgress(topicId, unitId)
+                    val completedItems = savedProgress?.completedItems ?: 0
+                    val savedScore = savedProgress?.score ?: 0
+
                     val unitTheory = unitDto.theory?.let { t ->
                         UnitTheory(
                             text = t.text,
@@ -108,10 +113,30 @@ class UnitExerciseViewModel @Inject constructor(
                         )
                     }
 
+                    // Calculate starting position
+                    var remaining = completedItems
+                    var blockIdx = 0
+                    var itemIdx = 0
+                    for ((i, block) in blocks.withIndex()) {
+                        if (remaining >= block.items.size) {
+                            remaining -= block.items.size
+                        } else {
+                            blockIdx = i
+                            itemIdx = remaining
+                            break
+                        }
+                    }
+                    if (completedItems >= totalItems && totalItems > 0) {
+                        blockIdx = blocks.lastIndex
+                        itemIdx = blocks.last().items.lastIndex
+                    }
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false, unitTitle = unitDto.title, unitExplanation = unitDto.explanation,
                         soundCorrectUrl = unitDto.soundCorrectUrl, soundIncorrectUrl = unitDto.soundIncorrectUrl,
-                        unitTheory = unitTheory, blocks = blocks, totalBlocks = blocks.size, totalItems = totalItems
+                        unitTheory = unitTheory, blocks = blocks, totalBlocks = blocks.size, totalItems = totalItems,
+                        completedItems = completedItems, score = savedScore,
+                        currentBlockIndex = blockIdx, currentItemIndex = itemIdx
                     )
                 },
                 onFailure = { e -> _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error") }
