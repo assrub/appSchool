@@ -130,12 +130,15 @@ class UnitExerciseViewModel @Inject constructor(
             val app = getApplication<Application>()
             viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundCorrectUrl) }
             val fullSentence = currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer)
+            val newScore = state.score + 1
+            val newCompleted = state.completedItems + 1
             _uiState.value = state.copy(
                 userInput = option, isCorrect = true,
                 feedback = Feedback("¡Muy bien! ✅", true),
-                score = state.score + 1, completedItems = state.completedItems + 1,
+                score = newScore, completedItems = newCompleted,
                 showingAnswer = true
             )
+            saveProgress()  // Save after each correct answer
             viewModelScope.launch {
                 delay(600)
                 _uiState.value = _uiState.value.copy(playingFullAudio = true, fullSentenceToPlay = fullSentence)

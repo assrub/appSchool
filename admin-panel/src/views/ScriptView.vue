@@ -55,7 +55,16 @@ const helpText = `<b>Formato:</b> JSON con <code>"version":"1.0"</code> y array 
 async function copyTemplate() {
   try {
     const { data } = await api.get('/admin/script/template')
-    await navigator.clipboard.writeText(data.template)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(data.template)
+    } else {
+      const el = document.createElement('textarea')
+      el.value = data.template
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
     alert('Template copiado al portapapeles. Pegalo en ChatGPT/Claude.')
   } catch (e) {
     alert('Error: ' + (e.message || 'No se pudo copiar'))
