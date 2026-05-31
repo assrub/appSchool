@@ -22,6 +22,7 @@
       <v-card-actions><v-spacer /><v-btn variant="text" @click="dialog=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" @click="save">{{ editing?'Guardar':'Crear' }}</v-btn></v-card-actions></v-card>
     </v-dialog>
     <v-dialog v-model="deleteDialog" max-width="400"><v-card rounded="lg"><v-card-title>¿Desactivar?</v-card-title><v-card-text>"{{ toDelete?.name }}" se desactivará.</v-card-text><v-card-actions><v-spacer /><v-btn variant="text" @click="deleteDialog=false">Cancelar</v-btn><v-btn color="error" @click="doDelete">Desactivar</v-btn></v-card-actions></v-card></v-dialog>
+    <v-dialog v-model="hardDeleteDialog" max-width="400"><v-card rounded="lg"><v-card-title>⚠️ Eliminar permanentemente</v-card-title><v-card-text>¿Estás seguro de eliminar "<b>{{ toHardDelete?.name }}</b>"?<br><br>Se borrarán <b>TODOS</b> los datos: unidades, bloques, ejercicios y progreso. No se puede deshacer.</v-card-text><v-card-actions><v-spacer /><v-btn variant="text" @click="hardDeleteDialog=false">Cancelar</v-btn><v-btn color="deep-orange" @click="doHardDelete">Eliminar permanentemente</v-btn></v-card-actions></v-card></v-dialog>
   </div>
 </template>
 
@@ -34,7 +35,7 @@ const route = useRoute()
 const subjectId = route.params.subjectId
 const subjectName = ref('')
 const items = ref([]); const loading = ref(true); const error = ref('')
-const dialog = ref(false); const deleteDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null)
+const dialog = ref(false); const deleteDialog = ref(false); const hardDeleteDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null); const toHardDelete = ref(null)
 const form = ref({ id:'', subject_id:subjectId, name:'', icon:'', difficulty:1, sort_order:0 })
 
 async function fetchData() { loading.value=true; error.value=''; try { const [r,s]=await Promise.all([api.get(`/admin/subjects/${subjectId}/topics`),api.get('/admin/subjects')]); items.value=r.data; const sub=s.data.find(x=>x.id===subjectId); if(sub) subjectName.value=sub.name } catch(e) { error.value=e.response?.data?.detail||'Error' } finally { loading.value=false } }
@@ -44,8 +45,8 @@ function openDialog(topic=null) { editing.value=topic; form.value=topic?{...topi
 async function save() { saving.value=true; try { if(editing.value) await api.put(`/admin/topics/${editing.value.id}`,form.value); else await api.post('/admin/topics',form.value); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
 function confirmDelete(t) { toDelete.value=t; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/topics/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
-function confirmHardDelete(t) { if(confirm(`¿Eliminar "${t.name}" PERMANENTEMENTE?`)) doHardDelete(t) }
-async function doHardDelete(t) { await api.delete(`/admin/topics/${t.id}/hard`); await fetchData() }
+function confirmHardDelete(t) { toHardDelete.value = t; hardDeleteDialog.value = true }
+async function doHardDelete() { await api.delete(`/admin/topics/${toHardDelete.value.id}/hard`); hardDeleteDialog.value=false; await fetchData() }
 async function moveItem(idx, dir) {
   const a = items.value[idx]; const b = items.value[idx+dir]
   const temp = a.sort_order; a.sort_order = b.sort_order; b.sort_order = temp
