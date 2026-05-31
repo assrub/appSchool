@@ -8,9 +8,11 @@
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
 
-    <v-card rounded="lg" elevation="2">
-      <v-progress-linear v-if="loading" indeterminate color="primary" />
-      <v-table v-else>
+    <v-row>
+      <v-col cols="7">
+        <v-card rounded="lg" elevation="2">
+          <v-progress-linear v-if="loading" indeterminate color="primary" />
+          <v-table v-else>
         <thead><tr><th></th><th>ID</th><th>Nombre</th><th>Color</th><th>Activo</th><th>Acciones</th></tr></thead>
         <tbody>
           <tr v-for="s in items" :key="s.id">
@@ -28,6 +30,11 @@
         </tbody>
       </v-table>
     </v-card>
+      </v-col>
+      <v-col cols="5" class="d-flex align-start justify-center">
+        <MobilePreview :html="listPreviewHtml" />
+      </v-col>
+    </v-row>
 
     <v-dialog v-model="dialog" max-width="500">
       <v-card rounded="lg"><v-card-title>{{ editing ? 'Editar' : 'Nueva' }} Materia</v-card-title>
@@ -48,14 +55,29 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
+import MobilePreview from '../components/MobilePreview.vue'
 
 const route = useRoute()
 const items = ref([]); const loading = ref(true); const error = ref('')
 const dialog = ref(false); const deleteDialog = ref(false); const hardDeleteDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null); const toHardDelete = ref(null)
 const form = ref({ id:'', name:'', icon:'', color:'#4CAF50', sort_order:0 })
+
+const listPreviewHtml = computed(() => {
+  if (!items.value.length) return '<p style="color:#999;text-align:center;padding:20px">Sin materias</p>'
+  return items.value.map(s => {
+    return `<div style="display:flex;align-items:center;gap:12px;padding:16px 14px;border-bottom:1px solid #f0f0f0">
+      <div style="font-size:32px">${s.icon || '📚'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:bold;font-size:16px;color:#333">${s.name}</div>
+        <div style="font-size:12px;color:#999;margin-top:2px">${(s.topicsCount||0)} temas</div>
+      </div>
+      <div style="font-size:18px;color:#4CAF50">→</div>
+    </div>`
+  }).join('')
+})
 
 async function fetchData() { loading.value=true; error.value=''; try { const r=await api.get('/admin/subjects'); items.value=r.data } catch(e) { error.value=e.response?.data?.detail||'Error' } finally { loading.value=false } }
 watch(() => route.params, fetchData, { immediate: true })

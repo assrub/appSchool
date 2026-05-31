@@ -9,13 +9,8 @@
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
 
-    <div class="d-flex mb-2">
-      <v-spacer />
-      <v-btn size="small" variant="tonal" :color="showPreview?'primary':''" @click="showPreview=!showPreview">📱 Vista previa {{ showPreview?'▼':'▶' }}</v-btn>
-    </div>
-
     <v-row>
-      <v-col :cols="showPreview?7:12">
+      <v-col cols="7">
         <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
           <v-table v-else><thead><tr><th>Ord.</th><th>ID</th><th>Título</th><th>Input</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody><tr v-for="(u,idx) in items" :key="u.id">
@@ -32,7 +27,7 @@
           <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay unidades.</v-card-text>
         </v-card>
       </v-col>
-      <v-col v-if="showPreview && items.length" cols="5" class="d-flex align-start justify-center">
+      <v-col cols="5" class="d-flex align-start justify-center">
         <MobilePreview :html="listPreviewHtml" />
       </v-col>
     </v-row>
@@ -74,7 +69,6 @@ const dialog = ref(false); const deleteDialog = ref(false); const editing = ref(
 const form = ref({ id:'', title:'', topic_id:topicId, exercise_type:'fill-blank', input_mode:'tap', explanation:'', sound_correct_url:'', sound_incorrect_url:'' })
 const uploadType = ref('')
 const viewMode = ref('table')
-const showPreview = ref(false)
 const previewHtml = computed(() => {
   const icon = form.value.id ? '✏️' : '📝'
   const title = form.value.title || 'Nombre de la unidad'
@@ -97,19 +91,22 @@ const previewHtml = computed(() => {
 
 const listPreviewHtml = computed(() => {
   if (!items.value.length) return '<p style="color:#999;text-align:center;padding:20px">Sin unidades</p>'
-  return items.value.map(u => {
-    const icon = u.id ? '✏️' : '📝'
+  const unitIcons = ['✏️','❌','❓','✅','🔄','📝']
+  return items.value.map((u, i) => {
+    const icon = unitIcons[i % unitIcons.length]
     const title = u.title || u.id
     const mode = u.input_mode === 'tap' ? '🖐️ Tap' : '⌨️ Type'
     const locked = u.is_locked
-    return `<div style="display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid #eee">
+    return `<div style="display:flex;align-items:center;gap:12px;padding:14px 12px;border-bottom:1px solid #f0f0f0;${locked?'opacity:0.5':''}">
       <div style="font-size:28px">${locked?'🔒':icon}</div>
-      <div style="flex:1">
-        <div style="font-weight:bold;font-size:14px">${title}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:bold;font-size:14px;color:${locked?'#999':'#333'}">${title}</div>
         <div style="font-size:11px;color:#999">${mode}</div>
-        <div style="height:4px;border-radius:2px;background:#e0e0e0;margin-top:4px"><div style="width:${Math.random()*100}%;height:100%;border-radius:2px;background:#4CAF50"></div></div>
+        <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:6px;overflow:hidden">
+          <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
+        </div>
       </div>
-      <div style="font-size:20px">${locked?'🔒':'→'}</div>
+      <div style="font-size:20px;color:${locked?'#999':'#4CAF50'}">${locked?'🔒':'→'}</div>
     </div>`
   }).join('')
 })
