@@ -6,6 +6,7 @@
         <v-list-item prepend-icon="mdi-bookshelf" title="Materias" to="/subjects" />
         <v-list-item prepend-icon="mdi-chart-bar" title="Progreso" to="/progress" />
         <v-list-item prepend-icon="mdi-script-text" title="Scripts" to="/script" />
+        <v-list-item prepend-icon="mdi-account-group" title="Usuarios" to="/users" />
         <v-list-item prepend-icon="mdi-logout" title="Salir" @click="logout" />
       </v-list>
     </v-navigation-drawer>

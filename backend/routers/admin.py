@@ -704,6 +704,40 @@ async def hard_delete_topic(topic_id: str, db: AsyncSession = Depends(get_db), a
     return MessageResponse(message="Topic deleted permanently")
 
 
+# ── Users (Children) ──────────────────────────────────────
+
+from models import AppUser
+from services.auth_service import hash_password
+
+@router.get("/users")
+async def list_users(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(AppUser).order_by(AppUser.id))
+    return [{"id": u.id, "username": u.username, "display_name": u.display_name, "is_active": u.is_active, "created_at": u.created_at.isoformat() if u.created_at else None} for u in result.scalars().all()]
+
+@router.post("/users")
+async def create_user(data: dict, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    user = AppUser(username=data["username"], display_name=data["display_name"], password_hash=hash_password(data["password"]))
+    db.add(user); await db.commit(); await db.refresh(user)
+    return {"id": user.id, "username": user.username, "display_name": user.display_name}
+
+@router.put("/users/{user_id}")
+async def update_user(user_id: int, data: dict, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    user = await db.get(AppUser, user_id)
+    if not user: raise HTTPException(status_code=404)
+    for k in ["username", "display_name"]:
+        if k in data: setattr(user, k, data[k])
+    if data.get("password"): user.password_hash = hash_password(data["password"])
+    await db.commit()
+    return {"id": user.id, "username": user.username, "display_name": user.display_name}
+
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    user = await db.get(AppUser, user_id)
+    if not user: raise HTTPException(status_code=404)
+    user.is_active = False; await db.commit()
+    return {"message": "User deactivated"}
+
+
 # ── Script Engine ─────────────────────────────────────────
 
 from pydantic import BaseModel as PydanticBase

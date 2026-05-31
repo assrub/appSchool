@@ -65,6 +65,11 @@ const routes = [
         name: 'script',
         component: () => import('../views/ScriptView.vue'),
       },
+      {
+        path: 'users',
+        name: 'users',
+        component: () => import('../views/UsersView.vue'),
+      },
     ],
   },
   {

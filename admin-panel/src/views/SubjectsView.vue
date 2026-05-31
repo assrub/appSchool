@@ -59,6 +59,7 @@ import { ref, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
 import MobilePreview from '../components/MobilePreview.vue'
+import AppPreview from '../components/AppPreview.vue'
 
 const route = useRoute()
 const items = ref([]); const loading = ref(true); const error = ref('')
