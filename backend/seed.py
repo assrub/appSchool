@@ -33,13 +33,19 @@ async def seed():
             "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS shuffle BOOLEAN DEFAULT FALSE",
             "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS answers JSONB",
             "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS input_mode VARCHAR(10)",
+            # device_id -> user_id migration for progress-related tables
+            "ALTER TABLE progress RENAME COLUMN device_id TO user_id",
+            "ALTER TABLE answer_history RENAME COLUMN device_id TO user_id",
+            "ALTER TABLE dictionary_entries RENAME COLUMN device_id TO user_id",
+            "ALTER TABLE study_sessions RENAME COLUMN device_id TO user_id",
         ]
         for m in migrations:
             try:
                 await db.execute(text(m))
+                await db.commit()
             except Exception:
+                await db.rollback()
                 pass
-        await db.commit()
 
         # Remove old data and re-seed
         await db.execute(sqldelete(ExerciseItem))
