@@ -1,8 +1,8 @@
 package com.appenglish.ui.screens.login
 
+import android.app.Application
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.appenglish.data.remote.api.AuthInterceptor
 import com.appenglish.util.ApiConfig
@@ -27,14 +27,15 @@ data class LoginUiState(
 )
 
 @HiltViewModel
-class LoginViewModel @Inject constructor() : ViewModel() {
+class LoginViewModel @Inject constructor(
+    private val app: Application
+) : AndroidViewModel(app) {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun checkSavedSession() {
-        val token = AuthInterceptor.token
-        if (!token.isNullOrEmpty()) {
+        if (AuthInterceptor.loadSession(app)) {
             _uiState.value = _uiState.value.copy(isLoggedIn = true)
         }
     }
@@ -73,6 +74,7 @@ class LoginViewModel @Inject constructor() : ViewModel() {
                 AuthInterceptor.token = token
                 AuthInterceptor.userId = userId
                 AuthInterceptor.username = displayName
+                AuthInterceptor.saveSession(app)
 
                 _uiState.value = _uiState.value.copy(isLoading = false, isLoggedIn = true)
             } catch (e: Exception) {

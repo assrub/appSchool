@@ -47,6 +47,7 @@ fun SubjectsScreen(
     onSubjectClick: (String) -> Unit,
     onDictionaryClick: () -> Unit,
     onProgressClick: () -> Unit,
+    onLogout: () -> Unit,
     viewModel: SubjectsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
