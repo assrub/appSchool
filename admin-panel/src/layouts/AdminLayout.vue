@@ -1,6 +1,6 @@
 <template>
   <v-layout>
-    <v-navigation-drawer v-model="drawer" color="primary" rail expand-on-hover permanent>
+    <v-navigation-drawer color="primary" rail expand-on-hover permanent>
       <v-list nav>
         <v-list-item prepend-icon="mdi-view-dashboard" title="Dashboard" to="/" exact />
         <v-list-item prepend-icon="mdi-bookshelf" title="Materias" to="/subjects" />
@@ -19,7 +19,7 @@
 
     <v-main style="min-height: 100vh; background: #f5f5f5">
       <v-container fluid class="pa-6">
-        <router-view />
+        <router-view :key="$route.fullPath" />
       </v-container>
     </v-main>
   </v-layout>
@@ -29,10 +29,16 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import api from '../api/client'
 
 const auth = useAuthStore()
 const router = useRouter()
-const drawer = ref(true)
+
+import { onMounted } from 'vue'
+onMounted(async () => {
+  if (!auth.isAuthenticated) { router.push('/login'); return }
+  try { await api.get('/auth/refresh') } catch { auth.logout(); router.push('/login') }
+})
 
 function logout() {
   auth.logout()

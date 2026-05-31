@@ -1,264 +1,75 @@
 <template>
   <div>
-    <div class="d-flex align-center mb-6">
-      <div>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/units/${unitId}/blocks`" class="mb-2">Bloques</v-btn>
-        <h1 class="text-h4">Ejercicios del bloque</h1>
-        <p class="text-grey">{{ blockTitle }}</p>
-      </div>
-      <v-spacer />
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">
-        Nuevo Ejercicio
-      </v-btn>
-    </div>
-
-    <v-card rounded="lg" elevation="2">
-      <v-table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tipo</th>
-            <th>Input</th>
-            <th>Contenido</th>
-            <th>Respuesta</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="i in items" :key="i.id">
-            <td>{{ i.id }}</td>
-            <td>
-              <v-chip size="small" color="primary" variant="tonal">{{ i.item_type }}</v-chip>
-            </td>
-            <td>
-              <v-chip v-if="i.input_mode" :color="i.input_mode==='tap'?'green':'orange'" size="small" variant="tonal">{{ i.input_mode==='tap'?'🖐️':'⌨️' }}</v-chip>
-              <span v-else class="text-grey text-caption">hereda</span>
-            </td>
-            <td class="text-truncate" style="max-width:300px">
-              {{ i.sentence || i.question || (i.words && i.words.join(' ')) || '-' }}
-            </td>
-            <td>{{ i.answer || (i.correct_order && i.correct_order.join(' ')) || '-' }}</td>
-            <td>
-              <v-tooltip text="Editar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(i)" /></template></v-tooltip>
-              <v-tooltip text="Eliminar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(i)" /></template></v-tooltip>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-      <v-card-text v-if="items.length === 0" class="text-center text-grey">
-        No hay ejercicios. Creá uno.
-      </v-card-text>
+    <div class="d-flex align-center mb-6"><div><v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/units/${unitId}/blocks`" class="mb-2">Bloques</v-btn><h1 class="text-h4">Ejercicios</h1><p class="text-grey">{{ blockTitle }}</p></div><v-spacer /><v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">Nuevo</v-btn></div>
+    <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }} <v-btn size="small" class="ml-2" @click="fetchData">Reintentar</v-btn></v-alert>
+    <v-card rounded="lg" elevation="2"><v-progress-linear v-if="loading" indeterminate color="primary" />
+      <v-table v-else><thead><tr><th>Tipo</th><th>Input</th><th>Contenido</th><th>Respuesta</th><th></th></tr></thead>
+        <tbody><tr v-for="i in items" :key="i.id">
+          <td><v-chip size="x-small" color="primary" variant="tonal">{{ i.item_type }}</v-chip></td>
+          <td><v-chip v-if="i.input_mode" :color="i.input_mode==='tap'?'green':'orange'" size="x-small" variant="tonal">{{ i.input_mode==='tap'?'Tap':'Type' }}</v-chip><span v-else class="text-caption">hereda</span></td>
+          <td style="max-width:250px" class="text-truncate">{{ i.sentence||i.question||'-' }}</td>
+          <td>{{ i.answer||'-' }}</td>
+          <td><v-btn icon="mdi-pencil" variant="text" size="x-small" color="primary" @click="openDialog(i)" /><v-btn icon="mdi-delete" variant="text" size="x-small" color="error" @click="confirmDelete(i)" /></td>
+        </tr></tbody></v-table>
+      <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay ejercicios.</v-card-text>
     </v-card>
 
-    <!-- Dialog -->
-    <v-dialog v-model="dialog" max-width="600">
-      <v-card rounded="lg">
-        <v-card-title>{{ editing ? 'Editar' : 'Nuevo' }} Ejercicio</v-card-title>
-        <v-card-text>
-          <v-select v-model="form.item_type" label="Tipo de ejercicio" :items="itemTypes" variant="outlined" class="mb-3" />
-          <v-select v-model="form.input_mode" label="Modo de respuesta" :items="inputModes" variant="outlined" class="mb-3" clearable hint="Vacío = hereda de la unidad" persistent-hint />
-
-          <!-- fill-blank -->
-          <template v-if="form.item_type === 'fill-blank'">
-            <v-text-field v-model="form.sentence" label="Frase (usá ______ para el blank)" variant="outlined" class="mb-2" />
-            <v-text-field v-model="form.answer" label="Respuesta correcta (principal)" variant="outlined" class="mb-2" />
-            <div class="mb-2">
-              <div class="text-caption text-grey mb-1">Respuestas alternativas (opcional)</div>
-              <div v-for="(a,i) in answersList" :key="i" class="d-flex align-center mb-1">
-                <v-text-field v-model="answersList[i]" variant="outlined" density="compact" hide-details class="mr-1" />
-                <v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="answersList.splice(i,1)" />
-              </div>
-              <v-btn size="x-small" variant="outlined" @click="answersList.push('')">+ respuesta alternativa</v-btn>
-            </div>
-            <v-text-field v-model="form.hint" label="Pista (opcional)" variant="outlined" />
-          </template>
-
-          <!-- multiple-choice -->
-          <template v-else-if="form.item_type === 'multiple-choice'">
-            <v-text-field v-model="form.question" label="Pregunta" variant="outlined" class="mb-2" />
-            <div v-for="(opt, idx) in formOptions" :key="idx" class="d-flex align-center mb-2">
-              <v-text-field v-model="formOptions[idx]" :label="`Opción ${idx + 1}`" variant="outlined" density="compact" hide-details class="flex-grow-1 mr-2" />
-              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="formOptions.splice(idx, 1)" />
-            </div>
-            <v-btn variant="outlined" size="small" prepend-icon="mdi-plus" @click="formOptions.push('')" class="mb-2">
-              Agregar opción
-            </v-btn>
-            <v-text-field v-model="form.answer" label="Respuesta correcta (debe coincidir con una opción)" variant="outlined" />
-          </template>
-
-          <!-- reorder -->
-          <template v-else-if="form.item_type === 'reorder'">
-            <v-textarea v-model="wordsText" label="Palabras (una por línea)" variant="outlined" rows="4" class="mb-2" />
-            <v-text-field v-model="correctOrderText" label="Orden correcto (separado por espacios)" variant="outlined" class="mb-2" />
-            <v-text-field v-model="form.hint" label="Pista (opcional)" variant="outlined" />
-          </template>
-
-          <!-- listening -->
-          <template v-else-if="form.item_type === 'listening'">
-            <v-text-field v-model="form.sentence" label="Frase que escucha el nene" variant="outlined" class="mb-2" />
-            <v-text-field v-model="form.audio_url" label="URL del audio" variant="outlined" class="mb-2" />
-            <v-text-field v-model="form.answer" label="Respuesta esperada" variant="outlined" />
-          </template>
-
-          <!-- matching -->
-          <template v-else-if="form.item_type === 'matching'">
-            <div v-for="(p, idx) in formPairs" :key="idx" class="d-flex align-center mb-2">
-              <v-text-field v-model="formPairs[idx].left" label="Izquierda" variant="outlined" density="compact" hide-details class="mr-2" />
-              <v-icon>mdi-arrow-right</v-icon>
-              <v-text-field v-model="formPairs[idx].right" label="Derecha" variant="outlined" density="compact" hide-details class="ml-2" />
-              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="formPairs.splice(idx, 1)" />
-            </div>
-            <v-btn variant="outlined" size="small" prepend-icon="mdi-plus" @click="formPairs.push({ left: '', right: '' })">
-              Agregar par
-            </v-btn>
-          </template>
-
-          <!-- true-false -->
-          <template v-else-if="form.item_type === 'true-false'">
-            <v-text-field v-model="form.sentence" label="Frase" variant="outlined" class="mb-2" />
-            <v-switch v-model="form.is_correct_boolean" label="¿Es correcta la frase?" color="primary" class="mb-2" />
-            <v-text-field v-if="!form.is_correct_boolean" v-model="form.answer" label="Corrección (frase correcta)" variant="outlined" />
-          </template>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="dialog = false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="saving" @click="saveItem">{{ editing ? 'Guardar' : 'Crear' }}</v-btn>
-        </v-card-actions>
-      </v-card>
+    <v-dialog v-model="dialog" max-width="600"><v-card rounded="lg"><v-card-title>{{ editing?'Editar':'Nuevo' }} Ejercicio</v-card-title>
+      <v-card-text>
+        <v-select v-model="form.item_type" label="Tipo" :items="itemTypes" variant="outlined" class="mb-3" />
+        <v-select v-model="form.input_mode" label="Modo" :items="inputModes" variant="outlined" class="mb-3" clearable hint="Vacío = hereda de la unidad" persistent-hint />
+        <template v-if="form.item_type==='fill-blank'">
+          <v-text-field v-model="form.sentence" label="Frase (usá ______)" variant="outlined" class="mb-2" />
+          <v-text-field v-model="form.answer" label="Respuesta" variant="outlined" class="mb-2" />
+          <div class="mb-2"><div class="text-caption mb-1">Alternativas</div><div v-for="(a,i) in answersList" :key="i" class="d-flex align-center mb-1"><v-text-field v-model="answersList[i]" variant="outlined" density="compact" hide-details class="mr-1" /><v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="answersList.splice(i,1)" /></div><v-btn size="x-small" variant="outlined" @click="answersList.push('')">+ alternativa</v-btn></div>
+          <v-text-field v-model="form.hint" label="Pista" variant="outlined" />
+        </template>
+        <template v-else-if="form.item_type==='multiple-choice'">
+          <v-text-field v-model="form.question" label="Pregunta" variant="outlined" class="mb-2" />
+          <div v-for="(o,i) in formOptions" :key="i" class="d-flex align-center mb-2"><v-text-field v-model="formOptions[i]" :label="'Opción '+(i+1)" variant="outlined" density="compact" hide-details class="flex-grow-1 mr-2" /><v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="formOptions.splice(i,1)" /></div><v-btn variant="outlined" size="small" prepend-icon="mdi-plus" @click="formOptions.push('')" class="mb-2">Opción</v-btn>
+          <v-text-field v-model="form.answer" label="Correcta" variant="outlined" />
+        </template>
+        <template v-else-if="form.item_type==='reorder'"><v-textarea v-model="wordsText" label="Palabras (una por línea)" variant="outlined" rows="4" class="mb-2" /><v-text-field v-model="correctOrderText" label="Orden correcto" variant="outlined" class="mb-2" /><v-text-field v-model="form.hint" label="Pista" variant="outlined" /></template>
+        <template v-else-if="form.item_type==='listening'"><v-text-field v-model="form.sentence" label="Frase" variant="outlined" class="mb-2" /><v-text-field v-model="form.audio_url" label="URL audio" variant="outlined" class="mb-2" /><v-text-field v-model="form.answer" label="Respuesta" variant="outlined" /></template>
+        <template v-else-if="form.item_type==='matching'"><div v-for="(p,i) in formPairs" :key="i" class="d-flex align-center mb-2"><v-text-field v-model="formPairs[i].left" label="Izq" variant="outlined" density="compact" hide-details class="mr-2" /><v-icon>mdi-arrow-right</v-icon><v-text-field v-model="formPairs[i].right" label="Der" variant="outlined" density="compact" hide-details class="ml-2" /><v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="formPairs.splice(i,1)" /></div><v-btn variant="outlined" size="small" prepend-icon="mdi-plus" @click="formPairs.push({left:'',right:''})">Par</v-btn></template>
+        <template v-else-if="form.item_type==='true-false'"><v-text-field v-model="form.sentence" label="Frase" variant="outlined" class="mb-2" /><v-switch v-model="form.is_correct_boolean" label="¿Es correcta?" color="primary" /><v-text-field v-if="!form.is_correct_boolean" v-model="form.answer" label="Corrección" variant="outlined" /></template>
+      </v-card-text>
+      <v-card-actions><v-spacer /><v-btn variant="text" @click="dialog=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" @click="save">{{ editing?'Guardar':'Crear' }}</v-btn></v-card-actions></v-card>
     </v-dialog>
-
-    <v-dialog v-model="deleteDialog" max-width="400">
-      <v-card rounded="lg">
-        <v-card-title>¿Eliminar ejercicio?</v-card-title>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="deleteDialog = false">Cancelar</v-btn>
-          <v-btn color="error" @click="doDelete">Eliminar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <v-dialog v-model="deleteDialog" max-width="400"><v-card rounded="lg"><v-card-title>¿Eliminar?</v-card-title><v-card-actions><v-spacer /><v-btn variant="text" @click="deleteDialog=false">Cancelar</v-btn><v-btn color="error" @click="doDelete">Eliminar</v-btn></v-card-actions></v-card></v-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
 
 const route = useRoute()
 const blockId = route.params.blockId
-const unitId = ref('')
-const blockTitle = ref('')
-const items = ref([])
-const dialog = ref(false)
-const deleteDialog = ref(false)
-const editing = ref(null)
-const saving = ref(false)
-const toDelete = ref(null)
+const unitId = ref(''); const blockTitle = ref('')
+const items = ref([]); const loading = ref(true); const error = ref('')
+const dialog = ref(false); const deleteDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null)
 
-const itemTypes = ['fill-blank', 'multiple-choice', 'reorder', 'listening', 'matching', 'true-false']
-const inputModes = [
-  { title: '🖐️ Tocar opciones', value: 'tap' },
-  { title: '⌨️ Escribir respuesta', value: 'type' },
-]
+const itemTypes = ['fill-blank','multiple-choice','reorder','listening','matching','true-false']
+const inputModes = [{title:'🖐️ Tap',value:'tap'},{title:'⌨️ Type',value:'type'}]
 const answersList = ref([])
-
-const form = ref({
-  block_id: Number(blockId),
-  item_type: 'fill-blank',
-  sentence: '', answer: '', hint: '',
-  question: '',
-  options: null, words: null, correct_order: null,
-  audio_url: '',
-  pairs: null,
-  is_correct_boolean: null,
-  sort_order: 0,
-})
-
-const formOptions = ref(['', '', ''])
-const formPairs = ref([{ left: '', right: '' }, { left: '', right: '' }])
+const formOptions = ref(['','',''])
+const formPairs = ref([{left:'',right:''},{left:'',right:''}])
 const wordsText = ref('')
 const correctOrderText = ref('')
+const form = ref({block_id:Number(blockId),item_type:'fill-blank',sentence:'',answer:'',answers:null,hint:'',question:'',options:null,words:null,correct_order:null,input_mode:null,audio_url:'',pairs:null,is_correct_boolean:null,sort_order:0})
 
-watch(() => form.value.item_type, () => {
-  formOptions.value = ['', '', '']
-  formPairs.value = [{ left: '', right: '' }, { left: '', right: '' }]
-  wordsText.value = ''
-  correctOrderText.value = ''
-})
+async function fetchData() { loading.value=true; error.value=''; try { const r=await api.get(`/admin/blocks/${blockId}/items`); items.value=r.data; const b=await api.get(`/admin/blocks/${blockId}`); blockTitle.value=b.data.title||'Bloque'; unitId.value=b.data.unit_id } catch(e) { error.value=e.response?.data?.detail||'Error' } finally { loading.value=false } }
+watch(() => route.params, fetchData, { immediate: true })
 
-onMounted(async () => {
-  const { data } = await api.get(`/admin/blocks/${blockId}/items`)
-  items.value = data
-  try {
-    const b = await api.get(`/admin/blocks/${blockId}`)
-    blockTitle.value = b.data.title || `Bloque #${blockId}`
-    unitId.value = b.data.unit_id
-  } catch { blockTitle.value = `Bloque #${blockId}` }
-})
-
-function openDialog(item = null) {
-  editing.value = item
-  if (item) {
-    form.value = {
-      block_id: Number(blockId),
-      item_type: item.item_type,
-      sentence: item.sentence || '', answer: item.answer || '',
-      answers: item.answers, hint: item.hint || '', question: item.question || '',
-      options: item.options, words: item.words, correct_order: item.correct_order,
-      audio_url: item.audio_url || '', input_mode: item.input_mode || null,
-      pairs: item.pairs, is_correct_boolean: item.is_correct_boolean,
-      sort_order: item.sort_order || 0,
-    }
-    formOptions.value = item.options || ['', '', '']
-    formPairs.value = item.pairs || [{ left: '', right: '' }]
-    wordsText.value = (item.words || []).join('\n')
-    correctOrderText.value = (item.correct_order || []).join(' ')
-    answersList.value = item.answers || []
-  } else {
-    form.value = {
-      block_id: Number(blockId), item_type: 'fill-blank',
-      sentence: '', answer: '', answers: null, hint: '', question: '',
-      options: null, words: null, correct_order: null, input_mode: null,
-      audio_url: '', pairs: null, is_correct_boolean: null, sort_order: 0,
-    }
-    formOptions.value = ['', '', '']
-    formPairs.value = [{ left: '', right: '' }]
-    wordsText.value = ''
-    correctOrderText.value = ''
-    answersList.value = []
-  }
-  dialog.value = true
+function openDialog(item=null) { editing.value=item
+  if(item){ form.value={...item}; answersList.value=item.answers||[]; formOptions.value=item.options||['','','']; formPairs.value=item.pairs||[{left:'',right:''}]; wordsText.value=(item.words||[]).join('\n'); correctOrderText.value=(item.correct_order||[]).join(' ') }
+  else { form.value={block_id:Number(blockId),item_type:'fill-blank',sentence:'',answer:'',answers:null,hint:'',question:'',options:null,words:null,correct_order:null,input_mode:null,audio_url:'',pairs:null,is_correct_boolean:null,sort_order:0}; answersList.value=[]; formOptions.value=['','','']; formPairs.value=[{left:'',right:''}]; wordsText.value=''; correctOrderText.value='' }
+  dialog.value=true
 }
 
-async function saveItem() {
-  saving.value = true
-  try {
-    const payload = { ...form.value, block_id: Number(blockId) }
-    const filtered = answersList.value.filter(a => a.trim())
-    payload.answers = filtered.length > 0 ? filtered : null
-
-    if (payload.item_type === 'multiple-choice') payload.options = formOptions.value.filter(o => o.trim())
-    if (payload.item_type === 'reorder') { payload.words = wordsText.value.split('\n').map(w => w.trim()).filter(w => w); payload.correct_order = correctOrderText.value.split(' ').filter(w => w) }
-    if (payload.item_type === 'matching') payload.pairs = formPairs.value.filter(p => p.left.trim() || p.right.trim())
-
-    if (editing.value) await api.put(`/admin/items/${editing.value.id}`, payload)
-    else await api.post('/admin/items', payload)
-
-    dialog.value = false
-    const { data } = await api.get(`/admin/blocks/${blockId}/items`)
-    items.value = data
-  } catch (e) { alert(e.response?.data?.detail || 'Error') }
-  finally { saving.value = false }
-}
-
-function confirmDelete(item) { toDelete.value = item; deleteDialog.value = true }
-
-async function doDelete() {
-  await api.delete(`/admin/items/${toDelete.value.id}`)
-  deleteDialog.value = false
-  const { data } = await api.get(`/admin/blocks/${blockId}/items`)
-  items.value = data
-}
+async function save() { saving.value=true; try { const p={...form.value,block_id:Number(blockId)}; const a=answersList.value.filter(x=>x.trim()); p.answers=a.length>0?a:null; if(p.item_type==='multiple-choice') p.options=formOptions.value.filter(o=>o.trim()); if(p.item_type==='reorder'){ p.words=wordsText.value.split('\n').map(w=>w.trim()).filter(w=>w); p.correct_order=correctOrderText.value.split(' ').filter(w=>w) } if(p.item_type==='matching') p.pairs=formPairs.value.filter(x=>x.left.trim()||x.right.trim()); if(editing.value) await api.put(`/admin/items/${editing.value.id}`,p); else await api.post('/admin/items',p); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
+function confirmDelete(i) { toDelete.value=i; deleteDialog.value=true }
+async function doDelete() { await api.delete(`/admin/items/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
 </script>
