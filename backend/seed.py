@@ -6,8 +6,9 @@ import json
 import os
 
 from database import async_session, init_db, engine
+from sqlalchemy import select, text, delete as sqldelete
 from models import (
-    Subject, Topic, TopicTheory, TheorySection,
+    Subject, Topic, TopicTheory, TheorySection, TheoryVideo,
     ExerciseUnit, UnitTheory, UnitTheorySection,
     ExerciseBlock, ExerciseItem, AdminUser,
 )
@@ -21,12 +22,37 @@ async def seed():
     await init_db()
 
     async with async_session() as db:
-        # Check if already seeded
-        from sqlalchemy import select
-        result = await db.execute(select(Subject).where(Subject.id == "english"))
-        if result.scalar_one_or_none():
-            print("Already seeded, skipping.")
-            return
+
+        # Ensure schema is up to date (add columns that may be new)
+        migrations = [
+            "ALTER TABLE exercise_units ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE exercise_units ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT ''",
+            "ALTER TABLE exercise_units ADD COLUMN IF NOT EXISTS sound_correct_url VARCHAR(500)",
+            "ALTER TABLE exercise_units ADD COLUMN IF NOT EXISTS sound_incorrect_url VARCHAR(500)",
+            "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT ''",
+            "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS shuffle BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS answers JSONB",
+            "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS input_mode VARCHAR(10)",
+        ]
+        for m in migrations:
+            try:
+                await db.execute(text(m))
+            except Exception:
+                pass
+        await db.commit()
+
+        # Remove old data and re-seed
+        await db.execute(sqldelete(ExerciseItem))
+        await db.execute(sqldelete(ExerciseBlock))
+        await db.execute(sqldelete(UnitTheorySection))
+        await db.execute(sqldelete(UnitTheory))
+        await db.execute(sqldelete(ExerciseUnit))
+        await db.execute(sqldelete(TheoryVideo))
+        await db.execute(sqldelete(TheorySection))
+        await db.execute(sqldelete(TopicTheory))
+        await db.execute(sqldelete(Topic))
+        await db.execute(sqldelete(Subject))
+        await db.commit()
 
         # Create default admin user
         admin_check = await db.execute(select(AdminUser).where(AdminUser.username == "admin"))
