@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+*.db
+.env
+
+# Android
+*.apk
+*.keystore
+*.jks
+build/
+.gradle/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+*.iml
+
+# Node / Admin Panel
+node_modules/
+dist/
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tools (SDK, JDK)
+tools/
+
+# Docker
+.env
+docker-compose.override.yml
+
+# Logs
+*.log

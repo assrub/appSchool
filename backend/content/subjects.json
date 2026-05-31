@@ -1,0 +1,11 @@
+{
+  "subjects": [
+    {
+      "id": "english",
+      "name": "Inglés",
+      "icon": "📚",
+      "color": "#4CAF50",
+      "mapConfig": null
+    }
+  ]
+}
