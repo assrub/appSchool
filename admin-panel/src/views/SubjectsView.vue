@@ -25,6 +25,7 @@
             <td>
               <v-tooltip text="Editar materia" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(s)" /></template></v-tooltip>
               <v-tooltip text="Ver temas" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="secondary" :to="`/subjects/${s.id}/topics`" /></template></v-tooltip>
+              <v-tooltip text="Asignar usuarios" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-account-group" v-bind="tp" variant="text" size="small" color="info" @click="openUserDialog(s)" /></template></v-tooltip>
               <v-tooltip text="Desactivar materia" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(s)" /></template></v-tooltip>
               <v-tooltip text="Eliminar permanentemente" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(s)" /></template></v-tooltip>
             </td>
@@ -53,6 +54,7 @@
 
     <v-dialog v-model="deleteDialog" max-width="400"><v-card rounded="lg"><v-card-title>¿Desactivar?</v-card-title><v-card-text>"{{ toDelete?.name }}" se desactivará.</v-card-text><v-card-actions><v-spacer /><v-btn variant="text" @click="deleteDialog=false">Cancelar</v-btn><v-btn color="error" @click="doDelete">Desactivar</v-btn></v-card-actions></v-card></v-dialog>
     <v-dialog v-model="hardDeleteDialog" max-width="400"><v-card rounded="lg"><v-card-title>⚠️ Eliminar permanentemente</v-card-title><v-card-text>¿Estás seguro de eliminar "<b>{{ toHardDelete?.name }}</b>"? Se borrarán TODOS los temas, unidades, ejercicios y progreso.</v-card-text><v-card-actions><v-spacer /><v-btn variant="text" @click="hardDeleteDialog=false">Cancelar</v-btn><v-btn color="deep-orange" @click="doHardDelete">Eliminar permanentemente</v-btn></v-card-actions></v-card></v-dialog>
+    <v-dialog v-model="userDialog" max-width="500"><v-card rounded="lg"><v-card-title>Asignar usuarios a "{{ selectedSubject?.name }}"</v-card-title><v-card-text><div v-for="u in allUsers" :key="u.id" class="mb-2"><v-checkbox v-model="selectedUsers" :value="u.id" :label="`${u.display_name} (${u.username})`" hide-details /></div></v-card-text><v-card-actions><v-spacer /><v-btn variant="text" @click="userDialog=false">Cancelar</v-btn><v-btn color="primary" @click="saveUserAssignment">Guardar</v-btn></v-card-actions></v-card></v-dialog>
   </div>
 </template>
 
@@ -65,7 +67,7 @@ import AppPreview from '../components/AppPreview.vue'
 
 const route = useRoute()
 const items = ref([]); const loading = ref(true); const error = ref('')
-const dialog = ref(false); const deleteDialog = ref(false); const hardDeleteDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null); const toHardDelete = ref(null)
+const dialog = ref(false); const deleteDialog = ref(false); const hardDeleteDialog = ref(false); const userDialog = ref(false); const editing = ref(null); const saving = ref(false); const toDelete = ref(null); const toHardDelete = ref(null); const selectedSubject = ref(null); const selectedUsers = ref([]); const allUsers = ref([])
 const form = ref({ id:'', name:'', icon:'', color:'#4CAF50', sort_order:0 })
 
 const listPreviewHtml = computed(() => {
@@ -91,6 +93,8 @@ function confirmDelete(s) { toDelete.value=s; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/subjects/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
 function confirmHardDelete(s) { toHardDelete.value = s; hardDeleteDialog.value = true }
 async function doHardDelete() { await api.delete(`/admin/subjects/${toHardDelete.value.id}/hard`); hardDeleteDialog.value=false; await fetchData() }
+async function openUserDialog(s) { selectedSubject.value = s; try { const { data } = await api.get('/admin/users'); allUsers.value = data } catch { allUsers.value = [] } try { const { data } = await api.get(`/admin/subjects/${s.id}/users`); selectedUsers.value = data || [] } catch { selectedUsers.value = [] } userDialog.value = true }
+async function saveUserAssignment() { await api.put(`/admin/subjects/${selectedSubject.value.id}/users`, { user_ids: selectedUsers.value }); userDialog.value = false; alert('Usuarios asignados') }
 async function exportSubject() {
   const itemsList = items.value.map(s => s.id).join(', ')
   const id = prompt(`ID de materia a exportar:\nDisponibles: ${itemsList}`)

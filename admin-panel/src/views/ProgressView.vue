@@ -56,6 +56,19 @@
               </tr></tbody>
             </v-table>
             <p v-else class="text-grey text-center py-4">Sin errores registrados.</p>
+
+            <template v-if="analytics">
+              <h3 class="text-subtitle-1 mb-2 mt-4">📊 Análisis</h3>
+              <p class="text-body-2">🎯 Precisión: <b>{{ analytics.overallAccuracy }}%</b> ({{ analytics.totalCorrect }}/{{ analytics.totalAnswered }})</p>
+              <p class="text-body-2 mt-1">⚠️ Unidades débiles:</p>
+              <div v-for="w in analytics.weakUnits" :key="w.unitId" class="d-flex align-center py-1">
+                <v-icon color="error" size="20" class="mr-1">mdi-alert-circle</v-icon>
+                <span class="text-caption">{{ w.unitId }} — {{ w.errorRate }}% error ({{ w.totalErrors }} fallos)</span>
+                <v-btn size="x-small" variant="tonal" color="orange" class="ml-2" @click="redoUnit(w.unitId)">🔄 Rehacer</v-btn>
+              </div>
+              <p class="text-body-2 mt-1">Errores repetidos:</p>
+              <div v-for="m in (analytics.commonMistakes||[]).slice(0,5)" :key="m.givenAnswer" class="text-caption ml-1">• Responde "{{ m.givenAnswer }}" en vez de "{{ m.correctAnswer }}" ({{ m.count }} veces)</div>
+            </template>
           </v-card-text>
         </v-card>
         <v-card v-else rounded="lg"><v-card-text class="text-center text-grey py-8">Seleccioná un usuario para ver su progreso.</v-card-text></v-card>
@@ -74,6 +87,7 @@ const loadingUsers = ref(true)
 const loadingDetail = ref(false)
 const errorUsers = ref('')
 const progressData = ref({ progress: [], errors: [], sessions: [] })
+const analytics = ref(null)
 
 async function fetchUsers() {
   loadingUsers.value = true
@@ -93,6 +107,7 @@ async function fetchUsers() {
 async function selectUser(user) {
   selectedUser.value = user
   loadingDetail.value = true
+  analytics.value = null
   try {
     const { data } = await api.get(`/admin/progress/${user.userId}/detail`)
     progressData.value = data
@@ -101,8 +116,18 @@ async function selectUser(user) {
   } finally {
     loadingDetail.value = false
   }
+  try {
+    const { data } = await api.get(`/admin/progress/${user.userId}/analytics`)
+    analytics.value = data
+  } catch { analytics.value = null }
 }
 
+async function redoUnit(unitId) {
+  try {
+    await api.post(`/admin/progress/${selectedUser.value.userId}/${unitId}/redo`)
+    alert('Unidad marcada para rehacer. El nene la verá en su app.')
+  } catch (e) { alert('Error: ' + (e.response?.data?.detail || e.message)) }
+}
 async function resetAll() {
   if (!confirm(`¿Resetear TODO el progreso de ${selectedUser.value.displayName}?`)) return
   // We need to go unit by unit — but for simplicity, reset all progress rows for this user

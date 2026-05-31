@@ -91,6 +91,7 @@ import java.util.Locale
 @Composable
 fun UnitExerciseScreen(
     onBackClick: () -> Unit,
+    onTheoryClick: () -> Unit = {},
     viewModel: UnitExerciseViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -193,21 +194,28 @@ fun UnitExerciseScreen(
         } else {
             val currentItem = viewModel.getCurrentItem()
             val options = viewModel.getOptions()
-            var selectedTab by remember { mutableStateOf(0) }
 
-            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+            ) {
                 if (uiState.unitTheory != null) {
-                    TabRow(selectedTabIndex = selectedTab, containerColor = Color.White, contentColor = Primary) {
-                        Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("📝 Ejercicio") })
-                        Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📖 Explicación") })
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().clickable { onTheoryClick() },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("📖", fontSize = 24.sp)
+                                Spacer(Modifier.width(10.dp))
+                                Text("Ver explicación", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                Text("→", fontSize = 18.sp, color = Primary)
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
                     }
                 }
-
-                if (selectedTab == 1 && uiState.unitTheory != null) {
-                    UnitTheoryView(theory = uiState.unitTheory!!, modifier = Modifier)
-                } else {
-                    LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             ) {
 
                 item {
@@ -510,9 +518,8 @@ fun UnitExerciseScreen(
                         }
                     }
                 }
-                } // else selectedTab
-            } // Column
+            }
         }
     }
-    }
+}
 }

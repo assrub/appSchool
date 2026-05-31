@@ -1243,3 +1243,82 @@ async def import_subject(data: dict, db: AsyncSession = Depends(get_db), admin: 
 
     await db.commit()
     return {"status": "ok", "subject": data["id"]}
+
+
+# ── User-Subject Assignment ────────────────────────────────
+
+from models import UserSubject
+
+@router.get("/subjects/{subject_id}/users")
+async def get_subject_users(subject_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(UserSubject).where(UserSubject.subject_id == subject_id))
+    return [r.user_id for r in result.scalars().all()]
+
+@router.put("/subjects/{subject_id}/users")
+async def assign_subject_users(subject_id: str, data: dict, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    await db.execute(delete(UserSubject).where(UserSubject.subject_id == subject_id))
+    for uid in data.get("user_ids", []):
+        db.add(UserSubject(user_id=uid, subject_id=subject_id))
+    await db.commit()
+    return {"status": "ok", "count": len(data.get("user_ids", []))}
+
+
+# ── Analytics ──────────────────────────────────────────────
+
+@router.get("/progress/{user_id}/analytics")
+async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    errors = (await db.execute(select(AnswerHistory).where(AnswerHistory.user_id == user_id, AnswerHistory.is_correct == False))).scalars().all()
+    all_answers = (await db.execute(select(AnswerHistory).where(AnswerHistory.user_id == user_id))).scalars().all()
+
+    # Weak units
+    unit_errors = {}
+    for e in errors:
+        key = e.unit_id
+        if key not in unit_errors: unit_errors[key] = {"errors": 0, "total": 0, "topicId": e.topic_id}
+        unit_errors[key]["errors"] += 1
+
+    for a in all_answers:
+        if a.unit_id in unit_errors: unit_errors[a.unit_id]["total"] += 1
+    for k in list(unit_errors):
+        if unit_errors[k]["total"] == 0: unit_errors[k]["total"] = 1
+
+    weak_units = [{"unitId": k, "topicId": v["topicId"], "errorRate": round(v["errors"]/v["total"]*100,1), "totalAttempts": v["total"], "totalErrors": v["errors"]} for k,v in sorted(unit_errors.items(), key=lambda x: -x[1]["errors"])]
+
+    # Common mistakes
+    mistake_map = {}
+    for e in errors:
+        key = f"{e.given_answer}→{e.correct_answer}"
+        if key not in mistake_map: mistake_map[key] = {"givenAnswer": e.given_answer, "correctAnswer": e.correct_answer, "count": 0, "topicId": e.topic_id}
+        mistake_map[key]["count"] += 1
+    common_mistakes = sorted(mistake_map.values(), key=lambda x: -x["count"])[:10]
+
+    # Strong units (least errors)
+    strong_units = sorted([u for u in weak_units], key=lambda x: x["errorRate"])[:5]
+
+    # Overall
+    total = len(all_answers)
+    correct = sum(1 for a in all_answers if a.is_correct)
+    accuracy = round(correct/total*100, 1) if total > 0 else 0
+
+    return {"weakUnits": weak_units[:5], "strongUnits": strong_units[:5], "commonMistakes": common_mistakes, "overallAccuracy": accuracy, "totalAnswered": total, "totalCorrect": correct}
+
+
+# ── Redo ───────────────────────────────────────────────────
+
+@router.post("/progress/{user_id}/{unit_id}/redo")
+async def mark_redo(user_id: int, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    prog = (await db.execute(select(Progress).where(Progress.user_id == user_id, Progress.unit_id == unit_id))).scalar_one_or_none()
+    if not prog:
+        raise HTTPException(status_code=404, detail="Progress not found")
+    if not prog.redo_data:
+        prog.redo_data = {}
+    prog.redo_data["marked"] = True
+    await db.commit()
+    return {"status": "ok", "unitId": unit_id}
+
+@router.delete("/progress/{user_id}/{unit_id}/redo")
+async def unmark_redo(user_id: int, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    prog = (await db.execute(select(Progress).where(Progress.user_id == user_id, Progress.unit_id == unit_id))).scalar_one_or_none()
+    if prog and prog.redo_data: prog.redo_data = {}
+    await db.commit()
+    return {"status": "ok"}

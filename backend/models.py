@@ -201,6 +201,7 @@ class Progress(Base):
     total_items: Mapped[int] = mapped_column(Integer, default=0)
     completed_items: Mapped[int] = mapped_column(Integer, default=0)
     test_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    redo_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     started_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
     completed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -289,3 +290,11 @@ class AppUser(Base):
     display_name: Mapped[str] = mapped_column(String(100), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class UserSubject(Base):
+    """Which subjects a child user can access."""
+    __tablename__ = "user_subjects"
+
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), primary_key=True)
+    subject_id: Mapped[str] = mapped_column(String(50), ForeignKey("subjects.id"), primary_key=True)

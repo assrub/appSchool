@@ -10,7 +10,7 @@ from sqlalchemy import select, text, delete as sqldelete
 from models import (
     Subject, Topic, TopicTheory, TheorySection, TheoryVideo,
     ExerciseUnit, UnitTheory, UnitTheorySection,
-    ExerciseBlock, ExerciseItem, AdminUser, AppUser,
+    ExerciseBlock, ExerciseItem, AdminUser, AppUser, UserSubject,
 )
 from services.auth_service import hash_password
 
@@ -109,6 +109,13 @@ async def seed():
         subjects_path = os.path.join(CONTENT_DIR, "subjects.json")
         with open(subjects_path, "r") as f:
             subjects_data = json.load(f)
+
+        # Assign fausti to all subjects
+        subj_check = await db.execute(select(UserSubject).where(UserSubject.user_id == 1))
+        if not subj_check.scalar_one_or_none():
+            for subj_data in subjects_data.get("subjects", []):
+                db.add(UserSubject(user_id=1, subject_id=subj_data["id"]))
+            print("Assigned fausti to subjects")
 
         for subj_data in subjects_data.get("subjects", []):
             subject = Subject(
