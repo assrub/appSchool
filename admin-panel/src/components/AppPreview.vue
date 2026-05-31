@@ -116,7 +116,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.app-preview-container { display: flex; flex-direction: column; align-items: center; }
+.app-preview-container { display: flex; flex-direction: column; align-items: flex-start; width: fit-content; }
 .pp-card { display: flex; align-items: center; gap: 12px; padding: 14px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
 .pp-icon { font-size: 28px; flex-shrink: 0; }
 .pp-body { flex: 1; min-width: 0; }

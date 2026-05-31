@@ -89,7 +89,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col v-if="showPreview" cols="12" md="3">
+      <v-col v-if="showPreview" cols="12" md="2" class="ml-0 pl-0">
         <AppPreview />
       </v-col>
     </v-row>
