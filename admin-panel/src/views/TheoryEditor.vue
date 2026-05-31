@@ -19,7 +19,7 @@
     </v-alert>
 
     <v-row v-if="!loading">
-      <v-col cols="8">
+      <v-col cols="12" md="8">
         <v-card rounded="lg" elevation="2">
           <v-tabs v-model="currentTab" color="primary" slider-color="primary">
             <v-tab v-for="(b, i) in blocks" :key="i" :value="i" class="text-lowercase">
@@ -144,7 +144,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="4">
+      <v-col cols="12" md="4">
         <div class="sticky-top" style="top: 80px">
           <h3 class="text-subtitle-1 font-weight-medium mb-2">Vista previa</h3>
           <MobilePreview :html="previewHtml" />
@@ -217,12 +217,12 @@ const backLabel = computed(() => type === 'topic' ? 'Temas' : 'Unidades')
 
 const previewHtml = computed(() => {
   return blocks.value.map(b => {
-    const title = b.title ? `<h2 style="color:#333;font-size:18px;margin-bottom:8px">${b.title}</h2>` : ''
+    const title = b.title ? `<h2>${b.title}</h2>` : ''
     const tips = b.tips?.length
-      ? `<div style="background:#FFF3E0;border-radius:8px;padding:8px 12px;margin-top:8px">${b.tips.map(t => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:14px">💡</span><span style="font-size:13px">${t}</span></div>`).join('')}</div>`
+      ? `<div class="tip-box">${b.tips.map(t => `<div class="tip-item"><span>💡</span><span>${t}</span></div>`).join('')}</div>`
       : ''
     return `${title}${b.html || ''}${tips}`
-  }).join('<hr style="margin:16px 0;border:none;border-top:1px dashed #ccc">')
+  }).join('<hr>')
 })
 
 function goBack() {

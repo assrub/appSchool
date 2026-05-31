@@ -19,10 +19,6 @@
         <v-card rounded="lg" elevation="2">
           <div class="d-flex align-center pa-2 border-b">
             <span class="text-overline">Unidades</span>
-            <v-spacer />
-            <v-btn size="x-small" variant="tonal" prepend-icon="mdi-cellphone" @click="showPreview = !showPreview">
-              {{ showPreview ? 'Ocultar' : 'Mostrar' }} preview
-            </v-btn>
           </div>
           <v-progress-linear v-if="loading" indeterminate color="primary" />
           <v-table v-else>
@@ -89,7 +85,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col v-if="showPreview" cols="12" md="2" class="ml-0 pl-0">
+      <v-col cols="12" md="3">
         <AppPreview />
       </v-col>
     </v-row>
@@ -165,7 +161,6 @@ const error = ref('')
 const dialog = ref(false)
 const deleteDialog = ref(false)
 const hardDeleteDialog = ref(false)
-const showPreview = ref(false)
 const editing = ref(null)
 const saving = ref(false)
 const toDelete = ref(null)
