@@ -64,6 +64,7 @@ data class Unit(
     val title: String,
     val exerciseType: String,
     val explanation: String,
+    val isLocked: Boolean = false,
     val theory: UnitTheory? = null,
     val blocks: List<ExerciseBlock>,
     val completedItems: Int = 0,

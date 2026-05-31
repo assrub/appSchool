@@ -77,6 +77,7 @@ class UnitCreate(BaseModel):
     exercise_type: str = "fill-blank"
     explanation: str | None = None
     input_mode: str = "tap"
+    is_locked: bool = False
     sort_order: int = 0
 
 
@@ -85,6 +86,7 @@ class UnitUpdate(BaseModel):
     exercise_type: str | None = None
     explanation: str | None = None
     input_mode: str | None = None
+    is_locked: bool | None = None
     sort_order: int | None = None
 
 
@@ -95,6 +97,7 @@ class UnitResponse(BaseModel):
     exercise_type: str
     explanation: str | None
     input_mode: str
+    is_locked: bool
     sort_order: int
     created_at: datetime
     updated_at: datetime

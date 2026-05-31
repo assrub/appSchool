@@ -92,6 +92,7 @@ class ExerciseUnit(Base):
     exercise_type: Mapped[str] = mapped_column(String(50), default="fill-blank")
     explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
     input_mode: Mapped[str] = mapped_column(String(10), default="tap")
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)

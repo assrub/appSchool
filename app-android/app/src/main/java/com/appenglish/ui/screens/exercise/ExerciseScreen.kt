@@ -131,8 +131,11 @@ fun UnitExerciseScreen(
                 Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
             }
         } else if (uiState.isFinished) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                item {
                     Text("🎉", fontSize = 64.sp)
                     Spacer(Modifier.height(16.dp))
                     Text("¡Unidad completada!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Primary)
@@ -140,8 +143,40 @@ fun UnitExerciseScreen(
                     Text("Puntuación: ${uiState.score} / ${uiState.totalItems}", style = MaterialTheme.typography.titleMedium)
                     val percent = if (uiState.totalItems > 0) (uiState.score.toFloat() / uiState.totalItems) * 100 else 0f
                     Text("${percent.toInt()}%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = if (percent >= 70) CorrectGreen else IncorrectRed)
-                    Spacer(Modifier.height(24.dp))
-                    Button(onClick = onBackClick, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp)) {
+                }
+
+                if (uiState.wrongItems.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(24.dp))
+                        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+                            Column(Modifier.padding(16.dp).fillMaxWidth()) {
+                                Text("❌ Errores para revisar (${uiState.wrongItems.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
+                                Spacer(Modifier.height(8.dp))
+                                uiState.wrongItems.forEach { wrong ->
+                                    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                                        Column(Modifier.padding(10.dp)) {
+                                            Text(wrong.sentence, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text("Respondiste: ", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                                Text(wrong.givenAnswer, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = IncorrectRed)
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Button(
+                                    onClick = { viewModel.startRetryWrongItems() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                                    shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
+                                ) { Text("Rehacer solo los errores", color = Color.White) }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = onBackClick, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
                         Text("Volver", color = Color.White)
                     }
                 }

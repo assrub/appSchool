@@ -255,6 +255,62 @@ async def delete_unit(
     return MessageResponse(message="Unit deleted")
 
 
+@router.put("/units/{unit_id}/lock", response_model=UnitResponse)
+async def lock_unit(unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    unit = await db.get(ExerciseUnit, unit_id)
+    if not unit: raise HTTPException(status_code=404, detail="Unit not found")
+    unit.is_locked = True
+    await db.commit()
+    await db.refresh(unit)
+    return UnitResponse.model_validate(unit)
+
+
+@router.put("/units/{unit_id}/unlock", response_model=UnitResponse)
+async def unlock_unit(unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    unit = await db.get(ExerciseUnit, unit_id)
+    if not unit: raise HTTPException(status_code=404, detail="Unit not found")
+    unit.is_locked = False
+    await db.commit()
+    await db.refresh(unit)
+    return UnitResponse.model_validate(unit)
+
+
+@router.delete("/progress/{device_id}/{topic_id}/{unit_id}", response_model=MessageResponse)
+async def reset_unit_progress(device_id: str, topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from sqlalchemy import delete as sqldelete
+    from models import Progress, AnswerHistory
+    await db.execute(sqldelete(Progress).where(Progress.device_id == device_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))
+    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.device_id == device_id, AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
+    await db.commit()
+    return MessageResponse(message="Progress reset")
+
+
+@router.post("/topics/{topic_id}/reset-all", response_model=MessageResponse)
+async def reset_topic_progress(topic_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from sqlalchemy import delete as sqldelete, update as sqlupdate
+    from models import Progress, AnswerHistory
+    await db.execute(sqldelete(Progress).where(Progress.topic_id == topic_id))
+    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.topic_id == topic_id))
+    await db.commit()
+    return MessageResponse(message="All progress reset")
+
+
+@router.put("/topics/{topic_id}/lock-all", response_model=MessageResponse)
+async def lock_all_units(topic_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from sqlalchemy import update as sqlupdate
+    await db.execute(sqlupdate(ExerciseUnit).where(ExerciseUnit.topic_id == topic_id).values(is_locked=True))
+    await db.commit()
+    return MessageResponse(message="All units locked")
+
+
+@router.put("/topics/{topic_id}/unlock-all", response_model=MessageResponse)
+async def unlock_all_units(topic_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from sqlalchemy import update as sqlupdate
+    await db.execute(sqlupdate(ExerciseUnit).where(ExerciseUnit.topic_id == topic_id).values(is_locked=False))
+    await db.commit()
+    return MessageResponse(message="All units unlocked")
+
+
 # ── Exercise Blocks ──────────────────────────────────────
 
 @router.get("/units/{unit_id}/blocks", response_model=list[BlockResponse])

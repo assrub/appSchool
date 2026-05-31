@@ -76,6 +76,7 @@ class TopicViewModel @Inject constructor(
                             title = unitDto.title,
                             exerciseType = unitDto.exerciseType,
                             explanation = unitDto.explanation,
+                            isLocked = unitDto.isLocked,
                             theory = unitTheory,
                             blocks = unitDto.blocks.map { blockDto ->
                                 ExerciseBlock(

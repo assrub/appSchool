@@ -67,6 +67,7 @@ data class UnitDto(
     val title: String,
     val exerciseType: String,
     val explanation: String,
+    val isLocked: Boolean = false,
     val progress: UnitProgressDto?,
     val theory: UnitTheoryDto?,
     val blocks: List<ExerciseBlockDto>

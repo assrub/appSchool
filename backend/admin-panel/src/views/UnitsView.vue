@@ -8,6 +8,15 @@
         <h1 class="text-h4">Unidades de {{ topicName }}</h1>
       </div>
       <v-spacer />
+      <v-btn color="warning" variant="tonal" size="small" class="mr-2" @click="topicAction('lock-all')">
+        🔒 Bloquear todo
+      </v-btn>
+      <v-btn color="success" variant="tonal" size="small" class="mr-2" @click="topicAction('unlock-all')">
+        🔓 Desbloquear todo
+      </v-btn>
+      <v-btn color="orange" variant="tonal" size="small" class="mr-2" @click="topicAction('reset-all')">
+        🔄 Resetear todo
+      </v-btn>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">
         Nueva Unidad
       </v-btn>
@@ -21,6 +30,7 @@
             <th>Título</th>
             <th>Tipo</th>
             <th>Input</th>
+            <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -37,8 +47,16 @@
               </v-chip>
             </td>
             <td>
+              <v-chip :color="u.is_locked ? 'grey' : 'green'" size="small" variant="tonal">
+                {{ u.is_locked ? '🔒 Bloqueado' : '🔓 Abierto' }}
+              </v-chip>
+            </td>
+            <td>
               <v-btn icon="mdi-pencil" variant="text" size="small" color="primary" @click="openDialog(u)" />
               <v-btn icon="mdi-list-box-outline" variant="text" size="small" color="secondary" :to="`/units/${u.id}/blocks`" />
+              <v-btn v-if="!u.is_locked" icon="mdi-lock" variant="text" size="small" color="warning" @click="toggleLock(u, true)" />
+              <v-btn v-else icon="mdi-lock-open" variant="text" size="small" color="success" @click="toggleLock(u, false)" />
+              <v-btn icon="mdi-restart" variant="text" size="small" color="orange" @click="confirmReset(u)" />
               <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="confirmDelete(u)" />
             </td>
           </tr>
@@ -141,6 +159,32 @@ async function saveUnit() {
 }
 
 function confirmDelete(unit) { toDelete.value = unit; deleteDialog.value = true }
+
+async function toggleLock(unit, lock) {
+  try {
+    const endpoint = lock ? `/admin/units/${unit.id}/lock` : `/admin/units/${unit.id}/unlock`
+    await api.put(endpoint)
+    const { data } = await api.get(`/admin/topics/${topicId}/units`)
+    units.value = data
+  } catch (e) { alert(e.response?.data?.detail || 'Error') }
+}
+
+async function confirmReset(unit) {
+  if (!confirm(`¿Resetear progreso de "${unit.title}"? El nene la hará de cero.`)) return
+  await api.delete(`/admin/progress/${deviceId}/${topicId}/${unit.id}`)
+  alert('Progreso reseteado')
+}
+
+const deviceId = 'android-default'
+
+async function topicAction(action) {
+  const labels = { 'lock-all': 'Bloquear', 'unlock-all': 'Desbloquear', 'reset-all': 'Resetear' }
+  if (!confirm(`¿${labels[action]} todas las unidades?`)) return
+  await api.post(`/admin/topics/${topicId}/${action}`)
+  const { data } = await api.get(`/admin/topics/${topicId}/units`)
+  units.value = data
+  alert('Acción completada')
+}
 
 async function doDelete() {
   await api.delete(`/admin/units/${toDelete.value.id}`)

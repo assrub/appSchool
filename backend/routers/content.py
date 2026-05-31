@@ -139,6 +139,7 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
                 title=unit.title,
                 exerciseType=unit.exercise_type,
                 explanation=unit.explanation or "",
+                isLocked=unit.is_locked,
                 progress=UnitProgress(totalItems=total_items),
                 theory=unit_theory_dto,
                 blocks=blocks_dto,

@@ -52,6 +52,7 @@ class Unit(BaseModel):
     title: str
     exerciseType: str
     explanation: str
+    isLocked: bool = False
     progress: UnitProgress | None = None
     theory: UnitTheoryDto | None = None
     blocks: list[ExerciseBlockDto]

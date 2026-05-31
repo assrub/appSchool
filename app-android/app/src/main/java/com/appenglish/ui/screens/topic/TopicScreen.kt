@@ -116,9 +116,10 @@ fun TopicScreen(
                         subtitle = unit.title,
                         progress = unit.percent,
                         completed = unit.percent >= 100.0,
+                        isLocked = unit.isLocked,
                         completedItems = unit.completedItems,
                         totalItems = unit.totalItems,
-                        onClick = { onUnitClick(topic.id, unit.id) }
+                        onClick = { if (!unit.isLocked) onUnitClick(topic.id, unit.id) }
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                 }
@@ -181,6 +182,7 @@ fun UnitCard(
     subtitle: String,
     progress: Double,
     completed: Boolean,
+    isLocked: Boolean = false,
     completedItems: Int,
     totalItems: Int,
     onClick: () -> Unit
@@ -192,7 +194,11 @@ fun UnitCard(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (completed) Color(0xFFE8F5E9) else Color.White
+            containerColor = when {
+                isLocked -> Color(0xFFF5F5F5)
+                completed -> Color(0xFFE8F5E9)
+                else -> Color.White
+            }
         )
     ) {
         Row(
@@ -231,9 +237,17 @@ fun UnitCard(
                 )
             }
             Text(
-                if (completed) "✅" else "→",
+                when {
+                    isLocked -> "🔒"
+                    completed -> "✅"
+                    else -> "→"
+                },
                 fontSize = 22.sp,
-                color = if (completed) CorrectGreen else Primary
+                color = when {
+                    isLocked -> Color.Gray
+                    completed -> CorrectGreen
+                    else -> Primary
+                }
             )
         }
     }
