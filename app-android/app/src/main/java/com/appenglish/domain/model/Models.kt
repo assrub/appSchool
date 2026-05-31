@@ -50,7 +50,13 @@ data class UnitTheory(
     val sections: List<TheorySection>,
     val headers: List<String>,
     val rows: List<List<String>>,
-    val tips: List<Tip>
+    val tips: List<Tip>,
+    val blocks: List<TheoryBlock> = emptyList()
+)
+
+data class TheoryBlock(
+    val title: String?,
+    val html: String?
 )
 
 data class TheorySection(

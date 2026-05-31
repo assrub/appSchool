@@ -107,8 +107,17 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
     for unit in topic.units:
         unit_theory_dto = None
         if unit.theory:
+            import json
+            blocks = None
+            try:
+                parsed = json.loads(unit.theory.text or "")
+                if isinstance(parsed, list):
+                    blocks = parsed
+            except:
+                pass
+
             unit_theory_dto = UnitTheoryDto(
-                text=unit.theory.text,
+                text=unit.theory.text if not blocks else "",
                 sections=[
                     TheorySectionDto(title=s.title, text=s.text, examples=s.examples or [])
                     for s in (unit.theory.sections or [])
@@ -118,6 +127,7 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
                     rows=unit.theory.table_rows or [],
                 ) if unit.theory.table_headers else None,
                 tips=[TipDto(emoji=t["emoji"], text=t["text"]) for t in (unit.theory.tips or [])],
+                blocks=blocks,
             )
 
         blocks_dto = []

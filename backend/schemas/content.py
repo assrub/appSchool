@@ -29,6 +29,7 @@ class UnitTheoryDto(BaseModel):
     sections: list[TheorySectionDto] = []
     table: TableDto | None = None
     tips: list[TipDto] = []
+    blocks: list[dict] | None = None
 
 
 class ExerciseItemDto(BaseModel):

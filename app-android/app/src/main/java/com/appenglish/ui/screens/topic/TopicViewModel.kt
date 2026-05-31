@@ -67,7 +67,8 @@ class TopicViewModel @Inject constructor(
                                 } ?: emptyList(),
                                 headers = t.table?.headers ?: emptyList(),
                                 rows = t.table?.rows ?: emptyList(),
-                                tips = t.tips?.map { Tip(it.emoji, it.text) } ?: emptyList()
+                                tips = t.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),
+                                blocks = t.blocks?.map { com.appenglish.domain.model.TheoryBlock(it.title, it.html) } ?: emptyList()
                             )
                         }
 

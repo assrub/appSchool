@@ -93,7 +93,8 @@ class UnitExerciseViewModel @Inject constructor(
                             sections = t.sections?.map { TheorySection(it.title, it.text, it.examples ?: emptyList()) } ?: emptyList(),
                             headers = t.table?.headers ?: emptyList(),
                             rows = t.table?.rows ?: emptyList(),
-                            tips = t.tips?.map { Tip(it.emoji, it.text) } ?: emptyList()
+                            tips = t.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),
+                            blocks = t.blocks?.map { com.appenglish.domain.model.TheoryBlock(it.title, it.html) } ?: emptyList()
                         )
                     }
 

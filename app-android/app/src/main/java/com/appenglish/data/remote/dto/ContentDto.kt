@@ -77,7 +77,13 @@ data class UnitTheoryDto(
     val text: String,
     val sections: List<TheorySectionDto>?,
     val table: TableDto?,
-    val tips: List<TipDto>?
+    val tips: List<TipDto>?,
+    val blocks: List<TheoryBlockDto>?
+)
+
+data class TheoryBlockDto(
+    val title: String?,
+    val html: String?
 )
 
 data class TheorySectionDto(
