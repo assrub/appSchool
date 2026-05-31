@@ -1,6 +1,7 @@
 package com.appenglish.ui.screens.exercise
 
 import android.app.Application
+import android.media.MediaPlayer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,7 @@ import com.appenglish.domain.model.Tip
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.ExerciseItem
 import com.appenglish.ui.components.SoundHelper
+import com.appenglish.util.ApiConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -19,6 +21,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 data class WrongAnswer(
@@ -34,12 +41,15 @@ data class UnitExerciseUiState(
     val unitTitle: String = "",
     val unitExplanation: String = "",
     val unitTheory: UnitTheory? = null,
+    val soundCorrectUrl: String? = null,
+    val soundIncorrectUrl: String? = null,
     val blocks: List<ExerciseBlock> = emptyList(),
     val currentBlockIndex: Int = 0,
     val currentItemIndex: Int = 0,
     val userInput: String = "",
     val feedback: Feedback? = null,
     val isCorrect: Boolean? = null,
+    val showAcceptButton: Boolean = false,
     val score: Int = 0,
     val totalBlocks: Int = 0,
     val totalItems: Int = 0,
@@ -84,7 +94,7 @@ class UnitExerciseViewModel @Inject constructor(
                     val unitDto = response.units.find { it.id == unitId }
                     if (unitDto == null) { _uiState.value = _uiState.value.copy(isLoading = false, error = "Unidad no encontrada"); return@fold }
 
-                    val blocks = unitDto.blocks.map { b -> ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint) }) }
+                    val blocks = unitDto.blocks.map { b -> ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint, it.itemType, it.inputMode, it.answers, it.options) }) }
                     val totalItems = blocks.sumOf { it.items.size }
 
                     val unitTheory = unitDto.theory?.let { t ->
@@ -100,6 +110,7 @@ class UnitExerciseViewModel @Inject constructor(
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false, unitTitle = unitDto.title, unitExplanation = unitDto.explanation,
+                        soundCorrectUrl = unitDto.soundCorrectUrl, soundIncorrectUrl = unitDto.soundIncorrectUrl,
                         unitTheory = unitTheory, blocks = blocks, totalBlocks = blocks.size, totalItems = totalItems
                     )
                 },
@@ -110,16 +121,14 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun selectOption(option: String) {
         val state = _uiState.value
-        if (state.isCorrect == true) return
+        if (state.isCorrect == true || state.showAcceptButton) return
 
         val currentItem = getCurrentItem() ?: return
-        val userAnswer = option.trim().lowercase()
-        val correctAnswer = currentItem.answer.trim().lowercase()
-        val correct = userAnswer == correctAnswer
+        val correct = isAnswerCorrect(currentItem, option)
 
         if (correct) {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { SoundHelper.playCorrect(app) }
+            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundCorrectUrl) }
             val fullSentence = currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer)
             _uiState.value = state.copy(
                 userInput = option, isCorrect = true,
@@ -133,27 +142,26 @@ class UnitExerciseViewModel @Inject constructor(
             }
         } else {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { SoundHelper.playIncorrect(app) }
+            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundIncorrectUrl) }
 
             val wrong = WrongAnswer(
-                blockIndex = state.currentBlockIndex,
-                itemIndex = state.currentItemIndex,
-                sentence = currentItem.sentence,
-                givenAnswer = option,
-                correctAnswer = currentItem.answer
+                blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex,
+                sentence = currentItem.sentence, givenAnswer = option, correctAnswer = currentItem.answer
             )
 
             _uiState.value = state.copy(
                 userInput = option, isCorrect = false,
-                feedback = Feedback("❌ La respuesta era: ${currentItem.answer}", false),
+                feedback = Feedback("❌ Incorrecto", false),
+                showAcceptButton = true,
                 wrongItems = state.wrongItems + wrong
             )
-
-            viewModelScope.launch {
-                delay(1200)
-                autoAdvance()
-            }
         }
+    }
+
+    fun onAcceptClick() {
+        val state = _uiState.value
+        _uiState.value = state.copy(showAcceptButton = false)
+        autoAdvance()
     }
 
     private fun autoAdvance() {
@@ -165,14 +173,14 @@ class UnitExerciseViewModel @Inject constructor(
                 currentItemIndex = state.currentItemIndex + 1,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
-                readyForNext = false, fullSentenceToPlay = ""
+                readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
         } else if (state.currentBlockIndex + 1 < state.blocks.size) {
             _uiState.value = state.copy(
                 currentBlockIndex = state.currentBlockIndex + 1, currentItemIndex = 0,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
-                readyForNext = false, fullSentenceToPlay = ""
+                readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
         } else {
             _uiState.value = state.copy(isFinished = true)
@@ -180,9 +188,14 @@ class UnitExerciseViewModel @Inject constructor(
         }
     }
 
-    fun onFullAudioFinished() {
-        _uiState.value = _uiState.value.copy(playingFullAudio = false, readyForNext = true)
+    private fun isAnswerCorrect(item: ExerciseItem, userOption: String): Boolean {
+        val answer = userOption.trim().lowercase()
+        if (answer == item.answer.trim().lowercase()) return true
+        item.answers?.forEach { if (answer == it.trim().lowercase()) return true }
+        return false
     }
+
+    fun onFullAudioFinished() { _uiState.value = _uiState.value.copy(playingFullAudio = false, readyForNext = true) }
 
     fun nextItem() {
         val state = _uiState.value
@@ -193,14 +206,14 @@ class UnitExerciseViewModel @Inject constructor(
                 currentItemIndex = state.currentItemIndex + 1,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
-                readyForNext = false, fullSentenceToPlay = ""
+                readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
         } else if (state.currentBlockIndex + 1 < state.blocks.size) {
             _uiState.value = state.copy(
                 currentBlockIndex = state.currentBlockIndex + 1, currentItemIndex = 0,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
-                readyForNext = false, fullSentenceToPlay = ""
+                readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
         } else {
             _uiState.value = state.copy(isFinished = true)
@@ -210,39 +223,31 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun startRetryWrongItems() {
         val wrongs = _uiState.value.wrongItems
-        if (wrongs.isEmpty()) {
-            _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false)
-            return
-        }
+        if (wrongs.isEmpty()) { _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false); return }
         _uiState.value = _uiState.value.copy(retryMode = true, retryIndex = 0, isFinished = false)
     }
 
     fun retryWrongAnswer(selectedOption: String) {
         val state = _uiState.value
+        if (state.showAcceptButton) return
         val wrong = state.wrongItems.getOrNull(state.retryIndex) ?: return
         val correct = selectedOption.trim().lowercase() == wrong.correctAnswer.trim().lowercase()
 
         if (correct) {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { SoundHelper.playCorrect(app) }
+            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundCorrectUrl) }
             val remainingWrongs = state.wrongItems.toMutableList()
             remainingWrongs.removeAt(state.retryIndex)
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = true,
                 feedback = Feedback("¡Corregido! ✅", true),
-                wrongItems = remainingWrongs,
-                score = state.score + 1, completedItems = state.completedItems + 1
+                wrongItems = remainingWrongs, score = state.score + 1, completedItems = state.completedItems + 1
             )
             viewModelScope.launch {
                 delay(800)
                 val nextIdx = state.retryIndex
                 if (nextIdx < remainingWrongs.size) {
-                    _uiState.value = _uiState.value.copy(
-                        retryIndex = nextIdx,
-                        userInput = "", feedback = null, isCorrect = null,
-                        showingAnswer = false, playingFullAudio = false,
-                        readyForNext = false
-                    )
+                    _uiState.value = _uiState.value.copy(retryIndex = nextIdx, userInput = "", feedback = null, isCorrect = null, showingAnswer = false, playingFullAudio = false, readyForNext = false)
                 } else {
                     _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false)
                     saveProgress(completed = true)
@@ -250,24 +255,12 @@ class UnitExerciseViewModel @Inject constructor(
             }
         } else {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { SoundHelper.playIncorrect(app) }
+            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundIncorrectUrl) }
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = false,
-                feedback = Feedback("❌ La respuesta era: ${wrong.correctAnswer}", false)
+                feedback = Feedback("❌ La respuesta era: ${wrong.correctAnswer}", false),
+                showAcceptButton = true
             )
-            viewModelScope.launch {
-                delay(1200)
-                val nextIdx = state.retryIndex + 1
-                if (nextIdx < state.wrongItems.size) {
-                    _uiState.value = _uiState.value.copy(
-                        retryIndex = nextIdx,
-                        userInput = "", feedback = null, isCorrect = null
-                    )
-                } else {
-                    _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false)
-                    saveProgress(completed = true)
-                }
-            }
         }
     }
 
@@ -283,35 +276,38 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun getCurrentBlockTitle(): String {
         val state = _uiState.value
-        if (state.retryMode) return "Errores para revisar (${state.retryIndex + 1}/${state.wrongItems.size})"
+        if (state.retryMode) return "Errores (${state.retryIndex + 1}/${state.wrongItems.size})"
         return state.blocks.getOrNull(state.currentBlockIndex)?.title ?: ""
     }
 
     fun getOptions(): List<String> {
         if (_uiState.value.retryMode) {
             val wrong = _uiState.value.wrongItems.getOrNull(_uiState.value.retryIndex)
-            val correct = wrong?.correctAnswer ?: "am"
-            val distractors = allAnswerOptions.filter { it != correct }.shuffled().take(2)
-            return (listOf(correct) + distractors).shuffled()
+            return generateOptions(wrong?.correctAnswer ?: "am", _uiState.value.blocks.firstOrNull()?.items?.firstOrNull())
         }
-        return when (unitId) {
-            "affirmative" -> listOf("am", "is", "are")
-            "negative" -> listOf("am not", "isn't", "aren't")
-            "interrogative" -> listOf("Am", "Is", "Are")
-            "short-answers" -> {
-                val current = getCurrentItem() ?: return listOf("Yes", "No")
-                val distractors = allAnswerOptions.filter { it != current.answer }.take(2)
-                (listOf(current.answer) + distractors).shuffled()
-            }
-            else -> listOf("am", "is", "are")
-        }
+        val item = getCurrentItem() ?: return listOf("am", "is", "are")
+        if (item.options != null && item.options.isNotEmpty()) return item.options
+        return generateOptions(item.answer, item)
     }
 
-    private val allAnswerOptions = listOf(
-        "I am", "I'm not", "he is", "he isn't", "she is", "she isn't",
-        "it is", "it isn't", "you are", "you aren't", "we are", "we aren't",
-        "they are", "they aren't", "am not", "isn't", "aren't", "Am", "Is", "Are"
-    )
+    private fun generateOptions(answer: String, item: ExerciseItem?): List<String> {
+        val opts = if (item?.options != null && item.options.isNotEmpty()) item.options
+        else {
+            when (unitId) {
+                "affirmative" -> listOf("am", "is", "are")
+                "negative" -> listOf("am not", "isn't", "aren't")
+                "interrogative" -> listOf("Am", "Is", "Are")
+                "short-answers" -> {
+                    val distractors = allAnswerOptions.filter { it != answer }.shuffled().take(2)
+                    (listOf(answer) + distractors).shuffled()
+                }
+                else -> listOf("am", "is", "are")
+            }
+        }
+        return if (opts.contains(answer)) opts else (opts + answer)
+    }
+
+    private val allAnswerOptions = listOf("I am","I'm not","he is","he isn't","she is","she isn't","it is","it isn't","you are","you aren't","we are","we aren't","they are","they aren't","am not","isn't","aren't","Am","Is","Are")
 
     private fun saveProgress(completed: Boolean = false) {
         viewModelScope.launch {
@@ -321,6 +317,33 @@ class UnitExerciseViewModel @Inject constructor(
                 completedItems = if (completed) state.totalItems else state.completedItems,
                 score = state.score, totalItems = state.totalItems, completed = completed
             )
+        }
+    }
+
+    private suspend fun playCustomSound(app: Application, url: String?) {
+        if (url.isNullOrBlank()) {
+            SoundHelper.playCorrect(app)
+            return
+        }
+        withContext(Dispatchers.IO) {
+            try {
+                val fullUrl = if (url.startsWith("http")) url else "${ApiConfig.BASE_URL.removeSuffix("/api/v1/")}$url"
+                val client = OkHttpClient()
+                val request = Request.Builder().url(fullUrl).build()
+                val response = client.newCall(request).execute()
+                if (!response.isSuccessful) { SoundHelper.playCorrect(app); return@withContext }
+                val bytes = response.body?.bytes() ?: return@withContext
+                val tempFile = File(app.cacheDir, "sound_${System.currentTimeMillis()}.mp3")
+                FileOutputStream(tempFile).use { it.write(bytes) }
+                withContext(Dispatchers.Main) {
+                    MediaPlayer().apply {
+                        setDataSource(tempFile.absolutePath)
+                        prepare()
+                        start()
+                        setOnCompletionListener { release() }
+                    }
+                }
+            } catch (_: Exception) { SoundHelper.playCorrect(app) }
         }
     }
 }

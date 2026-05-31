@@ -1,11 +1,16 @@
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from database import init_db
 from routers import content, tts, translate, progress, dictionary
 from routers import auth, admin
+
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @asynccontextmanager
@@ -31,6 +36,7 @@ app.include_router(progress.router, prefix="/api/v1/progress", tags=["Progress"]
 app.include_router(dictionary.router, prefix="/api/v1/dictionary", tags=["Dictionary"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 @app.get("/")

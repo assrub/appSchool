@@ -363,17 +363,30 @@ fun UnitExerciseScreen(
                                 }
 
                                 // Fixed-height feedback area (reserved space)
-                                Box(modifier = Modifier.fillMaxWidth().height(60.dp)) {
+                                Box(modifier = Modifier.fillMaxWidth().height(70.dp)) {
                                     val feedback = uiState.feedback
                                     if (feedback != null) {
-                                        Card(
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(containerColor = if (feedback.isCorrect) Color(0xFFE8F5E9) else Color(0xFFFFEBEE))
-                                        ) {
-                                            Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
-                                                Text(feedback.message, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = if (feedback.isCorrect) CorrectGreen else IncorrectRed)
-                                                if (feedback.isCorrect && currentItem.hint != null) {
-                                                    Text("💡 ${currentItem.hint}", style = MaterialTheme.typography.bodySmall, color = HintColor)
+                                        Column {
+                                            Card(
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = CardDefaults.cardColors(containerColor = if (feedback.isCorrect) Color(0xFFE8F5E9) else Color(0xFFFFEBEE))
+                                            ) {
+                                                Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
+                                                    Text(feedback.message, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = if (feedback.isCorrect) CorrectGreen else IncorrectRed)
+                                                    if (feedback.isCorrect && currentItem.hint != null) {
+                                                        Text("💡 ${currentItem.hint}", style = MaterialTheme.typography.bodySmall, color = HintColor)
+                                                    }
+                                                    if (uiState.showAcceptButton) {
+                                                        Spacer(Modifier.height(8.dp))
+                                                        Button(
+                                                            onClick = { viewModel.onAcceptClick() },
+                                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            modifier = Modifier.fillMaxWidth()
+                                                        ) {
+                                                            Text("Aceptar", color = Color.White)
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

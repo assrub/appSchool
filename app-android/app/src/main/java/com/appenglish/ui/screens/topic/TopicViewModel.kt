@@ -78,6 +78,8 @@ class TopicViewModel @Inject constructor(
                             exerciseType = unitDto.exerciseType,
                             explanation = unitDto.explanation,
                             isLocked = unitDto.isLocked,
+                            soundCorrectUrl = unitDto.soundCorrectUrl,
+                            soundIncorrectUrl = unitDto.soundIncorrectUrl,
                             theory = unitTheory,
                             blocks = unitDto.blocks.map { blockDto ->
                                 ExerciseBlock(
@@ -86,7 +88,11 @@ class TopicViewModel @Inject constructor(
                                         ExerciseItem(
                                             sentence = itemDto.sentence,
                                             answer = itemDto.answer,
-                                            hint = itemDto.hint
+                                            hint = itemDto.hint,
+                                            itemType = itemDto.itemType,
+                                            inputMode = itemDto.inputMode,
+                                            answers = itemDto.answers,
+                                            options = itemDto.options
                                         )
                                     }
                                 )

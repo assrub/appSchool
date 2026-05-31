@@ -137,6 +137,10 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
                     sentence=item.sentence,
                     answer=item.answer,
                     hint=item.hint,
+                    itemType=item.item_type,
+                    inputMode=item.input_mode,
+                    answers=item.answers,
+                    options=item.options,
                 )
                 for item in block.items
             ]
@@ -150,6 +154,8 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
                 exerciseType=unit.exercise_type,
                 explanation=unit.explanation or "",
                 isLocked=unit.is_locked,
+                soundCorrectUrl=unit.sound_correct_url,
+                soundIncorrectUrl=unit.sound_incorrect_url,
                 progress=UnitProgress(totalItems=total_items),
                 theory=unit_theory_dto,
                 blocks=blocks_dto,

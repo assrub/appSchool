@@ -36,6 +36,10 @@ class ExerciseItemDto(BaseModel):
     sentence: str
     answer: str
     hint: str | None = None
+    itemType: str = "fill-blank"
+    inputMode: str | None = None
+    answers: list[str] | None = None
+    options: list[str] | None = None
 
 
 class ExerciseBlockDto(BaseModel):
@@ -54,6 +58,8 @@ class Unit(BaseModel):
     exerciseType: str
     explanation: str
     isLocked: bool = False
+    soundCorrectUrl: str | None = None
+    soundIncorrectUrl: str | None = None
     progress: UnitProgress | None = None
     theory: UnitTheoryDto | None = None
     blocks: list[ExerciseBlockDto]

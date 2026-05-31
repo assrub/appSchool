@@ -68,6 +68,8 @@ data class UnitDto(
     val exerciseType: String,
     val explanation: String,
     val isLocked: Boolean = false,
+    val soundCorrectUrl: String? = null,
+    val soundIncorrectUrl: String? = null,
     val progress: UnitProgressDto?,
     val theory: UnitTheoryDto?,
     val blocks: List<ExerciseBlockDto>
@@ -108,7 +110,11 @@ data class ExerciseBlockDto(
 data class ExerciseItemDto(
     val sentence: String,
     val answer: String,
-    val hint: String?
+    val hint: String?,
+    val itemType: String = "fill-blank",
+    val inputMode: String? = null,
+    val answers: List<String>? = null,
+    val options: List<String>? = null
 )
 
 data class TestConfigDto(

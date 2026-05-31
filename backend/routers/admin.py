@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
@@ -629,3 +629,19 @@ async def delete_video(video_id: int, db: AsyncSession = Depends(get_db), admin:
     await db.delete(video)
     await db.commit()
     return MessageResponse(message="Video deleted")
+
+
+# ── Uploads ────────────────────────────────────────────────
+
+import os, uuid
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...), admin: dict = Depends(get_current_admin)):
+    ext = os.path.splitext(file.filename or "file.bin")[1] or ".bin"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join("uploads", filename)
+    os.makedirs("uploads", exist_ok=True)
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    return {"url": f"/uploads/{filename}"}

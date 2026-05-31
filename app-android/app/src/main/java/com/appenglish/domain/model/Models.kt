@@ -71,6 +71,8 @@ data class Unit(
     val exerciseType: String,
     val explanation: String,
     val isLocked: Boolean = false,
+    val soundCorrectUrl: String? = null,
+    val soundIncorrectUrl: String? = null,
     val theory: UnitTheory? = null,
     val blocks: List<ExerciseBlock>,
     val completedItems: Int = 0,
@@ -88,7 +90,11 @@ data class ExerciseBlock(
 data class ExerciseItem(
     val sentence: String,
     val answer: String,
-    val hint: String?
+    val hint: String?,
+    val itemType: String = "fill-blank",
+    val inputMode: String? = null,
+    val answers: List<String>? = null,
+    val options: List<String>? = null
 )
 
 data class TestConfig(
