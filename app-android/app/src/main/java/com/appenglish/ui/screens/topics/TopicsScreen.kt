@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.TopicSummary
+import com.appenglish.ui.components.BottomNavBar
+import com.appenglish.ui.components.BottomNavTab
 import com.appenglish.ui.theme.Primary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +47,7 @@ import com.appenglish.ui.theme.Primary
 fun TopicsScreen(
     onBackClick: () -> Unit,
     onTopicClick: (String) -> Unit,
+    onHomeClick: () -> Unit = {},
     viewModel: TopicsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
