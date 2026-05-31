@@ -120,11 +120,25 @@ class UnitExerciseViewModel @Inject constructor(
     }
 
     fun selectOption(option: String) {
+        checkAnswer(option)
+    }
+
+    fun onInputChanged(input: String) {
+        _uiState.value = _uiState.value.copy(userInput = input, feedback = null, isCorrect = null)
+    }
+
+    fun checkTextAnswer() {
+        val state = _uiState.value
+        if (state.userInput.isBlank()) return
+        checkAnswer(state.userInput)
+    }
+
+    private fun checkAnswer(userAnswer: String) {
         val state = _uiState.value
         if (state.isCorrect == true || state.showAcceptButton) return
 
         val currentItem = getCurrentItem() ?: return
-        val correct = isAnswerCorrect(currentItem, option)
+        val correct = isAnswerCorrect(currentItem, userAnswer)
 
         if (correct) {
             val app = getApplication<Application>()
@@ -133,12 +147,12 @@ class UnitExerciseViewModel @Inject constructor(
             val newScore = state.score + 1
             val newCompleted = state.completedItems + 1
             _uiState.value = state.copy(
-                userInput = option, isCorrect = true,
+                userInput = userAnswer, isCorrect = true,
                 feedback = Feedback("¡Muy bien! ✅", true),
                 score = newScore, completedItems = newCompleted,
                 showingAnswer = true
             )
-            saveProgress()  // Save after each correct answer
+            saveProgress()
             viewModelScope.launch {
                 delay(600)
                 _uiState.value = _uiState.value.copy(playingFullAudio = true, fullSentenceToPlay = fullSentence)
@@ -149,11 +163,11 @@ class UnitExerciseViewModel @Inject constructor(
 
             val wrong = WrongAnswer(
                 blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex,
-                sentence = currentItem.sentence, givenAnswer = option, correctAnswer = currentItem.answer
+                sentence = currentItem.sentence, givenAnswer = userAnswer, correctAnswer = currentItem.answer
             )
 
             _uiState.value = state.copy(
-                userInput = option, isCorrect = false,
+                userInput = userAnswer, isCorrect = false,
                 feedback = Feedback("❌ Incorrecto", false),
                 showAcceptButton = true,
                 wrongItems = state.wrongItems + wrong
@@ -328,11 +342,27 @@ class UnitExerciseViewModel @Inject constructor(
     private fun saveProgress(completed: Boolean = false) {
         viewModelScope.launch {
             val state = _uiState.value
+            val items = if (completed) state.totalItems else state.completedItems
             progressRepository.saveProgress(
                 topicId = topicId, unitId = unitId,
-                completedItems = if (completed) state.totalItems else state.completedItems,
+                completedItems = items,
                 score = state.score, totalItems = state.totalItems, completed = completed
             )
+            // Sync to backend
+            try {
+                progressRepository.syncProgress(
+                    listOf(
+                        com.appenglish.data.remote.dto.ProgressEntryDto(
+                            topicId = topicId,
+                            unitId = unitId,
+                            completed = completed,
+                            score = state.score,
+                            totalItems = state.totalItems,
+                            completedItems = items
+                        )
+                    )
+                )
+            } catch (_: Exception) {}
         }
     }
 
