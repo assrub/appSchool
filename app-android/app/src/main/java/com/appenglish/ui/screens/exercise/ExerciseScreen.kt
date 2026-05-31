@@ -27,8 +27,11 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -58,6 +61,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -191,8 +195,20 @@ fun UnitExerciseScreen(
         } else {
             val currentItem = viewModel.getCurrentItem()
             val options = viewModel.getOptions()
+            var selectedTab by remember { mutableIntStateOf(0) }
 
-            LazyColumn(
+            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                if (uiState.unitTheory != null) {
+                    TabRow(selectedTabIndex = selectedTab, containerColor = Color.White, contentColor = Primary) {
+                        Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("📝 Ejercicio") })
+                        Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("📖 Explicación") })
+                    }
+                }
+
+                if (selectedTab == 1 && uiState.unitTheory != null) {
+                    UnitTheoryView(theory = uiState.unitTheory!!, modifier = Modifier.padding(horizontal = 0.dp))
+                } else {
+                    LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)
             ) {
                 if (uiState.unitTheory != null) {
@@ -492,10 +508,12 @@ fun UnitExerciseScreen(
                                             Text("Traducción:", style = MaterialTheme.typography.labelSmall, color = Color(0xFF1565C0))
                                             Spacer(Modifier.height(2.dp))
                                             Text(translatedText!!, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                                        }
-                                    }
-                                }
-                            }
+                    }
+                }
+                } // closes if-else (selectedTab)
+            } // closes Column
+            }
+        }
                         }
                     }
                 }
