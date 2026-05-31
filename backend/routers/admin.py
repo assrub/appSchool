@@ -489,7 +489,9 @@ async def reorder_blocks(data: ReorderRequest, db: AsyncSession = Depends(get_db
 @router.put("/units/reorder", response_model=MessageResponse)
 async def reorder_units(data: ReorderRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     for it in data.items:
-        await db.execute(update(ExerciseUnit).where(ExerciseUnit.id == it["id"]).values(sort_order=it["sort_order"]))
+        unit = await db.get(ExerciseUnit, it["id"])
+        if unit:
+            unit.sort_order = it["sort_order"]
     await db.commit()
     return MessageResponse(message="Reordered")
 
