@@ -76,18 +76,6 @@ fun SubjectsScreen(
                             .padding(end = 16.dp, top = 8.dp, bottom = 8.dp)
                     )
                 }
-            )  // closes TopAppBar
-        }, // closes topBar, comma for next param
-        bottomBar = {
-            BottomNavBar(
-                currentTab = BottomNavTab.HOME,
-                onTabClick = { tab ->
-                    when (tab) {
-                        BottomNavTab.DICTIONARY -> onDictionaryClick()
-                        BottomNavTab.PROGRESS -> onProgressClick()
-                        BottomNavTab.HOME -> { /* already home */ }
-                    }
-                }
             )
         }
     ) { padding ->
