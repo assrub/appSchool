@@ -24,8 +24,9 @@ class UpdateManager @Inject constructor() {
 
     private var checkingVersion = false
 
-    fun checkForUpdate(activity: Activity) {
+    fun checkForUpdate(context: Context) {
         if (checkingVersion) return
+        val activity = context as? Activity ?: return
         checkingVersion = true
 
         Thread {

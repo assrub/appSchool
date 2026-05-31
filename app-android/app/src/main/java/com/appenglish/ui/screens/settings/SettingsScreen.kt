@@ -63,7 +63,7 @@ fun SettingsScreen(
             }
             Spacer(Modifier.height(16.dp))
             Button(
-                onClick = { UpdateManager().checkForUpdate(context as android.app.Activity) },
+                onClick = { UpdateManager().checkForUpdate(context) },
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()

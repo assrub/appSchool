@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.appenglish.data.repository.ContentRepository
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.ExerciseItem
+import com.appenglish.domain.model.UnitTheory
+import com.appenglish.domain.model.TheorySection
+import com.appenglish.domain.model.Tip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +21,7 @@ data class BlocksUiState(
     val unitName: String = "",
     val topicId: String = "",
     val blocks: List<ExerciseBlock> = emptyList(),
+    val topicTheory: UnitTheory? = null,
     val error: String? = null
 )
 
@@ -47,10 +51,18 @@ class BlocksViewModel @Inject constructor(
                                 onSuccess = { topic ->
                                     val unit = topic.units.find { it.id == unitId }
                                     if (unit != null) {
+                                        val theory = UnitTheory(
+                                            text = topic.theory.text,
+                                            sections = emptyList(),
+                                            headers = topic.theory.table?.headers ?: emptyList(),
+                                            rows = topic.theory.table?.rows ?: emptyList(),
+                                            tips = topic.theory.tips.map { Tip(it.emoji, it.text) }
+                                        )
                                         _uiState.value = _uiState.value.copy(
                                             isLoading = false,
                                             unitName = unit.title,
                                             topicId = topic.id,
+                                            topicTheory = theory,
                                             blocks = unit.blocks.map { b ->
                                                 ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint) })
                                             }
