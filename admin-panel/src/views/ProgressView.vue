@@ -13,7 +13,11 @@
               <template #append><v-icon>mdi-chevron-right</v-icon></template>
             </v-list-item>
           </v-list>
-          <v-card-text v-if="!loadingUsers && users.length===0" class="text-center text-grey">No hay usuarios. Creá uno en "Usuarios".</v-card-text>
+          <v-card-text v-if="!loadingUsers && users.length===0" class="text-center text-grey">
+        <p v-if="errorUsers" class="text-error mb-2">Error: {{ errorUsers }}</p>
+        <p>No hay usuarios. Creá uno en "Usuarios".</p>
+        <p class="text-caption mt-2">Si ya creaste usuarios, asegurate de haber hecho <code>git pull && docker compose up -d --build</code> en el VPS.</p>
+      </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="12" md="8">
@@ -68,16 +72,19 @@ const users = ref([])
 const selectedUser = ref(null)
 const loadingUsers = ref(true)
 const loadingDetail = ref(false)
+const errorUsers = ref('')
 const progressData = ref({ progress: [], errors: [], sessions: [] })
 
 async function fetchUsers() {
   loadingUsers.value = true
+  errorUsers.value = ''
   try {
     const { data } = await api.get('/admin/users/progress-summary')
     users.value = data || []
     if (data.length && !selectedUser.value) selectUser(data[0])
   } catch (e) {
     users.value = []
+    errorUsers.value = e.response?.data?.detail || e.message || 'Error de conexión'
   } finally {
     loadingUsers.value = false
   }
