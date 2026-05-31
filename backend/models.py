@@ -175,7 +175,7 @@ class AnswerHistory(Base):
     __tablename__ = "answer_history"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    device_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
     topic_id: Mapped[str] = mapped_column(String(100), nullable=False)
     unit_id: Mapped[str] = mapped_column(String(100), nullable=False)
     exercise_item_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -189,11 +189,11 @@ class AnswerHistory(Base):
 class Progress(Base):
     __tablename__ = "progress"
     __table_args__ = (
-        UniqueConstraint("device_id", "topic_id", "unit_id", name="uq_progress_device_topic_unit"),
+        UniqueConstraint("user_id", "topic_id", "unit_id", name="uq_progress_user_topic_unit"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    device_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
     topic_id: Mapped[str] = mapped_column(String(100), nullable=False)
     unit_id: Mapped[str] = mapped_column(String(100), nullable=False)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -209,7 +209,7 @@ class StudySession(Base):
     __tablename__ = "study_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    device_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
     topic_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     started_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
     ended_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
@@ -221,11 +221,11 @@ class StudySession(Base):
 class DictionaryEntry(Base):
     __tablename__ = "dictionary_entries"
     __table_args__ = (
-        UniqueConstraint("device_id", "word", name="uq_dict_device_word"),
+        UniqueConstraint("user_id", "word", name="uq_dict_user_word"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    device_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
     word: Mapped[str] = mapped_column(String(255), nullable=False)
     translation: Mapped[str] = mapped_column(String(500), nullable=False)
     source_lang: Mapped[str] = mapped_column(String(10), default="en")
@@ -276,4 +276,16 @@ class AdminUser(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+
+
+class AppUser(Base):
+    """Child/student user for login on the Android app."""
+    __tablename__ = "app_users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)

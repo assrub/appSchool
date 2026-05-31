@@ -6,6 +6,9 @@ class LoginRequest(BaseModel):
     password: str
 
 
+AppLoginRequest = LoginRequest  # Same fields, just different endpoint
+
+
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -15,3 +18,11 @@ class LoginResponse(BaseModel):
 class RefreshResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class AppLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    userId: int
+    username: str
+    displayName: str

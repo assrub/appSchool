@@ -10,7 +10,7 @@ from sqlalchemy import select, text, delete as sqldelete
 from models import (
     Subject, Topic, TopicTheory, TheorySection, TheoryVideo,
     ExerciseUnit, UnitTheory, UnitTheorySection,
-    ExerciseBlock, ExerciseItem, AdminUser,
+    ExerciseBlock, ExerciseItem, AdminUser, AppUser,
 )
 from services.auth_service import hash_password
 
@@ -63,6 +63,17 @@ async def seed():
             )
             db.add(admin)
             print("Created admin user: admin / admin123")
+
+        # Create default app user (Fausti)
+        app_user_check = await db.execute(select(AppUser).where(AppUser.username == "fausti"))
+        if not app_user_check.scalar_one_or_none():
+            app_user = AppUser(
+                username="fausti",
+                password_hash=hash_password("123"),
+                display_name="Fausti",
+            )
+            db.add(app_user)
+            print("Created app user: fausti / 123")
 
         # Load subjects.json
         subjects_path = os.path.join(CONTENT_DIR, "subjects.json")
