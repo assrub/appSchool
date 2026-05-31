@@ -47,3 +47,12 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.get("/api/v1/version")
+async def version():
+    return {
+        "versionCode": 1,
+        "versionName": "1.0.0",
+        "apkUrl": "/uploads/app-release.apk",
+    }

@@ -10,10 +10,15 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.appenglish.ui.navigation.AppNavGraph
 import com.appenglish.ui.theme.AppEnglishTheme
+import com.appenglish.util.UpdateManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var updateManager: UpdateManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -25,5 +30,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        updateManager.checkForUpdate(this)
     }
 }
