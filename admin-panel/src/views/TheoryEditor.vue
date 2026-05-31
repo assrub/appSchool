@@ -69,7 +69,7 @@ const backRoute = computed(() => {
   return route.query.topicId ? `/topics/${route.query.topicId}/units` : null
 })
 
-const backLabel = computed(() => type === 'topic' ? '< Temas' : '< Unidades')
+const backLabel = computed(() => type === 'topic' ? 'Temas' : 'Unidades')
 
 const previewHtml = computed(() => {
   return blocks.value.map(b => {

@@ -22,6 +22,7 @@
               <v-tooltip text="Editar materia" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(s)" /></template></v-tooltip>
               <v-tooltip text="Ver temas" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="secondary" :to="`/subjects/${s.id}/topics`" /></template></v-tooltip>
               <v-tooltip text="Desactivar materia" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(s)" /></template></v-tooltip>
+              <v-tooltip text="Eliminar permanentemente" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(s)" /></template></v-tooltip>
             </td>
           </tr>
         </tbody>
@@ -62,4 +63,6 @@ function openDialog(item=null) { editing.value=item; form.value=item?{...item}:{
 async function save() { saving.value=true; try { if(editing.value) await api.put(`/admin/subjects/${editing.value.id}`,form.value); else await api.post('/admin/subjects',form.value); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
 function confirmDelete(s) { toDelete.value=s; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/subjects/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
+function confirmHardDelete(s) { if(confirm(`¿Eliminar "${s.name}" PERMANENTEMENTE? Se borrarán TODOS los temas, unidades y ejercicios.`)) doHardDelete(s) }
+async function doHardDelete(s) { await api.delete(`/admin/subjects/${s.id}/hard`); await fetchData() }
 </script>

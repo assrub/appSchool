@@ -10,6 +10,7 @@
               <v-tooltip text="Editar teoría" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="{ path: `/theory/topic/${t.id}`, query: { subjectId } }" /></template></v-tooltip>
               <v-tooltip text="Editar tema" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(t)" /></template></v-tooltip>
               <v-tooltip text="Desactivar" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(t)" /></template></v-tooltip>
+              <v-tooltip text="Eliminar permanentemente" location="top"><template #activator="{ props: tp }"><v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(t)" /></template></v-tooltip>
             </td></tr></tbody></v-table>
       <v-card-text v-if="!loading && items.length===0" class="text-center text-grey">No hay temas.</v-card-text>
     </v-card>
@@ -41,4 +42,6 @@ function openDialog(topic=null) { editing.value=topic; form.value=topic?{...topi
 async function save() { saving.value=true; try { if(editing.value) await api.put(`/admin/topics/${editing.value.id}`,form.value); else await api.post('/admin/topics',form.value); dialog.value=false; await fetchData() } catch(e) { alert(e.response?.data?.detail||'Error') } finally { saving.value=false } }
 function confirmDelete(t) { toDelete.value=t; deleteDialog.value=true }
 async function doDelete() { await api.delete(`/admin/topics/${toDelete.value.id}`); deleteDialog.value=false; await fetchData() }
+function confirmHardDelete(t) { if(confirm(`¿Eliminar "${t.name}" PERMANENTEMENTE?`)) doHardDelete(t) }
+async function doHardDelete(t) { await api.delete(`/admin/topics/${t.id}/hard`); await fetchData() }
 </script>

@@ -55,6 +55,11 @@ const routes = [
         component: () => import('../views/TheoryEditor.vue'),
         props: true,
       },
+      {
+        path: 'progress',
+        name: 'progress',
+        component: () => import('../views/ProgressView.vue'),
+      },
     ],
   },
   {
