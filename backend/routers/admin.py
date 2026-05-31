@@ -1110,11 +1110,11 @@ async def _upsert_topic(db: AsyncSession, data: dict):
 async def _upsert_unit(db: AsyncSession, data: dict):
     unit = await db.get(ExerciseUnit, data["id"])
     if not unit:
-        unit = ExerciseUnit(id=data["id"], topic_id=data["topic_id"], title=data["name"], input_mode=data.get("input_mode","tap"), explanation=data.get("explanation",""))
+        unit = ExerciseUnit(id=data["id"], topic_id=data["topic_id"], title=data.get("title", data["id"]), explanation=data.get("explanation",""))
         db.add(unit)
         await db.flush()
     else:
-        for k in ["title", "input_mode", "explanation"]:
+        for k in ["title", "explanation"]:
             if k in data: setattr(unit, k, data[k])
 
     exercises = data.get("exercises", [])

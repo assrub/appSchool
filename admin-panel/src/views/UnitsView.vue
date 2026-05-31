@@ -12,9 +12,6 @@
       <v-btn color="success" variant="tonal" size="small" class="mr-2" @click="topicAction('unlock-all')">
         <v-icon start>mdi-lock-open</v-icon> Desbloquear todo
       </v-btn>
-      <v-btn color="orange" variant="tonal" size="small" class="mr-2" @click="topicAction('reset-all')">
-        <v-icon start>mdi-restart</v-icon> Resetear todo
-      </v-btn>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openDialog()">Nueva Unidad</v-btn>
     </div>
 
@@ -36,7 +33,6 @@
                 <th>Ord.</th>
                 <th>ID</th>
                 <th>Título</th>
-                <th>Input</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -49,11 +45,6 @@
                 </td>
                 <td class="font-weight-medium">{{ u.id }}</td>
                 <td>{{ u.title }}</td>
-                <td>
-                  <v-chip :color="u.input_mode === 'tap' ? 'success' : 'warning'" size="small" variant="tonal">
-                    {{ u.input_mode === 'tap' ? 'Tocar' : 'Escribir' }}
-                  </v-chip>
-                </td>
                 <td>
                   <v-chip :color="u.is_locked ? 'grey' : 'success'" size="small" variant="tonal">
                     <v-icon start size="14">{{ u.is_locked ? 'mdi-lock' : 'mdi-lock-open' }}</v-icon>
@@ -77,11 +68,6 @@
                     </template>
                   </v-tooltip>
                   <v-switch v-model="u.is_locked" color="warning" hide-details density="compact" inline @change="toggleLock(u, $event)" />
-                  <v-tooltip text="Resetear progreso" location="top">
-                    <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-restart" v-bind="tp" variant="text" size="small" color="orange" @click="confirmReset(u)" />
-                    </template>
-                  </v-tooltip>
                   <v-tooltip text="Eliminar" location="top">
                     <template #activator="{ props: tp }">
                       <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(u)" />
@@ -109,7 +95,6 @@
             <v-col cols="7">
               <v-text-field v-model="form.id" label="ID" :disabled="!!editing" :error-messages="v.errors.id" class="mb-2" />
               <v-text-field v-model="form.title" label="Título" :error-messages="v.errors.title" class="mb-2" />
-              <v-select v-model="form.input_mode" label="Modo" :items="[{ title: 'Tocar', value: 'tap' }, { title: 'Escribir', value: 'type' }]" :error-messages="v.errors.input_mode" class="mb-2" />
               <v-textarea v-model="form.explanation" label="Explicación" variant="outlined" rows="2" class="mb-3" />
               <div class="text-caption mb-1">Sonido de acierto</div>
               <div class="d-flex align-center mb-2">
@@ -150,20 +135,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <v-dialog v-model="resetDialog" max-width="400">
-      <v-card rounded="lg">
-        <v-card-title>¿Resetear progreso?</v-card-title>
-        <v-card-text>
-          Se reseteará el progreso de "<b>{{ toReset?.title }}</b>" para <b>TODOS</b> los usuarios.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="resetDialog = false">Cancelar</v-btn>
-          <v-btn color="orange" @click="doReset">Resetear</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -185,11 +156,9 @@ const loading = ref(true)
 const error = ref('')
 const dialog = ref(false)
 const deleteDialog = ref(false)
-const resetDialog = ref(false)
 const editing = ref(null)
 const saving = ref(false)
 const toDelete = ref(null)
-const toReset = ref(null)
 const uploadType = ref('')
 
 const form = ref({
@@ -362,32 +331,7 @@ async function doDelete() {
 }
 
 async function toggleLock(unit, lock) {
-  try {
-    await api.put(`/admin/units/${unit.id}/${lock ? 'lock' : 'unlock'}`)
-    snackbar.success(lock ? 'Unidad bloqueada' : 'Unidad desbloqueada')
-    await fetchData()
-  } catch (e) {
-    snackbar.error(e.response?.data?.detail || 'Error al cambiar estado')
-  }
-}
-
-function confirmReset(u) {
-  toReset.value = u
-  resetDialog.value = true
-}
-
-async function doReset() {
-  try {
-    await api.delete(`/admin/progress/${topicId}/${toReset.value.id}/reset-all-users`)
-    snackbar.success('Progreso reseteado')
-    resetDialog.value = false
-  } catch (e) {
-    snackbar.error(e.response?.data?.detail || 'Error al resetear')
-  }
-}
-
-async function topicAction(action) {
-  const labels = { 'lock-all': 'Bloquear', 'unlock-all': 'Desbloquear', 'reset-all': 'Resetear' }
+  const labels = { 'lock-all': 'Bloquear', 'unlock-all': 'Desbloquear' }
   try {
     await api.post(`/admin/topics/${topicId}/${action}`)
     snackbar.success(`${labels[action]} completado`)
