@@ -98,7 +98,8 @@ async function copyTemplate() {
     script.value = data.template
     jsonError.value = null
     validationResult.value = null
-    snackbar.success('Template copiado')
+    await navigator.clipboard.writeText(data.template)
+    snackbar.success('Template copiado al portapapeles')
   } catch (e) {
     snackbar.error('Error al obtener template')
   }
@@ -134,7 +135,7 @@ function validateJson() {
         }
         if (action.action === 'upsert_unit') {
           if (!action.topic_id) issues.push(`Acción #${i + 1} (upsert_unit): falta "topic_id"`)
-          if (action.name === undefined) issues.push(`Acción #${i + 1} (upsert_unit): usar "name" (no "title")`)
+          if (action.title === undefined) issues.push(`Acción #${i + 1} (upsert_unit): falta "title"`)
           if (action.exercises && !Array.isArray(action.exercises)) issues.push(`Acción #${i + 1}: "exercises" debe ser array`)
         }
         if (action.action === 'upsert_subject' && action.name === undefined) {

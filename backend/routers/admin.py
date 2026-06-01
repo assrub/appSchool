@@ -778,11 +778,11 @@ class ScriptRequest(PydanticBase):
     version: str = "1.0"
     actions: list[dict]
 
-SCRIPT_TEMPLATE = r"""# AppSchool — Formato de Script para IA
+SCRIPT_TEMPLATE = r"""# AppSchool — Guía Completa para Crear Contenido Educativo
 
-## Estructura general
+## 📋 Estructura General del Script
 
-Envía un JSON con esta forma:
+Todo script debe tener esta estructura básica:
 
 ```json
 {
@@ -791,180 +791,353 @@ Envía un JSON con esta forma:
 }
 ```
 
-Cada acción es un objeto con `"action"` (string) y los campos correspondientes.
+Cada elemento en "actions" es una operación: crear/actualizar materia, tema, unidad, o eliminar.
 
 ---
 
-## Acciones disponibles
+## 🎓 1. CREAR MATERIA (upsert_subject)
 
-### 1. upsert_subject — Crear o actualizar materia
+La materia es el nivel más alto (ej: "Inglés", "Matemáticas").
 
 ```json
 {
   "action": "upsert_subject",
-  "id": "english",           // ID único (sin espacios, ej: math, science)
-  "name": "Inglés",           // Nombre visible
-  "icon": "📚",               // Emoji (opcional)
-  "color": "#4CAF50"          // Color HEX (opcional)
+  "id": "english",
+  "name": "Inglés",
+  "icon": "📚",
+  "color": "#4CAF50"
 }
 ```
 
-### 2. upsert_topic — Crear o actualizar tema
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| id | Identificador único (sin espacios, minúsculas) | Sí |
+| name | Nombre visible (ej: "Inglés") | Sí |
+| icon | Emoji para mostrar (ej: 📚, 🌍, 🔢) | No |
+| color | Color HEX para el tema (ej: #4CAF50) | No |
+
+---
+
+## 📖 2. CREAR TEMA (upsert_topic)
+
+El tema agrupa unidades de contenido (ej: "Verbo To Be", "Past Simple").
 
 ```json
 {
   "action": "upsert_topic",
-  "id": "verb-to-be",         // ID único (sin espacios)
-  "subject_id": "english",    // ID de la materia padre
-  "name": "Verbo To Be",      // Nombre visible
-  "difficulty": 1,            // 1 a 5 (opcional)
-  "icon": "📝",               // Emoji (opcional)
-  "theory": {                 // Teoría del tema (opcional)
-    "blocks": [
-      {
-        "title": "¿Qué es el verbo to be?",
-        "html": "<h2>El verbo más importante</h2><p>Sirve para decir <b>quién sos</b>, <b>cómo estás</b>...</p>"
-      }
-    ]
+  "id": "verb-to-be",
+  "subject_id": "english",
+  "name": "Verbo To Be",
+  "difficulty": 1,
+  "icon": "📝",
+  "theory": {
+    "blocks": [ ... ],
+    "tips": [ ... ]
   }
 }
 ```
 
-### 3. upsert_unit — Crear o actualizar unidad de ejercicios
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| id | Identificador único | Sí |
+| subject_id | ID de la materia padre | Sí |
+| name | Nombre visible | Sí |
+| difficulty | 1 (fácil) a 5 (difícil) | No (default: 1) |
+| icon | Emoji | No |
+| theory | Teoría del tema (ver abajo) | No |
+
+### 📚 TEORÍA DEL TEMA
+
+La teoría del tema explica el CONCEPTO GENERAL. Se muestra cuando el usuario entra a los bloques de cualquier unidad de ese tema.
 
 ```json
-{
-  "action": "upsert_unit",
-  "id": "affirmative",         // ID único
-  "topic_id": "verb-to-be",    // ID del tema padre
-  "title": "Afirmativo (am/is/are)",
-  "input_mode": "tap",         // "tap" = tocar opciones, "type" = escribir
-  "explanation": "Completa con am, is o are",
-  "exercises": [ ... ]         // Lista de ejercicios (ver abajo)
+"theory": {
+  "blocks": [
+    {
+      "title": "Título de esta sección",
+      "html": "<p>Contenido HTML con formato...</p>"
+    }
+  ],
+  "tips": [
+    { "emoji": "💡", "text": "Un consejo útil para recordar" }
+  ]
 }
 ```
 
-### 4. delete_unit — Eliminar unidad
-```json
-{ "action": "delete_unit", "id": "affirmative" }
-```
+#### Etiquetas HTML permitidas en "html":
 
-### 5. delete_topic — Eliminar tema
-```json
-{ "action": "delete_topic", "id": "verb-to-be" }
-```
+| Etiqueta | Uso | Ejemplo |
+|----------|-----|---------|
+| `<p>` | Párrafo | `<p>Texto normal</p>` |
+| `<b>` | Negrita | `<b>importante</b>` |
+| `<i>` | Cursiva | `<i>énfasis</i>` |
+| `<u>` | Subrayado | `<u>subrayado</u>` |
+| `<h1>` | Título grande | `<h1>Título Principal</h1>` |
+| `<h2>` | Subtítulo | `<h2>Subsección</h2>` |
+| `<h3>` | Sub-subtítulo | `<h3>Detalle</h3>` |
+| `<ul>` | Lista con puntos | `<ul><li>Item 1</li><li>Item 2</li></ul>` |
+| `<ol>` | Lista numerada | `<ol><li>Paso 1</li><li>Paso 2</li></ol>` |
+| `<li>` | Elemento de lista | `<li>contenido</li>` |
+| `<table>` | Tabla | `<table>...</table>` |
+| `<tr>` | Fila de tabla | `<tr>...</tr>` |
+| `<th>` | Encabezado de columna | `<th>Nombre</th>` |
+| `<td>` | Celda de datos | `<td>valor</td>` |
+| `<blockquote>` | Cita destacada | `<blockquote>Frase célebre</blockquote>` |
+| `<mark>` | Resaltado amarillo | `<mark>importante</mark>` |
+| `<br>` | Salto de línea | `línea 1<br>línea 2` |
 
-### 6. delete_subject — Eliminar materia
+#### Ejemplo de teoría completa para un tema:
+
 ```json
-{ "action": "delete_subject", "id": "english" }
+"theory": {
+  "blocks": [
+    {
+      "title": "¿Qué es el Present Simple?",
+      "html": "<p>El <b>Present Simple</b> se usa para:</p><ul><li>🎯 Rutinas diarias</li><li>🌟 Hechos universales</li><li>💬 Preferencias y opiniones</li></ul><p>Ejemplos:<br><i>I wake up at 7am.</i><br><i>The sun rises in the east.</i></p>"
+    },
+    {
+      "title": "Formación del Presente Simple",
+      "html": "<table><tr><th>Sujeto</th><th>Verbo</th><th>Ejemplo</th></tr><tr><td>I / You / We / They</td><td>play</td><td>I play football</td></tr><tr><td>He / She / It</td><td>play + s</td><td>She plays tennis</td></tr></table>"
+    },
+    {
+      "title": "⚠️ Cuidado con las excepciones",
+      "html": "<p>Los verbos terminados en <b>-y</b> cambian a <b>-ies</b>:</p><ul><li>study → studies</li><li>fly → flies</li></ul><p>Los verbos terminados en <b>-ss, -x, -z, -ch, -sh</b> también add <b>-es</b>:</p><ul><li>kiss → kisses</li><li>watch → watches</li></ul>"
+    }
+  ],
+  "tips": [
+    { "emoji": "💡", "text": "Recordá: I/You/We/They = sin -s, He/She/It = con -s" },
+    { "emoji": "🎯", "text": "Si la palabra termina en y preceded por consonante, cambia y por ies" }
+  ]
+}
 ```
 
 ---
 
-## Tipos de ejercicios
+## 📝 3. CREAR UNIDAD (upsert_unit)
 
-Cada unidad puede tener una lista `"exercises"` con bloques de ejercicios:
+La unidad contiene EJERCICIOS PRACTICOS sobre un aspecto específico del tema.
 
 ```json
 {
-  "exercises": [
+  "action": "upsert_unit",
+  "id": "present-simple-affirm",
+  "topic_id": "present-simple",
+  "title": "Afirmativo",
+  "explanation": "Completá con la forma correcta del verbo",
+  "theory": {
+    "blocks": [ ... ],
+    "tips": [ ... ]
+  },
+  "exercises": [ ... ]
+}
+```
+
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| id | Identificador único | Sí |
+| topic_id | ID del tema padre | Sí |
+| title | Nombre visible | Sí |
+| explanation | Instrucciones para el alumno | No |
+| theory | Teoría específica de esta unidad | No |
+| exercises | Lista de ejercicios | Sí |
+
+### 📚 TEORÍA DE LA UNIDAD
+
+A diferencia de la teoría del TEMA (que es general), la teoría de la UNIDAD explica algo ESPECÍFICO de esta练习.
+
+```json
+"theory": {
+  "blocks": [
     {
-      "title": "PASO 1: Pronombres",   // Título del bloque (opcional)
-      "items": [ ... ]                    // Lista de ejercicios del bloque
-    },
-    {
-      "title": "PASO 2: Familia",
-      "items": [ ... ]
+      "title": "Afirmativo: Oraciones afirmativas",
+      "html": "<p>Para formar el afirmativo:</p><table><tr><th>Sujeto</th><th>Ser</th><th>Ejemplo</th></tr><tr><td>I</td><td>am</td><td>I am happy</td></tr><tr><td>He/She/It</td><td>is</td><td>She is tall</td></tr><tr><td>You/We/They</td><td>are</td><td>They are here</td></tr></table>"
     }
+  ],
+  "tips": [
+    { "emoji": "💡", "text": "Recordá: I → am, He/She/It → is, You/We/They → are" }
   ]
 }
 ```
 
-Si no ponés bloques, los ejercicios van directamente en la unidad:
+---
+
+## 🎯 4. TIPOS DE EJERCICIOS
+
+### Estructura de ejercicios
+
+Los ejercicios pueden organizarse en BLOQUES (para separar por dificultad/tema) o planos:
+
+**Con bloques (recomendado para unidades grandes):**
 
 ```json
-{
-  "exercises": [
-    { "type": "fill-blank", "sentence": "I ___ happy.", "answer": "am" },
-    { "type": "fill-blank", "sentence": "She ___ a doctor.", "answer": "is" }
-  ]
-}
+"exercises": [
+  {
+    "title": "PASO 1: Ejercicios básicos",
+    "items": [ ... ]
+  },
+  {
+    "title": "PASO 2: Ejercicios intermedios",
+    "items": [ ... ]
+  }
+]
 ```
 
-### fill-blank — Completar el espacio
+**Sin bloques (para unidades simples):**
+
+```json
+"exercises": [
+  { "type": "fill-blank", ... },
+  { "type": "fill-blank", ... }
+]
+```
+
+---
+
+### 4a. fill-blank — Completar el espacio
+
+El ejercicio más común. El usuario completa un espacio en blanco.
 
 ```json
 {
   "type": "fill-blank",
-  "sentence": "I ______ a happy student.",   // Usá ______ para el blank
-  "answer": "am",                              // Respuesta correcta principal
-  "answers": ["I am", "I'm"],                  // Otras respuestas válidas (opcional)
-  "options": ["am", "is", "are"],              // Botones visibles en modo tap (opcional)
-  "hint": "AM → Solo YO",                      // Pista (opcional)
-  "input_mode": "tap"                          // "tap" o "type" (opcional, hereda de la unidad)
+  "sentence": "I ______ a student.",
+  "answer": "am",
+  "answers": ["am", "Am"],
+  "options": ["am", "is", "are"],
+  "hint": "Para I usamos AM"
 }
 ```
 
-### multiple-choice — Elegir opción
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| sentence | Oración con ______ para el blank | Sí |
+| answer | Respuesta correcta | Sí |
+| answers | Otras respuestas válidas | No |
+| options | Opciones para botones (modo tap) | No |
+| hint | Pista que ve el alumno | No |
+
+**Regla para ______:** Usá exactamente 6 guiones bajos para el espacio a completar.
+
+---
+
+### 4b. multiple-choice — Elegir opción
+
+Una pregunta con múltiples opciones.
 
 ```json
 {
   "type": "multiple-choice",
-  "question": "¿Cómo se dice 'yo soy'?",   // La pregunta
-  "options": ["I am", "You are", "He is"],  // Opciones (mínimo 2)
-  "answer": "I am"                           // La correcta (debe estar en options)
+  "question": "¿Cómo se dice 'Él juega al fútbol'?",
+  "options": ["He play football", "He plays football", "He playing football"],
+  "answer": "He plays football",
+  "hint": "Con He/She/It el verbo termina en -s"
 }
 ```
 
-### reorder — Ordenar palabras
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| question | La pregunta a responder | Sí |
+| options | Array de opciones (mínimo 2) | Sí |
+| answer | Opción correcta (debe estar en options) | Sí |
+| hint | Pista | No |
+
+---
+
+### 4c. reorder — Ordenar palabras
+
+Mezclar las palabras y el usuario las ordena.
 
 ```json
 {
   "type": "reorder",
-  "words": ["am", "I", "happy"],             // Palabras desordenadas
-  "correct_order": ["I", "am", "happy"],     // Orden correcto
-  "hint": "Empieza con I"                     // Pista (opcional)
+  "words": ["am", "I", "happy"],
+  "correct_order": ["I", "am", "happy"],
+  "hint": "Primero va el pronombre"
 }
 ```
 
-### listening — Escuchar y escribir
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| words | Palabras desordenadas | Sí |
+| correct_order | Orden correcto | Sí |
+| hint | Pista | No |
+
+---
+
+### 4d. true-false — ¿Es correcta la oración?
+
+Evaluar si una oración es verdadera o falsa.
 
 ```json
 {
-  "type": "listening",
-  "sentence": "She is a doctor",              // La frase que se escucha
-  "audio_url": "/audio/doctor.mp3",           // URL del audio
-  "answer": "She is a doctor"                  // Lo que debe escribir el alumno
+  "type": "true-false",
+  "sentence": "I are happy",
+  "is_correct": false,
+  "answer": "I am happy"
 }
 ```
 
-### matching — Unir columnas
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| sentence | Oración a evaluar | Sí |
+| is_correct | true si es correcta, false si es incorrecta | Sí |
+| answer | Corrección (solo si es falsa) | No |
+
+---
+
+### 4e. matching — Unir columnas
+
+Relacionar elementos de dos columnas.
 
 ```json
 {
   "type": "matching",
   "pairs": [
-    {"left": "I", "right": "am"},
-    {"left": "She", "right": "is"},
-    {"left": "They", "right": "are"}
+    { "left": "I", "right": "am" },
+    { "left": "She", "right": "is" },
+    { "left": "They", "right": "are" }
   ]
 }
 ```
 
-### true-false — ¿Es correcta la frase?
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| pairs | Array de pares {left, right} | Sí |
+
+---
+
+### 4f. listening — Escuchar y escribir
+
+Escuchar un audio y escribir lo que se escucha.
 
 ```json
 {
-  "type": "true-false",
-  "sentence": "I are happy",           // La frase a evaluar
-  "is_correct": false,                  // ¿Es correcta?
-  "answer": "I am happy"               // Corrección (solo si es falsa)
+  "type": "listening",
+  "sentence": "She is a doctor",
+  "audio_url": "/audio/doctor.mp3",
+  "answer": "She is a doctor"
 }
+```
+
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| sentence | Texto que se escucha | Sí |
+| audio_url | URL del archivo de audio | Sí |
+| answer | Lo que debe escribir el alumno | Sí |
+
+---
+
+## 🗑️ 5. ELIMINAR CONTENIDO
+
+```json
+{ "action": "delete_unit", "id": "present-simple-affirm" }
+{ "action": "delete_topic", "id": "present-simple" }
+{ "action": "delete_subject", "id": "english" }
 ```
 
 ---
 
-## Ejemplo completo: Crear materia + tema + unidad con ejercicios
+## ✨ EJEMPLO COMPLETO: Inglés - Present Simple
 
 ```json
 {
@@ -987,31 +1160,92 @@ Si no ponés bloques, los ejercicios van directamente en la unidad:
       "theory": {
         "blocks": [
           {
-            "title": "¿Cuándo se usa?",
-            "html": "<p>El <b>Present Simple</b> se usa para hablar de <u>rutinas</u> y <u>hechos</u>.</p><ul><li>I wake up at 7am.</li><li>The sun rises in the east.</li></ul>"
+            "title": "¿Cuándo usamos el Present Simple?",
+            "html": "<p>El <b>Present Simple</b> sirve para hablar de:</p><ul><li>🎯 <b>Rutinas diarias</b>: I wake up at 7am.</li><li>🌟 <b>Hechos generales</b>: The sun rises in the east.</li><li>💬 <b>Preferencias</b>: I like pizza.</li></ul>"
           },
           {
-            "title": "Reglas",
-            "html": "<table><tr><th>Sujeto</th><th>Verbo</th></tr><tr><td>I/You/We/They</td><td>play</td></tr><tr><td>He/She/It</td><td>plays</td></tr></table>"
+            "title": "Cómo formar oraciones",
+            "html": "<h2>Afirmativo</h2><table><tr><th>Sujeto</th><th>Verbo</th><th>Ejemplo</th></tr><tr><td>I</td><td>am</td><td>I am happy</td></tr><tr><td>He/She/It</td><td>is</td><td>She is tall</td></tr><tr><td>You/We/They</td><td>are</td><td>They are here</td></tr></table><h2>Negativo</h2><p>Sujeto + <b>don't/doesn't</b> + verbo base</p><p>I <b>don't</b> like fish. / She <b>doesn't</b> play tennis.</p><h2>Pregunta</h2><p><b>Do/Does</b> + sujeto + verbo base?</p><p><b>Do</b> you speak English? / <b>Does</b> he live here?</p>"
+          },
+          {
+            "title": "⚠️ Errores comunes",
+            "html": "<p><mark>错误 comun:</mark> I are happy → ✅ Correcto: <b>I am happy</b></p><p><mark>错误 comun:</mark> She don't like → ✅ Correcto: <b>She doesn't like</b></p>"
           }
+        ],
+        "tips": [
+          { "emoji": "💡", "text": "Recordá: I → am, You/We/They → are, He/She/It → is" },
+          { "emoji": "🎯", "text": "Don't = Do not, Doesn't = Does not" }
         ]
       }
     },
     {
       "action": "upsert_unit",
-      "id": "present-simple-affirm",
+      "id": "ps-affirm",
       "topic_id": "present-simple",
-      "title": "Afirmativo",
-      "input_mode": "tap",
-      "explanation": "Completá con la forma correcta del verbo",
+      "title": "Oraciones afirmativas",
+      "explanation": "Completá con am, is o are",
+      "theory": {
+        "blocks": [
+          {
+            "title": "Afirmativo con el verbo TO BE",
+            "html": "<p>Sujeto + <b>am/is/are</b> + complemento</p><table><tr><th>Yo</th><td>I <b>am</b> ('m)</td><td>I am happy / I'm happy</td></tr><tr><th>Él/Ella</th><td>He/She/It <b>is</b> ('s)</td><td>He is tall / He's tall</td></tr><tr><th>Nosotros</th><td>We/You/They <b>are</b> ('re)</td><td>They are here / They're here</td></tr></table>"
+          }
+        ],
+        "tips": [
+          { "emoji": "💡", "text": "'am, is, are' se pueden contractar: I'm, He's, She's, It's, You're, We're, They're" }
+        ]
+      },
       "exercises": [
         {
-          "title": "PASO 1: Rutinas diarias",
+          "title": "PASO 1: Con I, You, We, They",
           "items": [
-            { "type": "fill-blank", "sentence": "I ______ up at 7am.", "answer": "wake", "hint": "wake up = despertarse" },
-            { "type": "fill-blank", "sentence": "She ______ breakfast at 8am.", "answer": "has", "hint": "have → has con He/She/It" },
-            { "type": "multiple-choice", "question": "¿Cómo se dice 'Él juega al fútbol'?", "options": ["He play football", "He plays football", "He playing football"], "answer": "He plays football" },
-            { "type": "reorder", "words": ["to", "I", "school", "go"], "correct_order": ["I", "go", "to", "school"] }
+            { "type": "fill-blank", "sentence": "I ______ happy.", "answer": "am", "options": ["am", "is", "are"], "hint": "Usamos AM con I" },
+            { "type": "fill-blank", "sentence": "They ______ at home.", "answer": "are", "options": ["am", "is", "are"], "hint": "Usamos ARE con They" },
+            { "type": "multiple-choice", "question": "Seleccioná la oración correcta:", "options": ["I is tall", "I am tall", "I are tall"], "answer": "I am tall" },
+            { "type": "reorder", "words": ["happy", "We", "are"], "correct_order": ["We", "are", "happy"], "hint": "We primero" }
+          ]
+        },
+        {
+          "title": "PASO 2: Con He, She, It",
+          "items": [
+            { "type": "fill-blank", "sentence": "She ______ a teacher.", "answer": "is", "options": ["am", "is", "are"], "hint": "Usamos IS con She" },
+            { "type": "fill-blank", "sentence": "He ______ my brother.", "answer": "is", "options": ["am", "is", "are"], "hint": "Usamos IS con He" },
+            { "type": "multiple-choice", "question": "¿Cómo se dice 'Él es alto'?", "options": ["He are tall", "He is tall", "He tall"], "answer": "He is tall" },
+            { "type": "true-false", "sentence": "It is a cat.", "is_correct": true }
+          ]
+        }
+      ]
+    },
+    {
+      "action": "upsert_unit",
+      "id": "ps-negat",
+      "topic_id": "present-simple",
+      "title": "Oraciones negativas",
+      "explanation": "Completá con don't o doesn't",
+      "theory": {
+        "blocks": [
+          {
+            "title": "Negativo con verbos regulares",
+            "html": "<p>Sujeto + <b>don't/doesn't</b> + verbo base</p><table><tr><th>Sujeto</th><th>No</th><th>Verbo</th><th>Ejemplo</th></tr><tr><td>I/You/We/They</td><td>don't</td><td>play</td><td>I don't play soccer</td></tr><tr><td>He/She/It</td><td>doesn't</td><td>play</td><td>She doesn't play tennis</td></tr></table><p><b>Nota:</b> Con He/She/It el verbo NO lleva -s</p>"
+          }
+        ],
+        "tips": [
+          { "emoji": "💡", "text": "Doesn't = Does not. Recordá: con he/she/it NO agregamos -s al verbo" }
+        ]
+      },
+      "exercises": [
+        {
+          "title": "PASO 1: I, You, We, They",
+          "items": [
+            { "type": "fill-blank", "sentence": "I ______ like fish.", "answer": "don't", "options": ["don't", "doesn't"], "hint": "Con I usamos don't" },
+            { "type": "fill-blank", "sentence": "They ______ play football.", "answer": "don't", "options": ["don't", "doesn't"], "hint": "Con They usamos don't" }
+          ]
+        },
+        {
+          "title": "PASO 2: He, She, It",
+          "items": [
+            { "type": "fill-blank", "sentence": "She ______ eat pizza.", "answer": "doesn't", "options": ["don't", "doesn't"], "hint": "Con She usamos doesn't" },
+            { "type": "multiple-choice", "question": "¿Cómo se dice 'Él no juega al fútbol'?", "options": ["He don't play football", "He doesn't plays football", "He doesn't play football"], "answer": "He doesn't play football" }
           ]
         }
       ]
@@ -1022,17 +1256,34 @@ Si no ponés bloques, los ejercicios van directamente en la unidad:
 
 ---
 
-## Tips para crear buen contenido
+## 🎨 Consejos para crear contenido EXCELENTE
 
-1. **Usá emojis** en iconos de materias y temas (los chicos los aman)
-2. **Poné hints** en ejercicios difíciles para guiar sin dar la respuesta
-3. **Alterná tipos** de ejercicios para no aburrir (fill-blank, mc, reorder, listening)
-4. **Empezá fácil** (dificultad 1) y subí de a poco
-5. **Usá tablas** en la teoría para comparar (sujeto vs verbo)
-6. **Negritas y colores** en el HTML de teoría para resaltar lo importante
-7. **Ejemplos reales** que el chico pueda relacionar con su vida diaria
-8. **No más de 5 ejercicios por bloque** para mantener la atención
-""".strip()
+### Para Materias y Temas:
+1. **Usá emojis** en iconos (📚🕐📝🎯) — los chicos los adoran
+2. **La teoría del TEMA** debe explicar el concepto general
+3. **La teoría de la UNIDAD** debe explicar algo específico de esa práctica
+4. **Empezá con dificultad 1** y aumentá gradualmente
+
+### Para Teoría:
+1. **Usá tablas** para comparar reglas (sujeto → verbo)
+2. **Resaltá con `<mark>`** los errores comunes
+3. **Usá `<blockquote>`** para citas o ejemplos importantes
+4. **Poné tips útiles** con emojis (💡🎯⚠️)
+5. **Máximo 3-4 bloques** de teoría por tema/unidad
+
+### Para Ejercicios:
+1. **Máximo 5 ejercicios por bloque** para mantener la atención
+2. **Alterná tipos** de ejercicios (fill-blank, MC, reorder)
+3. **Poné hints** útiles que guíen sin dar la respuesta
+4. **Los primeros ejercicios** deben ser fáciles (dificultad 1)
+5. **Usá ejemplos reales** de la vida del chico
+
+### Estructura recomendada:
+- **1 materia** = 2-4 temas
+- **1 tema** = 3-6 unidades
+- **1 unidad** = 2-3 bloques de 4-5 ejercicios
+
+¡Así de simple! 🎓""".strip()
 
 @router.post("/script")
 async def execute_script(data: ScriptRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
