@@ -1926,3 +1926,39 @@ async def delete_image(
         os.remove(file_path)
         return {"status": "ok", "deleted": filename}
     raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+
+# ── Video Upload ─────────────────────────────────────────────
+
+VIDEOS_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads", "videos")
+os.makedirs(VIDEOS_DIR, exist_ok=True)
+
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/x-msvideo", "video/webm", "video/x-matroska"}
+MAX_VIDEO_SIZE = 50 * 1024 * 1024  # 50MB
+
+
+@router.post("/upload/video")
+async def upload_video(
+    file: UploadFile = File(...),
+    admin: dict = Depends(get_current_admin),
+):
+    if file.content_type not in ALLOWED_VIDEO_TYPES:
+        raise HTTPException(status_code=400, detail=f"Tipo de video no permitido: {file.content_type}. Solo se permiten: MP4, MOV, AVI, WebM, MKV")
+
+    if file.size and file.size > MAX_VIDEO_SIZE:
+        raise HTTPException(status_code=400, detail="El video es demasiado grande. Máximo 50MB")
+
+    ext = os.path.splitext(file.filename or "video")[1] or ".mp4"
+    safe_filename = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(VIDEOS_DIR, safe_filename)
+
+    async with aiofiles.open(file_path, "wb") as out_file:
+        content = await file.read()
+        await out_file.write(content)
+
+    return {
+        "url": f"/uploads/videos/{safe_filename}",
+        "filename": safe_filename,
+        "contentType": file.content_type,
+        "size": len(content)
+    }

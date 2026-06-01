@@ -18,8 +18,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -216,7 +215,6 @@ private fun CompletionContent(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExerciseContent(
     uiState: UnitExerciseUiState,
@@ -238,6 +236,15 @@ private fun ExerciseContent(
     var draggingWord by remember { mutableStateOf<String?>(null) }
     var isOverDropZone by remember { mutableStateOf(false) }
     var dropZoneRect by remember { mutableStateOf(Rect.Zero) }
+
+    var popupSentence by remember { mutableStateOf("") }
+    var popupHint by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(uiState.isCorrect, uiState.showingAnswer) {
+        if (uiState.isCorrect == true && uiState.showingAnswer && currentItem != null) {
+            popupSentence = currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer)
+            popupHint = currentItem.hint
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -313,13 +320,13 @@ private fun ExerciseContent(
                         val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
                         val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
 
-                        FlowRow(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
-                            verticalArrangement = Arrangement.Center
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (beforeText.isNotEmpty()) {
-                                TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier.padding(top = 2.dp))
+                                TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
                             }
 
                             Spacer(Modifier.width(6.dp))
@@ -363,7 +370,7 @@ private fun ExerciseContent(
 
                             Spacer(Modifier.width(6.dp))
                             if (afterText.isNotEmpty()) {
-                                TranslateableText(text = afterText, fontSize = 24, modifier = Modifier.padding(top = 2.dp))
+                                TranslateableText(text = afterText, fontSize = 24, modifier = Modifier)
                             }
                         }
 
@@ -500,8 +507,8 @@ private fun ExerciseContent(
         ) {
             ResultPopup(
                 isCorrect = true,
-                sentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem.answer) ?: "",
-                hint = currentItem?.hint,
+                sentence = popupSentence,
+                hint = popupHint,
                 onContinue = {
                     scope.launch {
                         delay(250)
