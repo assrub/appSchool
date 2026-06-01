@@ -575,7 +575,43 @@ function openDialog(item = null) {
 }
 
 function validateForm() {
-  return v.validateAll(form.value, validationRules.value)
+  if (!v.validateAll(form.value, validationRules.value)) return false
+
+  // Custom type-specific validation
+  const t = form.value.item_type
+  if (t === 'fill-blank') {
+    if (!form.value.sentence?.includes('_')) {
+      snackbar.warning('La frase debe contener ______ para marcar el espacio en blanco')
+      return false
+    }
+  }
+  if (t === 'multiple-choice') {
+    const validOpts = formOptions.value.filter(o => o.trim()).length
+    if (validOpts < 2) {
+      snackbar.warning('Múltiple choice necesita al menos 2 opciones')
+      return false
+    }
+  }
+  if (t === 'reorder') {
+    const validWords = wordsText.value.split('\n').map(w => w.trim()).filter(w => w).length
+    if (validWords < 2) {
+      snackbar.warning('Reorder necesita al menos 2 palabras')
+      return false
+    }
+    const validOrder = correctOrderText.value.split('|').map(w => w.trim()).filter(w => w).length
+    if (validOrder < 2) {
+      snackbar.warning('El orden correcto necesita al menos 2 elementos separados por |')
+      return false
+    }
+  }
+  if (t === 'matching') {
+    const validPairs = formPairs.value.filter(p => p.left.trim() || p.right.trim()).length
+    if (validPairs < 2) {
+      snackbar.warning('Matching necesita al menos 2 pares')
+      return false
+    }
+  }
+  return true
 }
 
 async function save() {

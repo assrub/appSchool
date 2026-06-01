@@ -222,11 +222,3 @@ class TheorySaveRequest(BaseModel):
     table_rows: list[list[str]] | None = None
     tips: list[dict] | None = None
     blocks: list[dict] | None = None
-
-
-# ── Videos ────────────────────────────────────────────────
-
-class VideoCreate(BaseModel):
-    title: str
-    url: str
-    description: str | None = None
