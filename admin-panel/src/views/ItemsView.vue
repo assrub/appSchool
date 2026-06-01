@@ -114,11 +114,12 @@
             <v-col cols="7">
               <v-select
                 v-model="form.item_type"
-                label="Tipo"
+                label="Tipo de ejercicio"
                 :items="itemTypes"
                 variant="outlined"
                 class="mb-3"
               />
+              <v-alert v-if="form.item_type" density="compact" variant="tonal" color="info" class="mb-3" :text="currentTypeDesc" />
               <v-select
                 v-model="form.input_mode"
                 label="Modo"
@@ -240,16 +241,18 @@
               <template v-else-if="form.item_type === 'reorder'">
                 <v-textarea
                   v-model="wordsText"
-                  label="Palabras (una por línea)"
+                  label="Palabras (una por línea, frases multi-palabra en una línea)"
                   variant="outlined"
                   rows="4"
                   class="mb-2"
                 />
                 <v-text-field
                   v-model="correctOrderText"
-                  label="Orden correcto (separado por espacios)"
+                  label="Orden correcto (separado por |)"
                   variant="outlined"
                   class="mb-2"
+                  hint="Ej: palabra1|frase multi|palabra3"
+                  persistent-hint
                 />
                 <v-text-field v-model="form.hint" label="Pista" variant="outlined" />
               </template>
@@ -375,13 +378,19 @@ const toDelete = ref(null)
 const toHardDelete = ref(null)
 
 const itemTypes = [
-  { title: 'Completar vacío (fill-blank)', value: 'fill-blank' },
-  { title: 'Opción múltiple (multiple-choice)', value: 'multiple-choice' },
-  { title: 'Ordenar (reorder)', value: 'reorder' },
-  { title: 'Escuchar (listening)', value: 'listening' },
-  { title: 'Emparejar (matching)', value: 'matching' },
-  { title: 'Verdadero/Falso (true-false)', value: 'true-false' }
+  { title: 'Rellenar hueco (fill-blank)', value: 'fill-blank', desc: 'Frase con ______ donde el alumno arrastra o escribe la palabra correcta' },
+  { title: 'Opción múltiple (multiple-choice)', value: 'multiple-choice', desc: 'Pregunta con opciones A/B/C/D y una respuesta correcta' },
+  { title: 'Ordenar palabras (reorder)', value: 'reorder', desc: 'Palabras desordenadas que el alumno debe arrastrar al orden correcto' },
+  { title: 'Escuchar y escribir (listening)', value: 'listening', desc: 'El alumno escucha un audio y escribe lo que oye' },
+  { title: 'Emparejar (matching)', value: 'matching', desc: 'Pares izquierda/derecha que el alumno debe unir correctamente' },
+  { title: 'Verdadero/Falso (true-false)', value: 'true-false', desc: 'El alumno juzga si una frase es correcta o incorrecta' }
 ]
+
+const currentTypeDesc = computed(() => {
+  const found = itemTypes.find(t => t.value === form.value.item_type)
+  return found?.desc || ''
+})
+
 const inputModes = [
   { title: 'Tocar (tap)', value: 'tap' },
   { title: 'Escribir (type)', value: 'type' }
@@ -447,7 +456,7 @@ const validationRules = computed(() => ({
 
 const previewExerciseHtml = computed(() => {
   const t = form.value.item_type
-  const header = '<div style="background:#4CAF50;color:white;padding:12px 8px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="font-size:18px;margin-right:8px">←</div><div style="flex:1;text-align:center;margin-right:24px">Ejercicio</div></div>'
+  const header = `<div style="background:#4CAF50;color:white;padding:12px 8px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="font-size:18px;margin-right:8px">←</div><div style="flex:1;text-align:center;margin-right:24px">${blockTitle.value || 'Ejercicio'}</div></div>`
   const tabs = '<div style="display:flex;background:white;border-bottom:1px solid #e0e0e0;flex-shrink:0"><div style="flex:1;text-align:center;padding:12px 0;font-size:10px;font-weight:bold;color:#4CAF50;border-bottom:2px solid #4CAF50">EJERCICIOS</div></div>'
   const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#757575;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
   if (t === 'fill-blank') {
@@ -536,7 +545,7 @@ function openDialog(item = null) {
     formOptions.value = item.options?.length ? item.options : ['', '', '']
     formPairs.value = item.pairs?.length ? item.pairs : [{ left: '', right: '' }, { left: '', right: '' }]
     wordsText.value = (item.words || []).join('\n')
-    correctOrderText.value = (item.correct_order || []).join(' ')
+    correctOrderText.value = (item.correct_order || []).join('|')
   } else {
     form.value = {
       block_id: Number(blockId),
@@ -590,7 +599,7 @@ async function save() {
     }
     if (p.item_type === 'reorder') {
       p.words = wordsText.value.split('\n').map(w => w.trim()).filter(w => w)
-      p.correct_order = correctOrderText.value.split(' ').filter(w => w)
+      p.correct_order = correctOrderText.value.split('|').map(w => w.trim()).filter(w => w)
       p.options = null; p.answers = null; p.question = null; p.pairs = null; p.is_correct_boolean = null
     }
     if (p.item_type === 'listening') {
