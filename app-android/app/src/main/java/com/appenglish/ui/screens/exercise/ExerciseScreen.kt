@@ -278,9 +278,9 @@ private fun ExerciseContent(
     val inputMode = currentItem?.inputMode ?: "tap"
 
     var draggingWord by remember { mutableStateOf<String?>(null) }
-    var dragPosition by remember { mutableStateOf(Offset.Zero) }
     var isOverDropZone by remember { mutableStateOf(false) }
     var dropZoneBounds by remember { mutableStateOf(Rect.Zero) }
+    var wordRootPositions by remember { mutableStateOf(mutableMapOf<String, Rect>()) }
 
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
@@ -525,14 +525,11 @@ private fun ExerciseContent(
                         options.forEach { option ->
                             DraggableWord(
                                 word = option,
-                                onDragStart = { pos ->
-                                    draggingWord = option
-                                    dragPosition = pos
-                                    isOverDropZone = false
+                                onPositioned = { bounds ->
+                                    wordRootPositions = wordRootPositions.toMutableMap().apply { put(option, bounds) }
                                 },
-                                onDrag = { pos ->
-                                    dragPosition = pos
-                                    isOverDropZone = dropZoneBounds.contains(pos)
+                                onDragPos = { absolutePos ->
+                                    isOverDropZone = dropZoneBounds.contains(absolutePos)
                                 },
                                 onDragEnd = {
                                     if (isOverDropZone && draggingWord != null) {
@@ -540,6 +537,10 @@ private fun ExerciseContent(
                                         viewModel.checkTextAnswer()
                                     }
                                     draggingWord = null
+                                    isOverDropZone = false
+                                },
+                                onDragStart = { word ->
+                                    draggingWord = word
                                     isOverDropZone = false
                                 }
                             )
@@ -599,31 +600,6 @@ private fun ExerciseContent(
             }
         }
 
-        if (draggingWord != null) {
-            Box(
-                modifier = Modifier
-                    .offset {
-                        IntOffset(
-                            (dragPosition.x - 60f).roundToInt(),
-                            (dragPosition.y - 30f).roundToInt()
-                        )
-                    }
-                    .widthIn(min = 80.dp)
-                    .shadow(16.dp, RoundedCornerShape(16.dp))
-                    .background(Primary, RoundedCornerShape(16.dp))
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    draggingWord!!,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
-    }
-
     AnimatedVisibility(
         visible = uiState.isCorrect == true && uiState.showingAnswer,
         enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.6f),
@@ -656,14 +632,19 @@ private fun ExerciseContent(
         )
     }
 }
+}
 
 @Composable
 private fun DraggableWord(
     word: String,
-    onDragStart: (Offset) -> Unit,
-    onDrag: (Offset) -> Unit,
+    onPositioned: (Rect) -> Unit,
+    onDragStart: (word: String) -> Unit,
+    onDragPos: (absolutePos: Offset) -> Unit,
     onDragEnd: () -> Unit
 ) {
+    var dragDelta by remember { mutableStateOf(Offset.Zero) }
+    var rootBounds by remember { mutableStateOf(Rect.Zero) }
+
     val scale by animateFloatAsState(
         targetValue = 1f,
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
@@ -672,22 +653,35 @@ private fun DraggableWord(
 
     Card(
         modifier = Modifier
-            .scale(scale)
-            .shadow(6.dp, RoundedCornerShape(16.dp))
+            .scale(if (dragDelta != Offset.Zero) 1.08f else scale)
+            .offset { IntOffset(dragDelta.x.roundToInt(), dragDelta.y.roundToInt()) }
+            .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
+            .onGloballyPositioned { coords ->
+                rootBounds = coords.boundsInRoot()
+                onPositioned(rootBounds)
+            }
             .pointerInput(word) {
                 detectDragGesturesAfterLongPress(
-                    onDragStart = { offset ->
-                        onDragStart(offset)
+                    onDragStart = { _ ->
+                        onDragStart(word)
+                        dragDelta = Offset.Zero
                     },
-                    onDrag = { change, _ ->
+                    onDrag = { change, dragAmount ->
                         change.consume()
-                        onDrag(change.position)
+                        dragDelta += dragAmount
+                        val absolutePos = Offset(
+                            rootBounds.left + dragDelta.x + rootBounds.width / 2,
+                            rootBounds.top + dragDelta.y + rootBounds.height / 2
+                        )
+                        onDragPos(absolutePos)
                     },
                     onDragEnd = {
                         onDragEnd()
+                        dragDelta = Offset.Zero
                     },
                     onDragCancel = {
                         onDragEnd()
+                        dragDelta = Offset.Zero
                     }
                 )
             },
