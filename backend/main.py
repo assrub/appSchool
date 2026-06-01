@@ -12,11 +12,11 @@ from routers import auth, admin
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Read version from project root version.properties
+# Read version from version.properties in same directory (backend/)
 _VERSION_CODE = 1
 _VERSION_NAME = "1.0.0"
 try:
-    version_path = os.path.join(os.path.dirname(__file__), "..", "version.properties")
+    version_path = os.path.join(os.path.dirname(__file__), "version.properties")
     if os.path.exists(version_path):
         with open(version_path) as f:
             for line in f:
