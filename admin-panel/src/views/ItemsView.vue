@@ -28,7 +28,7 @@
             <th>Contenido</th>
             <th>Resp.</th>
             <th>Ops</th>
-            <th></th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>

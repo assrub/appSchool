@@ -17,7 +17,7 @@
     </v-alert>
 
     <v-row>
-      <v-col cols="7">
+      <v-col cols="12" md="9">
         <v-card rounded="lg" elevation="2">
           <v-progress-linear v-if="loading" indeterminate color="primary" />
           <v-table v-else>
@@ -27,27 +27,14 @@
                 <th>#</th>
                 <th>Título</th>
                 <th>🔀</th>
-                <th>Ejercicios</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(b, idx) in items" :key="b.id">
                 <td>
-                  <v-btn
-                    icon="mdi-chevron-up"
-                    variant="text"
-                    size="x-small"
-                    :disabled="idx === 0"
-                    @click="moveItem(idx, -1)"
-                  />
-                  <v-btn
-                    icon="mdi-chevron-down"
-                    variant="text"
-                    size="x-small"
-                    :disabled="idx === items.length - 1"
-                    @click="moveItem(idx, 1)"
-                  />
+                  <v-btn icon="mdi-chevron-up" variant="text" size="x-small" :disabled="idx === 0" @click="moveItem(idx, -1)" />
+                  <v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="idx === items.length - 1" @click="moveItem(idx, 1)" />
                 </td>
                 <td>{{ b.id }}</td>
                 <td>{{ b.title }}</td>
@@ -62,8 +49,6 @@
                       <v-btn icon="mdi-dumbbell" v-bind="tp" variant="text" size="small" color="secondary" :to="`/blocks/${b.id}/items`" />
                     </template>
                   </v-tooltip>
-                </td>
-                <td>
                   <v-tooltip text="Editar bloque" location="top">
                     <template #activator="{ props: tp }">
                       <v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(b)" />
@@ -93,7 +78,7 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="5" class="d-flex align-start">
+      <v-col cols="12" md="3">
         <MobilePreview :html="blocksPreviewHtml" />
       </v-col>
     </v-row>
