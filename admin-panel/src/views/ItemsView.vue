@@ -121,8 +121,9 @@
               />
               <v-alert v-if="form.item_type" density="compact" variant="tonal" color="info" class="mb-3" :text="currentTypeDesc" />
               <v-select
+                v-if="form.item_type === 'fill-blank'"
                 v-model="form.input_mode"
-                label="Modo"
+                label="Modo (Tap / Type)"
                 :items="inputModes"
                 variant="outlined"
                 class="mb-3"

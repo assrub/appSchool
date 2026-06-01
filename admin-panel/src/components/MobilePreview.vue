@@ -28,7 +28,7 @@ defineProps({ html: { type: String, default: '' } })
   background: #333; border-radius: 0 0 12px 12px;
   margin: 0 auto; flex-shrink: 0;
 }
-.phone-screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.phone-screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; zoom: 0.72; }
 .phone-home {
   width: 30px; height: 4px; background: #999; border-radius: 2px;
   margin: 8px auto 0; flex-shrink: 0;
