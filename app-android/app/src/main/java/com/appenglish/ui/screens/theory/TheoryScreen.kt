@@ -61,7 +61,7 @@ fun TheoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(uiState.topicName, fontWeight = FontWeight.Bold) },
+                title = { Text(uiState.title, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White)

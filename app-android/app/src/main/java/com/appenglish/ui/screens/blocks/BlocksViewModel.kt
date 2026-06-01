@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.appenglish.data.repository.ContentRepository
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.ExerciseItem
+import com.appenglish.domain.model.TheoryBlock
 import com.appenglish.domain.model.UnitTheory
 import com.appenglish.domain.model.TheorySection
 import com.appenglish.domain.model.Tip
@@ -20,8 +21,10 @@ data class BlocksUiState(
     val isLoading: Boolean = true,
     val unitName: String = "",
     val topicId: String = "",
+    val unitId: String = "",
     val blocks: List<ExerciseBlock> = emptyList(),
     val topicTheory: UnitTheory? = null,
+    val unitTheory: UnitTheory? = null,
     val error: String? = null
 )
 
@@ -51,18 +54,30 @@ class BlocksViewModel @Inject constructor(
                                 onSuccess = { topic ->
                                     val unit = topic.units.find { it.id == unitId }
                                     if (unit != null) {
-                                        val theory = UnitTheory(
+                                        val topicTheory = UnitTheory(
                                             text = topic.theory.text,
                                             sections = emptyList(),
                                             headers = topic.theory.table?.headers ?: emptyList(),
                                             rows = topic.theory.table?.rows ?: emptyList(),
                                             tips = topic.theory.tips.map { Tip(it.emoji, it.text) }
                                         )
+                                        val unitTheory = unit.theory?.let { ut ->
+                                            UnitTheory(
+                                                text = ut.text,
+                                                sections = emptyList(),
+                                                headers = ut.table?.headers ?: emptyList(),
+                                                rows = ut.table?.rows ?: emptyList(),
+                                                tips = ut.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),
+                                                blocks = ut.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
+                                            )
+                                        }
                                         _uiState.value = _uiState.value.copy(
                                             isLoading = false,
                                             unitName = unit.title,
                                             topicId = topic.id,
-                                            topicTheory = theory,
+                                            unitId = unit.id,
+                                            topicTheory = topicTheory,
+                                            unitTheory = unitTheory,
                                             blocks = unit.blocks.map { b ->
                                                 ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint) })
                                             }

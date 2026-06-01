@@ -39,6 +39,7 @@ object Routes {
     const val EXERCISE = "exercise/{topicId}/{unitId}"
     const val TEST = "test/{topicId}"
     const val THEORY = "theory/{topicId}"
+    const val UNIT_THEORY = "unit-theory/{topicId}/{unitId}"
     const val DICTIONARY = "dictionary"
     const val PROGRESS = "progress"
     const val SETTINGS = "settings"
@@ -49,6 +50,7 @@ object Routes {
     fun exercise(topicId: String, unitId: String) = "exercise/$topicId/$unitId"
     fun test(topicId: String) = "test/$topicId"
     fun theory(topicId: String) = "theory/$topicId"
+    fun unitTheory(topicId: String, unitId: String) = "unit-theory/$topicId/$unitId"
 }
 
 @Composable
@@ -129,7 +131,7 @@ fun AppNavGraph() {
             composable(Routes.UNITS_LIST, arguments = listOf(navArgument("topicId") { type = NavType.StringType })) {
                 UnitsScreen(
                     onBackClick = { navController.popBackStack() },
-                    onUnitClick = { topicId, unitId -> navController.navigate(Routes.blocks(unitId)) },
+                    onUnitClick = { _, unitId -> navController.navigate(Routes.blocks(unitId)) },
                     onTestClick = { topicId -> navController.navigate(Routes.test(topicId)) }
                 )
             }
@@ -138,11 +140,19 @@ fun AppNavGraph() {
                 BlocksScreen(
                     onBackClick = { navController.popBackStack() },
                     onBlockClick = { topicId, unitId -> navController.navigate(Routes.exercise(topicId, unitId)) },
-                    onTheoryClick = { topicId -> navController.navigate(Routes.theory(topicId)) }
+                    onTopicTheoryClick = { topicId -> navController.navigate(Routes.theory(topicId)) },
+                    onUnitTheoryClick = { topicId, unitId -> navController.navigate(Routes.unitTheory(topicId, unitId)) }
                 )
             }
 
             composable(Routes.THEORY, arguments = listOf(navArgument("topicId") { type = NavType.StringType })) {
+                TheoryScreen(onBackClick = { navController.popBackStack() })
+            }
+
+            composable(Routes.UNIT_THEORY, arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType },
+                navArgument("unitId") { type = NavType.StringType }
+            )) {
                 TheoryScreen(onBackClick = { navController.popBackStack() })
             }
 
