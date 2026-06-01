@@ -106,218 +106,141 @@
       </v-card-text>
     </v-card>
 
-    <v-dialog v-model="dialog" max-width="900">
+    <v-dialog v-model="dialog" max-width="950">
       <v-card rounded="lg">
-        <v-card-title>{{ editing ? 'Editar' : 'Nuevo' }} Ejercicio</v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="7">
-              <v-select
-                v-model="form.item_type"
-                label="Tipo de ejercicio"
-                :items="itemTypes"
-                variant="outlined"
-                class="mb-3"
-              />
-              <v-alert v-if="form.item_type" density="compact" variant="tonal" color="info" class="mb-3" :text="currentTypeDesc" />
-              <v-select
-                v-if="form.item_type === 'fill-blank'"
-                v-model="form.input_mode"
-                label="Modo (Tap / Type)"
-                :items="inputModes"
-                variant="outlined"
-                class="mb-3"
-                clearable
-                hint="Vacío = hereda de la unidad"
-                persistent-hint
-              />
+        <v-card-title class="d-flex align-center">
+          {{ editing ? 'Editar' : 'Nuevo' }} Ejercicio
+          <v-spacer />
+          <v-chip size="small" :color="form.item_type === 'fill-blank' ? 'primary' : 'grey'" variant="tonal" class="ml-2">
+            {{ itemTypes.find(t => t.value === form.item_type)?.title || form.item_type }}
+          </v-chip>
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <v-row dense>
+            <v-col cols="6">
+              <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                <div class="text-subtitle-2 font-weight-bold mb-3">Configuración</div>
+                <v-select v-model="form.item_type" label="Tipo de ejercicio" :items="itemTypes" variant="outlined" density="comfortable" class="mb-3" hide-details />
+                <v-alert v-if="form.item_type" density="compact" variant="tonal" color="info" class="mt-3 mb-0" :text="currentTypeDesc" />
+              </v-card>
 
+              <v-card v-if="form.item_type === 'fill-blank'" variant="outlined" rounded="lg" class="pa-4 mb-4">
+                <div class="text-subtitle-2 font-weight-bold mb-3">Modo</div>
+                <v-select v-model="form.input_mode" label="Tap / Type" :items="inputModes" variant="outlined" density="comfortable" clearable hint="Vacío = hereda de la unidad" persistent-hint hide-details />
+              </v-card>
+
+              <!-- Fill-blank -->
               <template v-if="form.item_type === 'fill-blank'">
-                <v-text-field
-                  v-model="form.sentence"
-                  label="Frase (usá ______ para el espacio)"
-                  :error-messages="v.errors.sentence"
-                  variant="outlined"
-                  class="mb-3"
-                />
-                <div class="text-caption mb-1">Respuesta correcta</div>
-                <v-text-field
-                  v-model="form.answer"
-                  label="Principal"
-                  :error-messages="v.errors.answer"
-                  variant="outlined"
-                  density="compact"
-                  class="mb-2"
-                />
-                <div class="mb-3">
-                  <div class="text-caption">Alternativas (otras respuestas válidas)</div>
-                  <div v-for="(a, i) in answersList" :key="i" class="d-flex align-center mb-1">
-                    <v-text-field
-                      v-model="answersList[i]"
-                      variant="outlined"
-                      density="compact"
-                      hide-details
-                      class="mr-1"
-                    />
-                    <v-btn
-                      icon="mdi-close"
-                      variant="text"
-                      size="x-small"
-                      color="error"
-                      @click="answersList.splice(i, 1)"
-                    />
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="text-subtitle-2 font-weight-bold mb-3">Frase</div>
+                  <v-text-field v-model="form.sentence" label="Frase (usá ______ para el espacio)" :error-messages="v.errors.sentence" variant="outlined" density="comfortable" class="mb-3" hide-details />
+                  <v-text-field v-model="form.answer" label="Respuesta correcta" :error-messages="v.errors.answer" variant="outlined" density="comfortable" class="mb-3" hide-details />
+                  <v-text-field v-model="form.hint" label="Pista (opcional)" variant="outlined" density="comfortable" hide-details />
+                </v-card>
+
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="d-flex align-center mb-3">
+                    <div class="text-subtitle-2 font-weight-bold">Alternativas aceptadas</div>
+                    <v-spacer />
+                    <v-btn size="x-small" variant="tonal" prepend-icon="mdi-plus" color="primary" @click="answersList.push('')">Agregar</v-btn>
                   </div>
-                  <v-btn
-                    size="x-small"
-                    variant="outlined"
-                    class="mt-1"
-                    @click="answersList.push('')"
-                  >
-                    + Alternativa
-                  </v-btn>
-                </div>
-
-                <div class="mb-3">
-                  <div class="text-caption">Opciones visibles (modo Tap). Si están vacías, se generan automáticamente.</div>
-                  <div v-for="(o, i) in optionsList" :key="i" class="d-flex align-center mb-1">
-                    <v-text-field
-                      v-model="optionsList[i]"
-                      variant="outlined"
-                      density="compact"
-                      hide-details
-                      class="mr-1"
-                    />
-                    <v-btn
-                      icon="mdi-close"
-                      variant="text"
-                      size="x-small"
-                      color="error"
-                      @click="optionsList.splice(i, 1)"
-                    />
+                  <div v-if="answersList.length === 0" class="text-caption text-grey">No hay alternativas</div>
+                  <div v-for="(a, i) in answersList" :key="i" class="d-flex align-center mb-2">
+                    <v-text-field v-model="answersList[i]" placeholder="Alternativa..." variant="outlined" density="compact" hide-details class="mr-2" />
+                    <v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="answersList.splice(i, 1)" />
                   </div>
-                  <v-btn size="x-small" variant="outlined" class="mt-1" @click="optionsList.push('')">
-                    + Opción
-                  </v-btn>
-                </div>
+                </v-card>
 
-                <v-text-field v-model="form.hint" label="Pista (opcional)" variant="outlined" />
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="d-flex align-center mb-3">
+                    <div class="text-subtitle-2 font-weight-bold">Opciones visibles</div>
+                    <v-spacer />
+                    <v-btn size="x-small" variant="tonal" prepend-icon="mdi-plus" color="primary" @click="optionsList.push('')">Agregar</v-btn>
+                  </div>
+                  <div class="text-caption text-grey mb-2">Para modo Tap. Si se dejan vacías, se generan automáticamente.</div>
+                  <div v-for="(o, i) in optionsList" :key="i" class="d-flex align-center mb-2">
+                    <v-text-field v-model="optionsList[i]" placeholder="Opción..." variant="outlined" density="compact" hide-details class="mr-2" />
+                    <v-btn icon="mdi-close" variant="text" size="x-small" color="error" @click="optionsList.splice(i, 1)" />
+                  </div>
+                </v-card>
               </template>
 
-              <template v-else-if="form.item_type === 'multiple-choice'">
-                <v-text-field
-                  v-model="form.question"
-                  label="Pregunta"
-                  :error-messages="v.errors.question"
-                  variant="outlined"
-                  class="mb-2"
-                />
-                <div v-for="(o, i) in formOptions" :key="i" class="d-flex align-center mb-2">
-                  <v-text-field
-                    v-model="formOptions[i]"
-                    :label="'Opción ' + (i + 1)"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    class="flex-grow-1 mr-2"
-                  />
-                  <v-btn
-                    icon="mdi-delete"
-                    variant="text"
-                    size="small"
-                    color="error"
-                    @click="formOptions.splice(i, 1)"
-                  />
-                </div>
-                <v-btn variant="outlined" size="small" prepend-icon="mdi-plus" @click="formOptions.push('')" class="mb-2">
-                  Opción
-                </v-btn>
-                <v-text-field
-                  v-model="form.answer"
-                  label="Correcta"
-                  :error-messages="v.errors.answer"
-                  variant="outlined"
-                />
+              <!-- Multiple choice -->
+              <template v-if="form.item_type === 'multiple-choice'">
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="text-subtitle-2 font-weight-bold mb-3">Pregunta y opciones</div>
+                  <v-text-field v-model="form.question" label="Pregunta" :error-messages="v.errors.question" variant="outlined" density="comfortable" class="mb-3" hide-details />
+                  <div class="d-flex align-center mb-2">
+                    <span class="text-caption font-weight-bold">Opciones</span>
+                    <v-spacer />
+                    <v-btn size="x-small" variant="tonal" prepend-icon="mdi-plus" color="primary" @click="formOptions.push('')">Agregar</v-btn>
+                  </div>
+                  <div v-for="(o, i) in formOptions" :key="i" class="d-flex align-center mb-2">
+                    <v-text-field v-model="formOptions[i]" :label="'Opción ' + (i + 1)" variant="outlined" density="compact" hide-details class="mr-2" />
+                    <v-btn icon="mdi-delete" variant="text" size="x-small" color="error" :disabled="formOptions.length <= 2" @click="formOptions.splice(i, 1)" />
+                  </div>
+                  <v-text-field v-model="form.answer" label="Respuesta correcta" :error-messages="v.errors.answer" variant="outlined" density="comfortable" class="mt-2" hide-details />
+                </v-card>
               </template>
 
-              <template v-else-if="form.item_type === 'reorder'">
-                <v-textarea
-                  v-model="wordsText"
-                  label="Palabras (una por línea, frases multi-palabra en una línea)"
-                  variant="outlined"
-                  rows="4"
-                  class="mb-2"
-                />
-                <v-text-field
-                  v-model="correctOrderText"
-                  label="Orden correcto (separado por |)"
-                  variant="outlined"
-                  class="mb-2"
-                  hint="Ej: palabra1|frase multi|palabra3"
-                  persistent-hint
-                />
-                <v-text-field v-model="form.hint" label="Pista" variant="outlined" />
+              <!-- Reorder -->
+              <template v-if="form.item_type === 'reorder'">
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="text-subtitle-2 font-weight-bold mb-3">Palabras a ordenar</div>
+                  <v-textarea v-model="wordsText" label="Palabras (una por línea)" variant="outlined" density="comfortable" rows="3" class="mb-3" hide-details />
+                  <v-text-field v-model="correctOrderText" label="Orden correcto (separado por |)" variant="outlined" density="comfortable" class="mb-3" hint="Ej: palabra1|frase multi|palabra3" persistent-hint hide-details />
+                  <v-text-field v-model="form.hint" label="Pista (opcional)" variant="outlined" density="comfortable" hide-details />
+                </v-card>
               </template>
 
-              <template v-else-if="form.item_type === 'listening'">
-                <v-text-field v-model="form.sentence" label="Frase" variant="outlined" class="mb-2" />
-                <v-text-field v-model="form.audio_url" label="URL audio" variant="outlined" class="mb-2" />
-                <v-text-field v-model="form.answer" label="Respuesta" variant="outlined" />
+              <!-- Listening -->
+              <template v-if="form.item_type === 'listening'">
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="text-subtitle-2 font-weight-bold mb-3">Audio</div>
+                  <v-text-field v-model="form.sentence" label="Frase a escuchar" variant="outlined" density="comfortable" class="mb-3" hide-details />
+                  <v-text-field v-model="form.audio_url" label="URL del audio" variant="outlined" density="comfortable" class="mb-3" hide-details />
+                  <v-text-field v-model="form.answer" label="Respuesta esperada" variant="outlined" density="comfortable" hide-details />
+                </v-card>
               </template>
 
-              <template v-else-if="form.item_type === 'matching'">
-                <div v-for="(p, i) in formPairs" :key="i" class="d-flex align-center mb-2">
-                  <v-text-field
-                    v-model="formPairs[i].left"
-                    label="Izq"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    class="mr-2"
-                  />
-                  <v-icon>mdi-arrow-right</v-icon>
-                  <v-text-field
-                    v-model="formPairs[i].right"
-                    label="Der"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    class="ml-2"
-                  />
-                  <v-btn
-                    icon="mdi-delete"
-                    variant="text"
-                    size="small"
-                    color="error"
-                    @click="formPairs.splice(i, 1)"
-                  />
-                </div>
-                <v-btn variant="outlined" size="small" prepend-icon="mdi-plus" @click="formPairs.push({ left: '', right: '' })">
-                  Par
-                </v-btn>
+              <!-- Matching -->
+              <template v-if="form.item_type === 'matching'">
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="d-flex align-center mb-3">
+                    <div class="text-subtitle-2 font-weight-bold">Pares (izquierda ↔ derecha)</div>
+                    <v-spacer />
+                    <v-btn size="x-small" variant="tonal" prepend-icon="mdi-plus" color="primary" @click="formPairs.push({ left: '', right: '' })">Agregar</v-btn>
+                  </div>
+                  <div v-for="(p, i) in formPairs" :key="i" class="d-flex align-center mb-2">
+                    <v-text-field v-model="formPairs[i].left" label="Izquierda" variant="outlined" density="compact" hide-details class="mr-1" />
+                    <v-icon color="primary" class="mx-1">mdi-arrow-right</v-icon>
+                    <v-text-field v-model="formPairs[i].right" label="Derecha" variant="outlined" density="compact" hide-details class="ml-1" />
+                    <v-btn icon="mdi-delete" variant="text" size="x-small" color="error" class="ml-1" @click="formPairs.splice(i, 1)" />
+                  </div>
+                </v-card>
               </template>
 
-              <template v-else-if="form.item_type === 'true-false'">
-                <v-text-field v-model="form.sentence" label="Frase" variant="outlined" class="mb-2" />
-                <v-switch v-model="form.is_correct_boolean" label="¿Es correcta?" color="primary" hide-details />
-                <v-text-field
-                  v-if="!form.is_correct_boolean"
-                  v-model="form.answer"
-                  label="Corrección"
-                  variant="outlined"
-                />
+              <!-- True-false -->
+              <template v-if="form.item_type === 'true-false'">
+                <v-card variant="outlined" rounded="lg" class="pa-4 mb-4">
+                  <div class="text-subtitle-2 font-weight-bold mb-3">Enunciado</div>
+                  <v-text-field v-model="form.sentence" label="Frase a evaluar" variant="outlined" density="comfortable" class="mb-3" hide-details />
+                  <v-switch v-model="form.is_correct_boolean" label="¿Es correcta?" color="success" hide-details class="mb-3" />
+                  <v-text-field v-if="!form.is_correct_boolean" v-model="form.answer" label="Corrección (cómo debería ser)" variant="outlined" density="comfortable" hide-details />
+                </v-card>
               </template>
             </v-col>
-            <v-col cols="5" class="d-flex align-center justify-center">
-              <MobilePreview :html="previewExerciseHtml" />
+            <v-col cols="6" class="d-flex align-start justify-center">
+              <div class="preview-sticky" style="position: sticky; top: 16px">
+                <MobilePreview :html="previewExerciseHtml" />
+              </div>
             </v-col>
           </v-row>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-4 pt-0">
           <v-spacer />
           <v-btn variant="text" @click="dialog = false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="saving" @click="save">
-            {{ editing ? 'Guardar' : 'Crear' }}
-          </v-btn>
+          <v-btn color="primary" :loading="saving" @click="save">{{ editing ? 'Guardar' : 'Crear' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
