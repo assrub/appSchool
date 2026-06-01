@@ -420,7 +420,12 @@ class UnitExerciseViewModel @Inject constructor(
     fun getCurrentBlockTitle(): String {
         val state = _uiState.value
         if (state.retryMode) return "Errores (${state.retryIndex + 1}/${state.wrongItems.size})"
-        return state.blocks.getOrNull(state.currentBlockIndex)?.title ?: ""
+        val block = state.blocks.getOrNull(state.currentBlockIndex) ?: return ""
+        val blockNum = state.currentBlockIndex + 1
+        val totalBlocks = state.blocks.size
+        val itemNum = state.currentItemIndex + 1
+        val totalItems = block.items.size
+        return "${block.title} (${blockNum}/${totalBlocks} → ${itemNum}/${totalItems})"
     }
 
     fun getOptions(): List<String> {
