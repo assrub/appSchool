@@ -4,11 +4,11 @@
       <div class="phone-notch" />
       <div class="phone-screen">
         <div class="phone-header">
-          <span class="text-caption">AppSchool</span>
+          <span>AppEnglish</span>
         </div>
         <div class="phone-content" v-html="html" />
+        <div class="phone-home" />
       </div>
-      <div class="phone-home" />
     </div>
     <div class="text-caption text-center mt-2 text-grey">Vista previa en celular</div>
   </div>
@@ -21,24 +21,72 @@ defineProps({ html: { type: String, default: '' } })
 <style scoped>
 .phone-preview { display: inline-flex; flex-direction: column; align-items: flex-start; flex-shrink: 0; }
 .phone-frame {
-   max-width: 240px; width: 240px; height: 480px;
+  max-width: 240px; width: 240px; height: 480px;
   border: 3px solid #333; border-radius: 24px;
   background: #fff; overflow: hidden;
   position: relative;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column;
 }
 .phone-notch {
   width: 80px; height: 16px;
   background: #333; border-radius: 0 0 12px 12px;
-  margin: 0 auto;
+  margin: 0 auto; flex-shrink: 0;
 }
-.phone-screen { padding: 12px; height: calc(100% - 50px); overflow-y: auto; }
+.phone-screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 .phone-header {
-  text-align: center; padding: 4px 0 8px;
-  border-bottom: 1px solid #eee; margin-bottom: 8px;
-  color: #4CAF50; font-weight: bold;
+  background: #4CAF50; color: white;
+  padding: 12px 16px; font-weight: bold; font-size: 16px;
+  text-align: center; flex-shrink: 0;
 }
-.phone-content :deep(body) { font-family: 'Roboto', sans-serif; font-size: 14px; color: #333; padding: 0; margin: 0; line-height: 1.6; }
+.phone-content { flex: 1; overflow-y: auto; background: #f5f5f5; }
+
+/* Subject/Topic/Unit/Block cards */
+.phone-content :deep(.subject-card),
+.phone-content :deep(.topic-card),
+.phone-content :deep(.unit-card),
+.phone-content :deep(.block-card) {
+  margin: 0 12px 12px 12px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+
+/* Bottom nav */
+.phone-content :deep(.bottom-nav) {
+  display: flex;
+  justify-content: space-around;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+  padding: 8px 0;
+}
+.phone-content :deep(.nav-item) {
+  text-align: center;
+  flex: 1;
+}
+.phone-content :deep(.nav-icon) {
+  font-size: 20px;
+}
+.phone-content :deep(.nav-label) {
+  font-size: 10px;
+  color: #757575;
+  margin-top: 2px;
+}
+.phone-content :deep(.nav-item.active .nav-label) {
+  color: #4CAF50;
+}
+
+/* Content styling for theory previews */
+.phone-content :deep(body) {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  color: #333;
+  padding: 0;
+  margin: 0;
+  line-height: 1.6;
+  background: #f5f5f5;
+}
 .phone-content :deep(h1) { font-size: 1.2em; margin: 10px 0 8px; color: #388E3C; border-bottom: 2px solid #C8E6C9; padding-bottom: 4px; }
 .phone-content :deep(h2) { font-size: 1.1em; margin: 10px 0 6px; color: #4CAF50; font-weight: bold; }
 .phone-content :deep(h3) { font-size: 1em; margin: 8px 0 4px; color: #4CAF50; }
@@ -60,6 +108,6 @@ defineProps({ html: { type: String, default: '' } })
 .phone-content :deep(hr) { border: none; border-top: 1px dashed #ccc; margin: 12px 0; }
 .phone-home {
   width: 30px; height: 4px; background: #999; border-radius: 2px;
-  margin: 8px auto 0;
+  margin: 8px auto 0; flex-shrink: 0;
 }
 </style>

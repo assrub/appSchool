@@ -65,23 +65,35 @@ fun TopicsScreen(
             )
         }
     ) { padding ->
-        if (uiState.isLoading) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Primary)
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Row(
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("TEMAS", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = Primary)
             }
-        } else if (uiState.error != null) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Reintentar", color = Primary, modifier = Modifier.clickable { viewModel.loadTopics() })
+            when {
+                uiState.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Primary)
+                    }
                 }
-            }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
-                items(uiState.topics) { topic ->
-                    TopicCard(topic = topic, onClick = { onTopicClick(topic.id) })
-                    Spacer(Modifier.height(8.dp))
+                uiState.error != null -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Reintentar", color = Primary, modifier = Modifier.clickable { viewModel.loadTopics() })
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        items(uiState.topics) { topic ->
+                            TopicCard(topic = topic, onClick = { onTopicClick(topic.id) })
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
                 }
             }
         }

@@ -162,10 +162,19 @@ const backLabel = computed(() => {
 })
 
 const previewHtml = computed(() => {
-  return blocks.value.map(b => {
-    const title = b.title ? `<h2>${b.title}</h2>` : ''
-    return `${title}${b.html || ''}`
-  }).join('<hr>')
+  if (!blocks.value.length) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">Agregá un bloque de teoría</div>'
+  const bottomNav = `<div class="bottom-nav" style="position:sticky;bottom:0">
+    <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
+    <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
+    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
+    <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
+  </div>`
+  let content = blocks.value.map(b => {
+    const title = b.title ? `<div style="font-size:18px;font-weight:bold;color:#4CAF50;margin-bottom:12px;padding-top:8px">${b.title}</div>` : ''
+    const text = b.html ? b.html.replace(/<[^>]*>/g, '') : ''
+    return `<div style="margin:0 12px 16px 12px;background:white;border-radius:16px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">${title}<div style="font-size:15px;color:#333;line-height:1.6">${text || '<span style="color:#999">Sin contenido</span>'}</div></div>`
+  }).join('<div style="height:8px"></div>')
+  return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px 0;background:#f5f5f5">${content}</div>${bottomNav}</div>`
 })
 
 function goBack() {

@@ -269,10 +269,28 @@ function getIconForType(type) {
 }
 
 const previewHtml = computed(() => {
-  if (!selectedNode.value) return '<p>Seleccioná un contenido</p>'
-  return `<div style="padding:16px">
-    <h2 style="font-size:20px;font-weight:bold;margin-bottom:12px">${selectedNode.value.name || selectedNode.value.title || 'Sin título'}</h2>
-    <p style="color:#666">${selectedNode.value.type}</p>
+  if (!selectedNode.value) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">Seleccioná un contenido</div>'
+  const title = selectedNode.value.name || selectedNode.value.title || 'Sin título'
+  const type = selectedNode.value.type
+  const icon = type === 'subject' ? (selectedNode.value.icon || '📚') : type === 'topic' ? (selectedNode.value.icon || '📝') : '📋'
+  return `<div style="display:flex;flex-direction:column;height:100%">
+    <div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5">
+      <div style="margin:0 12px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
+        <div style="display:flex;align-items:center;padding:20px">
+          <div style="font-size:28px;margin-right:16px">${icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:20px;font-weight:bold;color:#212121;line-height:1.2">${title}</div>
+            <div style="font-size:13px;color:#757575;margin-top:4px;text-transform:capitalize">${type}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
+      <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
+      <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
+      <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
+    </div>
   </div>`
 })
 

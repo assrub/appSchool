@@ -60,6 +60,12 @@ fun SubjectsScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Row(
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("MATERIAS", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = Primary)
+            }
             SubjectsListContent(
                 subjects = uiState.subjects,
                 isLoading = uiState.isLoading,
