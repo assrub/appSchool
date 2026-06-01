@@ -151,7 +151,19 @@ Copiá esta guía y usala como contexto cuando le pidas a una IA que te ayude a 
 
 ${data.aiGuide}
 `
-    await navigator.clipboard.writeText(fullContent)
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(fullContent)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = fullContent
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
     snackbar.success('Template JSON + Guía IA copiados al portapapeles')
   } catch (e) {
     snackbar.error('Error al obtener template: ' + (e.message || 'Error desconocido'))
@@ -166,7 +178,19 @@ async function copyTemplate() {
     script.value = data.template
     jsonError.value = null
     validationResult.value = null
-    await navigator.clipboard.writeText(data.template)
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(data.template)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = data.template
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
     snackbar.success('Template copiado al portapapeles')
   } catch (e) {
     snackbar.error('Error al obtener template')

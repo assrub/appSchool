@@ -14,7 +14,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,14 +22,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -59,7 +56,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -69,17 +65,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -100,7 +90,6 @@ import com.appenglish.ui.theme.WarningOrange
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -276,13 +265,6 @@ private fun ExerciseContent(
 
     val inputMode = currentItem?.inputMode ?: "tap"
 
-    var draggingOption by remember { mutableStateOf<String?>(null) }
-    var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var dropZoneCenter by remember { mutableStateOf(Offset.Zero) }
-    var isOverDropZone by remember { mutableStateOf(false) }
-
-    val density = LocalDensity.current
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -350,7 +332,7 @@ private fun ExerciseContent(
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -387,35 +369,36 @@ private fun ExerciseContent(
 
                             Spacer(Modifier.width(6.dp))
 
+                            val selectedOption = if (uiState.isCorrect == null) uiState.userInput else null
+                            val isCorrectOpt = currentItem.answer.trim().lowercase() == uiState.userInput.trim().lowercase()
+
                             val bgColor = when {
                                 uiState.showingAnswer && uiState.isCorrect == true -> CorrectBackground
                                 uiState.showingAnswer && uiState.isCorrect == false -> IncorrectBackground
-                                isOverDropZone && draggingOption != null -> Primary.copy(alpha = 0.15f)
+                                selectedOption != null -> Primary.copy(alpha = 0.1f)
                                 else -> Color.Transparent
                             }
                             val borderColor = when {
                                 uiState.showingAnswer && uiState.isCorrect == true -> CorrectGreen
                                 uiState.showingAnswer && uiState.isCorrect == false -> ErrorRed
-                                isOverDropZone && draggingOption != null -> Primary
+                                selectedOption != null -> Primary
                                 else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
                             }
 
                             Box(
                                 modifier = Modifier
-                                    .widthIn(min = 90.dp)
+                                    .widthIn(min = 100.dp, max = 160.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(color = bgColor, shape = RoundedCornerShape(12.dp))
                                     .border(
-                                        width = if (isOverDropZone && draggingOption != null) 3.dp else 2.dp,
+                                        width = if (selectedOption != null || uiState.showingAnswer) 3.dp else 2.dp,
                                         color = borderColor,
                                         shape = RoundedCornerShape(12.dp)
                                     )
-                                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                                    .onGloballyPositioned { coords ->
-                                        val pos = coords.positionInRoot()
-                                        val size = coords.size
-                                        dropZoneCenter = Offset(pos.x + size.width / 2, pos.y + size.height / 2)
-                                    },
+                                    .clickable(enabled = inputMode == "tap" && uiState.isCorrect == null && uiState.userInput.isNotEmpty()) {
+                                        viewModel.checkTextAnswer()
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 when {
@@ -431,9 +414,9 @@ private fun ExerciseContent(
                                             }
                                         )
                                     }
-                                    draggingOption != null -> {
+                                    selectedOption != null -> {
                                         Text(
-                                            draggingOption!!,
+                                            selectedOption,
                                             style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
                                             fontWeight = FontWeight.Bold,
                                             color = Primary
@@ -441,9 +424,9 @@ private fun ExerciseContent(
                                     }
                                     else -> {
                                         Text(
-                                            "_____",
-                                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                            "Tap to place",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                         )
                                     }
                                 }
@@ -512,71 +495,63 @@ private fun ExerciseContent(
             if (inputMode == "tap" && uiState.isCorrect == null && options.isNotEmpty()) {
                 item {
                     Text(
-                        "Arrastrá la palabra al hueco",
+                        "Elegí la palabra correcta y tocá el recuadro",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
                     Spacer(Modifier.height(8.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
+                    ) {
                         options.forEach { option ->
-                            val isBeingDragged = draggingOption == option
+                            val isSelected = uiState.userInput == option
+                            val scale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.08f else 1f,
+                                animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                                label = "scale"
+                            )
 
-                            Box(
+                            Card(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .offset {
-                                        if (isBeingDragged) IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt())
-                                        else IntOffset.Zero
-                                    }
-                                    .scale(if (isBeingDragged) 1.05f else 1f)
-                                    .shadow(if (isBeingDragged) 12.dp else 4.dp, RoundedCornerShape(16.dp))
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (isBeingDragged) Primary else Primary.copy(alpha = 0.95f), RoundedCornerShape(16.dp))
-                                    .pointerInput(option) {
-                                        detectDragGesturesAfterLongPress(
-                                            onDragStart = {
-                                                draggingOption = option
-                                                isOverDropZone = false
-                                            },
-                                            onDragEnd = {
-                                                if (isOverDropZone && draggingOption != null) {
-                                                    viewModel.selectOption(draggingOption!!)
-                                                }
-                                                draggingOption = null
-                                                isOverDropZone = false
-                                                dragOffset = Offset.Zero
-                                            },
-                                            onDragCancel = {
-                                                draggingOption = null
-                                                isOverDropZone = false
-                                                dragOffset = Offset.Zero
-                                            },
-                                            onDrag = { change, dragAmount ->
-                                                change.consume()
-                                                dragOffset += dragAmount
-                                                val touchPoint = Offset(
-                                                    change.position.x + dragOffset.x,
-                                                    change.position.y + dragOffset.y
-                                                )
-                                                val distance = kotlin.math.abs(touchPoint.y - dropZoneCenter.y)
-                                                val horizontalDistance = kotlin.math.abs(touchPoint.x - dropZoneCenter.x)
-                                                isOverDropZone = distance < 80.dp.toPx() && horizontalDistance < 120.dp.toPx()
-                                            }
-                                        )
-                                    }
-                                    .padding(vertical = 18.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    option,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    .scale(scale)
+                                    .shadow(if (isSelected) 8.dp else 4.dp, RoundedCornerShape(16.dp))
+                                    .clickable { viewModel.selectOption(option) },
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = if (isSelected) 8.dp else 4.dp
+                                ),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) Primary else Color.White
                                 )
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        option,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) Color.White else Primary
+                                    )
+                                }
                             }
                         }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = { viewModel.checkTextAnswer() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        enabled = uiState.userInput.isNotEmpty()
+                    ) {
+                        Text("Confirmar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
@@ -603,7 +578,7 @@ private fun ExerciseContent(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(18.dp),
+                                        .padding(16.dp),
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
