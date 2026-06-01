@@ -57,50 +57,31 @@
                   </v-chip>
                 </td>
                 <td>
-                  <v-btn
-                    variant="text"
-                    color="secondary"
-                    size="small"
-                    :to="`/blocks/${b.id}/items`"
-                  >
-                    Ver ejercicios
-                  </v-btn>
+                  <v-tooltip text="Ver ejercicios" location="top">
+                    <template #activator="{ props: tp }">
+                      <v-btn icon="mdi-dumbbell" v-bind="tp" variant="text" size="small" color="secondary" :to="`/blocks/${b.id}/items`" />
+                    </template>
+                  </v-tooltip>
                 </td>
                 <td>
-                  <v-tooltip text="Editar" location="top">
+                  <v-tooltip text="Editar bloque" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn
-                        icon="mdi-pencil"
-                        v-bind="tp"
-                        variant="text"
-                        size="small"
-                        color="primary"
-                        @click="openDialog(b)"
-                      />
+                      <v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(b)" />
                     </template>
                   </v-tooltip>
-                  <v-tooltip text="Editar teoría" location="top">
+                  <v-tooltip text="Editar teoría del bloque" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn
-                        icon="mdi-book-open-page-variant"
-                        v-bind="tp"
-                        variant="text"
-                        size="small"
-                        color="info"
-                        :to="{ path: `/theory/block/${b.id}`, query: { unitId } }"
-                      />
+                      <v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="{ path: `/theory/block/${b.id}`, query: { unitId } }" />
                     </template>
                   </v-tooltip>
-                  <v-tooltip text="Eliminar" location="top">
+                  <v-tooltip text="Desactivar bloque" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn
-                        icon="mdi-delete"
-                        v-bind="tp"
-                        variant="text"
-                        size="small"
-                        color="error"
-                        @click="confirmDelete(b)"
-                      />
+                      <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(b)" />
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip text="Eliminar permanentemente" location="top">
+                    <template #activator="{ props: tp }">
+                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(b)" />
                     </template>
                   </v-tooltip>
                 </td>
@@ -157,6 +138,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="hardDeleteDialog" max-width="400">
+      <v-card rounded="lg">
+        <v-card-title class="text-error">
+          <v-icon class="mr-2">mdi-alert</v-icon>
+          Eliminar permanentemente
+        </v-card-title>
+        <v-card-text>
+          ¿Estás seguro de eliminar "<b>{{ toHardDelete?.title }}</b>"?<br />
+          Se borrarán TODOS los ejercicios y progreso asociados.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="hardDeleteDialog = false">Cancelar</v-btn>
+          <v-btn color="deep-orange" @click="doHardDelete">Eliminar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -178,9 +177,11 @@ const loading = ref(true)
 const error = ref('')
 const dialog = ref(false)
 const deleteDialog = ref(false)
+const hardDeleteDialog = ref(false)
 const editing = ref(null)
 const saving = ref(false)
 const toDelete = ref(null)
+const toHardDelete = ref(null)
 
 const form = ref({ title: '', unit_id: unitId, shuffle: false, sort_order: 0 })
 
@@ -276,6 +277,22 @@ async function doDelete() {
     await api.delete(`/admin/blocks/${toDelete.value.id}`)
     snackbar.success('Bloque eliminado')
     deleteDialog.value = false
+    await fetchData()
+  } catch (e) {
+    snackbar.error(e.response?.data?.detail || 'Error al eliminar')
+  }
+}
+
+function confirmHardDelete(b) {
+  toHardDelete.value = b
+  hardDeleteDialog.value = true
+}
+
+async function doHardDelete() {
+  try {
+    await api.delete(`/admin/blocks/${toHardDelete.value.id}/hard`)
+    snackbar.success('Bloque eliminado permanentemente')
+    hardDeleteDialog.value = false
     await fetchData()
   } catch (e) {
     snackbar.error(e.response?.data?.detail || 'Error al eliminar')

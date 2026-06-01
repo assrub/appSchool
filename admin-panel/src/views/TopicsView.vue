@@ -53,12 +53,7 @@
                 <td>
                   <v-tooltip text="Ver unidades" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-dumbbell" v-bind="tp" variant="text" size="small" color="warning" :to="`/topics/${t.id}/units`" />
-                    </template>
-                  </v-tooltip>
-                  <v-tooltip text="Editar teoría" location="top">
-                    <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="{ path: `/theory/topic/${t.id}`, query: { subjectId } }" />
+                      <v-btn icon="mdi-format-list-bulleted-type" v-bind="tp" variant="text" size="small" color="secondary" :to="`/topics/${t.id}/units`" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Editar tema" location="top">
@@ -66,7 +61,7 @@
                       <v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(t)" />
                     </template>
                   </v-tooltip>
-                  <v-tooltip text="Desactivar" location="top">
+                  <v-tooltip text="Desactivar tema" location="top">
                     <template #activator="{ props: tp }">
                       <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(t)" />
                     </template>

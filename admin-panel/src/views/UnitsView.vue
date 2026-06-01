@@ -62,15 +62,19 @@
                       <v-btn icon="mdi-list-box-outline" v-bind="tp" variant="text" size="small" color="secondary" :to="`/units/${u.id}/blocks`" />
                     </template>
                   </v-tooltip>
-                  <v-tooltip text="Editar teoría" location="top">
+                  <v-tooltip text="Editar teoría de la unidad" location="top">
                     <template #activator="{ props: tp }">
                       <v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="{ path: `/theory/unit/${u.id}`, query: { topicId } }" />
                     </template>
                   </v-tooltip>
-                  <v-switch v-model="u.is_locked" color="warning" hide-details density="compact" inline @change="toggleLock(u, $event)" />
-                  <v-tooltip text="Eliminar" location="top">
+                  <v-tooltip text="Desactivar unidad" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(u)" />
+                      <v-btn icon="mdi-lock" v-bind="tp" variant="text" size="small" color="warning" @click="confirmDelete(u)" />
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip text="Eliminar permanentemente" location="top">
+                    <template #activator="{ props: tp }">
+                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(u)" />
                     </template>
                   </v-tooltip>
                 </td>
@@ -136,6 +140,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="hardDeleteDialog" max-width="400">
+      <v-card rounded="lg">
+        <v-card-title class="text-error">
+          <v-icon class="mr-2">mdi-alert</v-icon>
+          Eliminar permanentemente
+        </v-card-title>
+        <v-card-text>
+          ¿Estás seguro de eliminar "<b>{{ toHardDelete?.title }}</b>"?<br />
+          Se borrarán TODOS los bloques, ejercicios y progreso asociados.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="hardDeleteDialog = false">Cancelar</v-btn>
+          <v-btn color="deep-orange" @click="doHardDelete">Eliminar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -157,9 +179,11 @@ const loading = ref(true)
 const error = ref('')
 const dialog = ref(false)
 const deleteDialog = ref(false)
+const hardDeleteDialog = ref(false)
 const editing = ref(null)
 const saving = ref(false)
 const toDelete = ref(null)
+const toHardDelete = ref(null)
 const uploadType = ref('')
 
 const form = ref({
@@ -335,14 +359,19 @@ async function doDelete() {
   }
 }
 
-async function toggleLock(unit, lock) {
-  const labels = { 'lock-all': 'Bloquear', 'unlock-all': 'Desbloquear' }
+function confirmHardDelete(u) {
+  toHardDelete.value = u
+  hardDeleteDialog.value = true
+}
+
+async function doHardDelete() {
   try {
-    await api.post(`/admin/topics/${topicId}/${action}`)
-    snackbar.success(`${labels[action]} completado`)
+    await api.delete(`/admin/units/${toHardDelete.value.id}/hard`)
+    snackbar.success('Unidad eliminada permanentemente')
+    hardDeleteDialog.value = false
     await fetchData()
   } catch (e) {
-    snackbar.error(e.response?.data?.detail || `Error al ${labels[action].toLowerCase()}`)
+    snackbar.error(e.response?.data?.detail || 'Error al eliminar')
   }
 }
 

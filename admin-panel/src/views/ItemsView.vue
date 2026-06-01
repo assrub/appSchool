@@ -77,20 +77,26 @@
               <span v-else class="text-caption text-grey">-</span>
             </td>
             <td>
-              <v-btn
-                icon="mdi-pencil"
-                variant="text"
-                size="x-small"
-                color="primary"
-                @click="openDialog(i)"
-              />
-              <v-btn
-                icon="mdi-delete"
-                variant="text"
-                size="x-small"
-                color="error"
-                @click="confirmDelete(i)"
-              />
+              <v-tooltip text="Editar ejercicio" location="top">
+                <template #activator="{ props: tp }">
+                  <v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(i)" />
+                </template>
+              </v-tooltip>
+              <v-tooltip text="Editar teoría del bloque" location="top">
+                <template #activator="{ props: tp }">
+                  <v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="info" :to="{ path: `/theory/block/${blockId}`, query: { unitId } }" />
+                </template>
+              </v-tooltip>
+              <v-tooltip text="Desactivar ejercicio" location="top">
+                <template #activator="{ props: tp }">
+                  <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(i)" />
+                </template>
+              </v-tooltip>
+              <v-tooltip text="Eliminar permanentemente" location="top">
+                <template #activator="{ props: tp }">
+                  <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(i)" />
+                </template>
+              </v-tooltip>
             </td>
           </tr>
         </tbody>
@@ -323,6 +329,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="hardDeleteDialog" max-width="400">
+      <v-card rounded="lg">
+        <v-card-title class="text-error">
+          <v-icon class="mr-2">mdi-alert</v-icon>
+          Eliminar permanentemente
+        </v-card-title>
+        <v-card-text>
+          ¿Estás seguro de eliminar este ejercicio?<br />
+          Esta acción no se puede deshacer.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="hardDeleteDialog = false">Cancelar</v-btn>
+          <v-btn color="deep-orange" @click="doHardDelete">Eliminar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -344,9 +368,11 @@ const loading = ref(true)
 const error = ref('')
 const dialog = ref(false)
 const deleteDialog = ref(false)
+const hardDeleteDialog = ref(false)
 const editing = ref(null)
 const saving = ref(false)
 const toDelete = ref(null)
+const toHardDelete = ref(null)
 
 const itemTypes = [
   { title: 'Completar vacío (fill-blank)', value: 'fill-blank' },
@@ -545,6 +571,22 @@ async function doDelete() {
     await api.delete(`/admin/items/${toDelete.value.id}`)
     snackbar.success('Ejercicio eliminado')
     deleteDialog.value = false
+    await fetchData()
+  } catch (e) {
+    snackbar.error(e.response?.data?.detail || 'Error al eliminar')
+  }
+}
+
+function confirmHardDelete(i) {
+  toHardDelete.value = i
+  hardDeleteDialog.value = true
+}
+
+async function doHardDelete() {
+  try {
+    await api.delete(`/admin/items/${toHardDelete.value.id}/hard`)
+    snackbar.success('Ejercicio eliminado permanentemente')
+    hardDeleteDialog.value = false
     await fetchData()
   } catch (e) {
     snackbar.error(e.response?.data?.detail || 'Error al eliminar')

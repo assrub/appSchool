@@ -60,19 +60,6 @@
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
-
-          <v-card-text v-if="type === 'topic'">
-            <div class="d-flex align-center mb-3">
-              <v-icon class="mr-2">mdi-video</v-icon>
-              <span class="text-subtitle-2 font-weight-medium">Videos de YouTube</span>
-            </div>
-            <v-row v-for="(v, i) in videos" :key="i" class="mb-3" align="center">
-              <v-col cols="5"><v-text-field v-model="v.title" label="Título" variant="outlined" density="compact" hide-details /></v-col>
-              <v-col cols="5"><v-text-field v-model="v.url" label="URL de YouTube" variant="outlined" density="compact" hide-details placeholder="https://youtube.com/..." /></v-col>
-              <v-col cols="2"><v-btn icon="mdi-delete" variant="text" color="error" @click="removeVideo(i)" /></v-col>
-            </v-row>
-            <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addVideo">Agregar video</v-btn>
-          </v-card-text>
         </v-card>
       </v-col>
 
@@ -129,7 +116,6 @@ const error = ref('')
 const openPanels = ref([])
 const blocks = ref([{ title: '', html: '', tips: [] }])
 const globalTips = ref([])
-const videos = ref([])
 
 const removeDialog = ref(false)
 const blockToRemove = ref(0)
@@ -202,14 +188,6 @@ function doRemoveBlock() {
   removeDialog.value = false
 }
 
-function addVideo() {
-  videos.value.push({ title: '', url: '', sort_order: videos.value.length })
-}
-
-function removeVideo(i) {
-  videos.value.splice(i, 1)
-}
-
 async function fetchData() {
   loading.value = true
   error.value = ''
@@ -232,15 +210,6 @@ async function fetchData() {
       globalTips.value = []
       openPanels.value = []
     }
-
-    if (type === 'topic') {
-      try {
-        const v = await api.get(`/admin/topics/${id}/videos`)
-        videos.value = v.data || []
-      } catch {
-        videos.value = []
-      }
-    }
   } catch (e) {
     error.value = e.response?.data?.detail || 'Error al cargar'
   } finally {
@@ -261,16 +230,6 @@ async function save(silent = false) {
     const payload = { blocks: blocks.value, tips: globalTips.value }
     const endpoint = type === 'block' ? `/admin/blocks/${id}/theory` : `/admin/${type}s/${id}/theory`
     await api.put(endpoint, payload)
-
-    if (type === 'topic' && videos.value.length) {
-      for (const v of videos.value) {
-        if (v.id) {
-          await api.put(`/admin/videos/${v.id}`, v)
-        } else if (v.title || v.url) {
-          await api.post(`/admin/topics/${id}/videos`, v)
-        }
-      }
-    }
 
     lastSaved.value = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
     if (!silent) snackbar.success('Guardado correctamente')

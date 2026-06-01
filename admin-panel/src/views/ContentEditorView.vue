@@ -126,7 +126,7 @@
                     </v-window-item>
 
                     <v-window-item value="theory">
-                      <div v-if="selectedNode.type === 'topic' || selectedNode.type === 'unit'">
+                      <div v-if="selectedNode.type === 'topic' || selectedNode.type === 'unit' || selectedNode.type === 'block'">
                         <div class="d-flex align-center mb-4">
                           <v-btn color="primary" variant="tonal" prepend-icon="mdi-plus" @click="addTheoryBlock">
                             Agregar sección
@@ -155,7 +155,7 @@
                       </div>
                       <div v-else class="text-center text-grey pa-8">
                         <v-icon size="48">mdi-book-open-page-variant-outline</v-icon>
-                        <p>La teoría está disponible para temas y unidades</p>
+                        <p>La teoría no está disponible para este elemento</p>
                       </div>
                     </v-window-item>
 
@@ -329,14 +329,15 @@ function onNodeClick(node) {
   editTab.value = 'content'
   editForm.value = { ...node }
 
-  if (node.type === 'topic' || node.type === 'unit') {
+  if (node.type === 'topic' || node.type === 'unit' || node.type === 'block') {
     loadTheory(node)
   }
 }
 
 async function loadTheory(node) {
   try {
-    const { data } = await api.get(`/admin/${node.type}s/${node.id}/theory`)
+    const endpoint = node.type === 'block' ? `/admin/blocks/${node.id}/theory` : `/admin/${node.type}s/${node.id}/theory`
+    const { data } = await api.get(endpoint)
     theoryBlocks.value = data.blocks?.length ? data.blocks : [{ title: '', html: '' }]
   } catch {
     theoryBlocks.value = [{ title: '', html: '' }]
@@ -363,7 +364,8 @@ async function saveTheory() {
   try {
     const type = selectedNode.value.type
     const id = selectedNode.value.id
-    await api.put(`/admin/${type}s/${id}/theory`, { blocks: theoryBlocks.value })
+    const endpoint = type === 'block' ? `/admin/blocks/${id}/theory` : `/admin/${type}s/${id}/theory`
+    await api.put(endpoint, { blocks: theoryBlocks.value })
     snackbar.success('Teoría guardada')
   } catch (e) {
     snackbar.error(e.response?.data?.detail || 'Error al guardar')

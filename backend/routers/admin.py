@@ -858,6 +858,33 @@ async def hard_delete_topic(topic_id: str, db: AsyncSession = Depends(get_db), a
     return MessageResponse(message="Topic deleted permanently")
 
 
+@router.delete("/units/{unit_id}/hard", response_model=MessageResponse)
+async def hard_delete_unit(unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    unit = await db.get(ExerciseUnit, unit_id)
+    if not unit: raise HTTPException(status_code=404)
+    await db.delete(unit)
+    await db.commit()
+    return MessageResponse(message="Unit deleted permanently")
+
+
+@router.delete("/blocks/{block_id}/hard", response_model=MessageResponse)
+async def hard_delete_block(block_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    block = await db.get(ExerciseBlock, block_id)
+    if not block: raise HTTPException(status_code=404)
+    await db.delete(block)
+    await db.commit()
+    return MessageResponse(message="Block deleted permanently")
+
+
+@router.delete("/items/{item_id}/hard", response_model=MessageResponse)
+async def hard_delete_item(item_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    item = await db.get(ExerciseItem, item_id)
+    if not item: raise HTTPException(status_code=404)
+    await db.delete(item)
+    await db.commit()
+    return MessageResponse(message="Item deleted permanently")
+
+
 # ── Users (Children) ──────────────────────────────────────
 
 from models import AppUser
