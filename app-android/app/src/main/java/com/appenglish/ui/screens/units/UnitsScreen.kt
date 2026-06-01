@@ -160,7 +160,7 @@ private fun UnitsListContent(
 
         LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             itemsIndexed(units) { _, u ->
-                val displayIcon = if (u.icon.isNotBlank()) u.icon else "📝"
+                val displayIcon = u.icon
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()

@@ -66,7 +66,7 @@ function renderSubjects() {
   html += subjectsData.value.map(s => `
     <div class="subject-card" data-idx="${subjectsData.value.indexOf(s)}" data-view="subjects">
       <div style="display:flex;align-items:center;padding:20px">
-        <div style="font-size:28px;margin-right:16px">${s.icon||'📚'}</div>
+        <div style="font-size:28px;margin-right:16px">${s.icon||''}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:22px;font-weight:bold;color:#212121;line-height:1.2">${s.name}</div>
           <div style="font-size:14px;color:#757575;margin-top:4px">${s.topicsCount||0} temas</div>
@@ -85,7 +85,7 @@ function renderTopics() {
     const stars = '★'.repeat(t.difficulty || 1) + '☆'.repeat(5 - (t.difficulty || 1))
     return `<div class="topic-card" data-idx="${topicsData.value.indexOf(t)}" data-view="topics">
       <div style="display:flex;align-items:center;padding:16px">
-        <div style="font-size:28px;margin-right:14px">${t.icon||'📝'}</div>
+        <div style="font-size:28px;margin-right:14px">${t.icon||''}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:18px;font-weight:bold;color:#212121;line-height:1.2">${t.name}</div>
           <div style="font-size:12px;color:#FFA726;margin-top:4px">${stars}</div>
@@ -106,7 +106,7 @@ function renderUnits() {
   let html = '<div style="padding:16px 16px 8px 16px"><div style="font-size:20px;font-weight:bold;color:#4CAF50">UNIDADES</div></div>'
   html += unitsData.value.map(u => {
     const locked = u.is_locked
-    const icon = u.icon || '📝'
+    const icon = u.icon || ''
     return `<div class="unit-card" data-idx="${unitsData.value.indexOf(u)}" data-view="units" style="${locked ? 'opacity:0.5' : ''}">
       <div style="display:flex;align-items:center;padding:18px">
         <div style="font-size:28px;margin-right:14px">${locked ? '🔒' : icon}</div>

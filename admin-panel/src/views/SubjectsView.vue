@@ -265,7 +265,7 @@ const listPreviewHtml = computed(() => {
   html += items.value.map(s => {
     return `<div class="subject-card">
       <div style="display:flex;align-items:center;padding:20px">
-        <div style="font-size:28px;margin-right:16px">${s.icon || '📚'}</div>
+        <div style="font-size:28px;margin-right:16px">${s.icon}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:22px;font-weight:bold;color:#212121;line-height:1.2">${s.name}</div>
           <div style="font-size:14px;color:#757575;margin-top:4px">${(s.topicsCount || 0)} temas</div>

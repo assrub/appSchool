@@ -187,7 +187,7 @@ const validationRules = {
 }
 
 const previewHtml = computed(() => {
-  const icon = form.value.icon || '📝'
+  const icon = form.value.icon
   const title = form.value.title || 'Nombre de la unidad'
   const mode = form.value.input_mode === 'tap' ? 'Tocar' : 'Escribir'
   const locked = form.value.is_locked
@@ -195,7 +195,7 @@ const previewHtml = computed(() => {
     <div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5">
       <div class="unit-card" style="margin:0 8px">
         <div style="display:flex;align-items:center;padding:20px">
-          <div style="font-size:28px;margin-right:16px">${locked ? '🔒' : icon}</div>
+          <div style="font-size:28px;margin-right:16px">${locked ? '🔒' : (icon || '')}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:20px;font-weight:bold;color:${locked ? '#999' : '#212121'};line-height:1.2">${title}</div>
             <div style="font-size:14px;color:#757575;margin-top:4px">${mode}</div>
@@ -221,13 +221,13 @@ const listPreviewHtml = computed(() => {
   if (!items.value.length) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">No hay unidades</div>'
   let html = '<div style="padding:16px 16px 8px 16px"><div style="font-size:20px;font-weight:bold;color:#4CAF50">UNIDADES</div></div>'
   html += items.value.map((u) => {
-    const icon = u.icon || '📝'
+    const icon = u.icon
     const title = u.title || u.id
     const mode = u.input_mode === 'tap' ? 'Tocar' : 'Escribir'
     const locked = u.is_locked
     return `<div class="unit-card" style="${locked ? 'opacity:0.5' : ''}">
       <div style="display:flex;align-items:center;padding:18px">
-        <div style="font-size:28px;margin-right:14px">${locked ? '🔒' : icon}</div>
+        <div style="font-size:28px;margin-right:14px">${locked ? '🔒' : (icon || '')}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:17px;font-weight:bold;color:${locked ? '#999' : '#212121'};line-height:1.2">${title}</div>
           <div style="font-size:12px;color:#757575;margin-top:2px">${mode}</div>

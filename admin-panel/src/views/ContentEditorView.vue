@@ -272,7 +272,7 @@ const previewHtml = computed(() => {
   if (!selectedNode.value) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">Seleccioná un contenido</div>'
   const title = selectedNode.value.name || selectedNode.value.title || 'Sin título'
   const type = selectedNode.value.type
-  const icon = type === 'subject' ? (selectedNode.value.icon || '📚') : type === 'topic' ? (selectedNode.value.icon || '📝') : '📋'
+  const icon = type === 'subject' ? selectedNode.value.icon : type === 'topic' ? selectedNode.value.icon : ''
   return `<div style="display:flex;flex-direction:column;height:100%">
     <div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5">
       <div style="margin:0 12px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">

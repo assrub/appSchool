@@ -212,7 +212,7 @@ fun SubjectCard(
             Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(subject.icon, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
+            Text(subject.icon.ifBlank { "" }, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(
