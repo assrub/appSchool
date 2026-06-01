@@ -1,5 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
+import os
+import uuid
+import aiofiles
 from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
@@ -1362,9 +1365,267 @@ async def execute_script(data: ScriptRequest, db: AsyncSession = Depends(get_db)
     return {"results": results}
 
 
+THEORY_AI_GUIDE = r"""# Guía Completa para Crear Teorías en AppSchool
+
+Esta guía te ayudará a crear contenido teórico de calidad para las diferentes secciones de la app: Temas (Topic), Unidades (Unit) y Bloques (Block).
+
+================================================================================
+1. TEORÍA DE TEMA (Topic Theory)
+================================================================================
+
+La teoría de TEMA es la explicación GENERAL del concepto. Se muestra cuando el
+usuario entra a cualquier unidad de ese tema. Debe ser una introducción completa
+pero accesible.
+
+OBJETIVO: Que el alumno entienda el CONCEPTO GENERAL antes de practicar.
+
+ESTRUCTURA RECOMENDADA:
+{
+  "blocks": [
+    {
+      "title": "¿Qué es el [CONCEPTO]?",
+      "html": "<p>Explicación clara y simple del concepto...</p><p>Ejemplos concretos...</p>"
+    },
+    {
+      "title": "📚 Reglas principales",
+      "html": "<p>Lista de reglas o conceptos clave...</p><ul><li>Regla 1</li><li>Regla 2</li></ul>"
+    },
+    {
+      "title": "💡 Ejemplos en contexto",
+      "html": "<p>Ejemplos prácticos de la vida real...</p><blockquote>Frase ejemplo con el concepto</blockquote>"
+    }
+  ],
+  "tips": [
+    { "emoji": "💡", "text": "Tip memorable para recordar el concepto" },
+    { "emoji": "🎯", "text": "Consejo práctico para aplicar" }
+  ]
+}
+
+EJEMPLO REAL (Verbo To Be):
+{
+  "blocks": [
+    {
+      "title": "¿Qué es el Verbo To Be?",
+      "html": "<p>El verbo <b>To Be</b> (ser/estar) es el más importante en inglés. Equivale a los verbos 'ser' y 'estar' en español.</p><p>Se usa para:</p><ul><li>🎯 Identificar personas y cosas: <i>I am a student</i> (Soy estudiante)</li><li>🌟 Describir estados: <i>She is happy</i> (Ella está feliz)</li><li>💬 Expresar ubicación: <i>They are at home</i> (Ellos están en casa)</li></ul>"
+    },
+    {
+      "title": "📋 Formas del Verbo To Be",
+      "html": "<table><tr><th>Sujeto</th><th>Forma</th><th>Contracción</th><th>Ejemplo</th></tr><tr><td>I</td><td>am</td><td>I'm</td><td>I am happy</td></tr><tr><td>He/She/It</td><td>is</td><td>He's/She's/It's</td><td>She is tall</td></tr><tr><td>You/We/They</td><td>are</td><td>You're/We're/They're</td><td>We are ready</td></tr></table>"
+    },
+    {
+      "title": "⚠️ Errores comunes",
+      "html": "<p><mark>错误 NO escribas 'yo soy' como 'I am soy'</mark> - En inglés solo se usa AM, nunca 'am soy'</p><p><mark>错误 NO uses 'is' con 'you'</mark> - You ALWAYS usa ARE, nunca 'you is'</p>"
+    }
+  ],
+  "tips": [
+    { "emoji": "👑", "text": "AM → Solo para YO (I). Como un rey que está solo en su trono" },
+    { "emoji": "👉", "text": "IS → Para UNO solo (He, She, It). Apuntás con el dedo a una sola persona" },
+    { "emoji": "🚢", "text": "ARE → Para MUCHOS (You, We, They). Una armada de barcos juntos" }
+  ]
+}
+
+================================================================================
+2. TEORÍA DE UNIDAD (Unit Theory)
+================================================================================
+
+La teoría de UNIDAD explica un aspecto ESPECÍFICO del tema. Mientras el tema
+explica el concepto general, la unidad se enfoca en una variación o uso particular.
+
+OBJETIVO: Detalle específico sobre AFIRMATIVO, NEGATIVO, INTERROGATIVO, etc.
+
+CUÁNDO USAR: Cuando la unidad tiene matices diferentes que necesitan explicación
+adicional más allá del concepto general.
+
+ESTRUCTURA:
+{
+  "blocks": [
+    {
+      "title": "Cómo formar [AFIRMATIVO/NEGATIVO/INTERROGATIVO]",
+      "html": "<p>Explicación específica de esta forma...</p>"
+    },
+    {
+      "title": "📝 Estructura",
+      "html": "<p>Estructura de la oración:</p><table><tr><th>Sujeto</th><th>Verbo</th><th>Complemento</th></tr><tr><td>I</td><td>am</td><td>a student</td></tr></table>"
+    }
+  ],
+  "tips": [
+    { "emoji": "💡", "text": "Tip específico de esta forma" }
+  ]
+}
+
+EJEMPLO (Unidad Afirmativo del Verbo To Be):
+{
+  "blocks": [
+    {
+      "title": "Oraciones Afirmativas con To Be",
+      "html": "<p>Para formar oraciones afirmativas, seguí esta estructura:</p><p><b>Sujeto + Forma del To Be + Complemento</b></p><p>Ejemplos:</p><ul><li>I am → I'm a teacher</li><li>He is → He's at work</li><li>They are → They're happy</li></ul>"
+    },
+    {
+      "title": "⚡ Contracciones",
+      "html": "<p>En conversación usamos contracciones:</p><table><tr><th>Completa</th><th>Contracción</th></tr><tr><td>I am</td><td>I'm</td></tr><tr><td>he is</td><td>he's</td></tr><tr><td>she is</td><td>she's</td></tr><tr><td>it is</td><td>it's</td></tr><tr><td>you are</td><td>you're</td></tr><tr><td>we are</td><td>we're</td></tr><tr><td>they are</td><td>they're</td></tr></table>"
+    }
+  ],
+  "tips": [
+    { "emoji": "💡", "text": "En inglés informal siempre se usan contracciones. En writing formal se puede usar la forma completa." }
+  ]
+}
+
+================================================================================
+3. TEORÍA DE BLOQUE (Block Theory)
+================================================================================
+
+La teoría de BLOQUE es muy específica - explica el CONTEXTO de los ejercicios
+de ese bloque particular. Puede incluir reglas específicas, tips para entender
+el patrón, o errores a evitar en esos ejercicios específicos.
+
+OBJETIVO: Help the student understand the PATTERN or RULE for that specific set
+of exercises.
+
+CUÁNDO USAR: Ideal para bloques de ejercicios tricky, excepciones, o patrones
+que requieren explicación específica.
+
+ESTRUCTURA:
+{
+  "blocks": [
+    {
+      "title": "El patrón de [PATTERN NAME]",
+      "html": "<p>Explicación del patrón que van a practicar...</p>"
+    },
+    {
+      "title": "🔑 Cómo reconocerlo",
+      "html": "<p>Qué buscar para identificar este patrón...</p>"
+    }
+  ],
+  "tips": [
+    { "emoji": "🎯", "text": "Tip específico para acertar estos ejercicios" }
+  ]
+}
+
+EJEMPLO (Bloque de Third Person Singular - Present Simple):
+{
+  "blocks": [
+    {
+      "title": "El patrón de Third Person Singular",
+      "html": "<p>Cuando el sujeto es <b>He, She o It</b>, el verbo CAMBIA:</p><p><b>verb + s / es</b></p><ul><li>play → plays</li><li>go → goes</li><li>study → studies</li></ul>"
+    },
+    {
+      "title": "⚠️ Excepciones importantes",
+      "html": "<p>Verbos que NO siguen la regla normal:</p><ul><li><b>have → has</b> (no 'haves')</li><li><b>be → is</b> (completamente diferente)</li></ul><p><mark>Estos hay que memorizarlos</mark></p>"
+    }
+  ],
+  "tips": [
+    { "emoji": "🔄", "text": "Si el sujeto es He/She/It, buscá si el verbo termina en s, x, ch, sh, o y → agregá 'es'" },
+    { "emoji": "💡", "text": "Regla nemotécnica: 'Un solo personaje (He/She/It) necesita más esfuerzo para expresar acciones → agrega s/es'" }
+  ]
+}
+
+================================================================================
+4. ETIQUETAS HTML PERMITIDAS
+================================================================================
+
+En el campo 'html' de cada bloque podés usar:
+
+TEXTO:
+- <p>...</p> - Párrafo
+- <b>...</b> - Negrita (important)
+- <i>...</i> - Cursiva (emphasis)
+- <u>...</u> - Subrayado
+- <mark>...</mark> - Resaltado amarillo (para errores comunes)
+- <br> - Salto de línea
+
+LISTAS:
+- <ul><li>...</li></ul> - Lista con viñetas
+- <ol><li>...</li></ol> - Lista numerada
+
+ENCABEZADOS:
+- <h1>...</h1> - Título grande
+- <h2>...</h2> - Subtítulo
+- <h3>...</h3> - Sub-subtítulo
+
+OTROS:
+- <blockquote>...</blockquote> - Cita destacada
+- <table>...</table> - Tabla (con <tr>, <th>, <td>)
+- <a href="...">...</a> - Link
+
+EJEMPLO COMPLETO:
+"<h2>¿Qué es el Present Simple?</h2><p>El Present Simple se usa para:</p><ul><li>🎯 Rutinas diarias</li><li>🌟 Hechos universales</li></ul><table><tr><th>Sujeto</th><th>Verbo</th></tr><tr><td>I/You</td><td>play</td></tr></table><blockquote>Remember: Practice makes perfect!</blockquote>"
+
+================================================================================
+5. FORMATO DE TIPS
+================================================================================
+
+Los tips son frases cortas y memorables que ayudan al alumno a recordar
+conceptos. Formato:
+
+{
+  "emoji": "🎯",  // Un emoji relacionado
+  "text": "Frase corta y memorable que explique o recuerde el concepto"
+}
+
+REGLAS PARA BUENOS TIPS:
+1. Ser BREVE - máximo 15-20 palabras
+2. Ser MEMORABLE - usar analogías o imágenes mentales
+3. Ser PRÁCTICO - indicar cómo aplicarlo
+
+EJEMPLOS:
+{ "emoji": "👑", "text": "AM → Solo para YO. Como un rey solo en su trono" }
+{ "emoji": "👉", "text": "IS → Para UNO solo. Apuntás a UNA persona" }
+{ "emoji": "🚢", "text": "ARE → Para MUCHOS. Una ARMADA de barcos juntos" }
+{ "emoji": "🔄", "text": "Si termina en y precedida por consonante → cambia a ies" }
+
+================================================================================
+6. CÓMO USAR ESTA GUÍA CON UNA IA
+================================================================================
+
+Cuando le des esta guía a una IA (Claude, ChatGPT, etc.), seguí estos pasos:
+
+1. COPIA toda esta guía (desde # Guía Completa hasta el final)
+
+2. DECILE qué tipo de teoría necesitás crear:
+   - "Creá la teoría para el Tema 'Past Simple' de Inglés"
+   - "Creá la teoría para la Unidad 'Afirmativo' del Tema 'Verbo To Be'"
+   - "Creá la teoría para el Bloque de ejercicios sobre 'Wh- Questions'"
+
+3. PROVEÉ contexto adicional:
+   - A qué año/curso va dirigido
+   - Qué dificultades tiene el tema
+   - Ejemplos específicos que quieras incluir
+
+4. PEDILE el JSON estructurado según la sección correspondiente
+
+5. REVISA que el HTML esté bien formado y los tips sean útiles
+
+EJEMPLO DE PROMPT PARA IA:
+---
+Usando la guía adjunta, creá la teoría completa para el Tema 'Present
+Continuous' de inglés para estudiantes de 2do año Secundario.
+
+El tema debería incluir:
+- Qué es el Present Continuous (acción happening ahora)
+- Cuándo usarlo (acciones que están ocurriendo en este momento)
+- Estructura: Sujeto + am/is/are + verbo-ing
+- Ejercicios de práctica
+---
+
+================================================================================
+7. RESUMEN RÁPIDO
+================================================================================
+
+| Tipo | Scope | Objetivo | Ideal para |
+|------|-------|----------|------------|
+| Topic | Concepto general | Entender el tema completo | Introducciones, overview |
+| Unit | Aspecto específico | Dominar una forma (afirmativo, negativo...) | Variaciones y matices |
+| Block | Detalle puntual | Entender patrones específicos | Errores comunes, tips |
+
+PRO TIP: Empezá siempre con la teoría del Topic (general), después
+agregá teoría a las Units que lo necesiten, y finalmente a los Blocks
+que sean particularmente difíciles.
+"""
+
+
 @router.get("/script/template")
 async def get_script_template(admin: dict = Depends(get_current_admin)):
-    return {"template": SCRIPT_TEMPLATE}
+    return {"template": SCRIPT_TEMPLATE, "aiGuide": THEORY_AI_GUIDE}
 
 
 async def _upsert_subject(db: AsyncSession, data: dict):
@@ -1615,3 +1876,53 @@ async def unmark_redo(user_id: int, unit_id: str, db: AsyncSession = Depends(get
     if prog and prog.redo_data: prog.redo_data = {}
     await db.commit()
     return {"status": "ok"}
+
+
+# ── Upload ────────────────────────────────────────────────────
+
+IMAGES_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads", "images")
+os.makedirs(IMAGES_DIR, exist_ok=True)
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+
+
+@router.post("/upload/image")
+async def upload_image(
+    file: UploadFile = File(...),
+    admin: dict = Depends(get_current_admin),
+):
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail=f"Tipo de archivo no permitido: {file.content_type}. Solo se permiten: JPEG, PNG, GIF, WebP, SVG")
+
+    if file.size and file.size > MAX_IMAGE_SIZE:
+        raise HTTPException(status_code=400, detail="La imagen es demasiado grande. Máximo 5MB")
+
+    ext = os.path.splitext(file.filename or "image")[1] or ".jpg"
+    safe_filename = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(IMAGES_DIR, safe_filename)
+
+    async with aiofiles.open(file_path, "wb") as out_file:
+        content = await file.read()
+        if len(content) > MAX_IMAGE_SIZE:
+            raise HTTPException(status_code=400, detail="La imagen es demasiado grande. Máximo 5MB")
+        await out_file.write(content)
+
+    return {
+        "url": f"/uploads/images/{safe_filename}",
+        "filename": safe_filename,
+        "contentType": file.content_type,
+        "size": len(content)
+    }
+
+
+@router.delete("/upload/image/{filename}")
+async def delete_image(
+    filename: str,
+    admin: dict = Depends(get_current_admin),
+):
+    file_path = os.path.join(IMAGES_DIR, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return {"status": "ok", "deleted": filename}
+    raise HTTPException(status_code=404, detail="Archivo no encontrado")

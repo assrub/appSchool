@@ -15,39 +15,74 @@
       <v-alert v-if="showHelp" type="info" variant="tonal" class="mb-4" density="compact">
         <b>Formato:</b> JSON con <code>"version": "1.0"</code> y array <code>"actions"</code>.<br />
         Acciones: <code>upsert_subject</code>, <code>upsert_topic</code>, <code>upsert_unit</code>, <code>delete_unit</code>, <code>delete_topic</code>, <code>delete_subject</code>.<br />
-        <b>Tip:</b> Usá "Copiar template" para obtener la estructura exacta.
+        <b>Tip:</b> Usá "Copiar todo" para obtener el template JSON y la guía IA para crear teorías.
       </v-alert>
     </v-expand-transition>
 
     <v-card rounded="lg" elevation="2">
+      <v-tabs v-model="tab" color="primary" align-tabs="start">
+        <v-tab value="template">
+          <v-icon start>mdi-code-json</v-icon>
+          Template JSON
+        </v-tab>
+        <v-tab value="ai-guide">
+          <v-icon start>mdi-robot</v-icon>
+          Guía IA para Teorías
+        </v-tab>
+      </v-tabs>
+
+      <v-divider />
+
       <v-card-text>
         <div class="d-flex align-center mb-4 flex-wrap ga-2">
-          <v-btn color="secondary" prepend-icon="mdi-content-copy" variant="tonal" size="small" @click="copyTemplate">
-            Copiar template
+          <v-btn color="primary" prepend-icon="mdi-content-copy" variant="flat" size="small" @click="copyAll" :loading="loading">
+            <v-icon start size="18">mdi-content-copy</v-icon>
+            Copiar todo (Template + Guía IA)
           </v-btn>
           <v-btn color="success" prepend-icon="mdi-play" @click="executeScript" :loading="executing" size="small">
-            Ejecutar
+            Ejecutar script
           </v-btn>
           <v-btn variant="outlined" prepend-icon="mdi-format-validation" @click="validateJson" :disabled="!script.trim()" size="small">
-            Validar JSON
+            Validar
           </v-btn>
           <v-btn variant="text" prepend-icon="mdi-close" @click="clearAll" size="small" color="grey">
             Limpiar
           </v-btn>
         </div>
 
-        <v-textarea
-          v-model="script"
-          label="Script JSON"
-          variant="outlined"
-          rows="18"
-          placeholder='{ "version": "1.0", "actions": [ ... ] }'
-          hide-details
-          class="font-monospace"
-          style="font-size: 13px"
-          :error="jsonError !== null"
-          :error-messages="jsonError"
-        />
+        <v-window v-model="tab">
+          <v-window-item value="template">
+            <v-textarea
+              v-model="script"
+              label="Script JSON"
+              variant="outlined"
+              rows="20"
+              placeholder='{ "version": "1.0", "actions": [ ... ] }'
+              hide-details
+              class="font-monospace"
+              style="font-size: 13px"
+              :error="jsonError !== null"
+              :error-messages="jsonError"
+            />
+          </v-window-item>
+
+          <v-window-item value="ai-guide">
+            <v-alert type="info" variant="tonal" class="mb-4">
+              <b>Esta guía</b> la podés usar para darle contexto a una IA (Claude, ChatGPT, etc.) cuando quieras que te ayude a crear teorías para topics, unidades y bloques. Copiala junto con el template JSON.
+            </v-alert>
+            <v-textarea
+              v-model="aiGuide"
+              label="Guía IA para crear teorías"
+              variant="outlined"
+              rows="25"
+              hide-details
+              class="font-monospace"
+              style="font-size: 12px; background: #f8f9fa;"
+              readonly
+              auto-grow
+            />
+          </v-window-item>
+        </v-window>
 
         <v-alert v-if="validationResult" type="warning" variant="tonal" class="mt-3" density="compact">
           <b>Validación:</b> {{ validationResult }}
@@ -85,12 +120,45 @@ import api from '../api/client'
 
 const snackbar = inject('snackbar')
 
+const tab = ref('template')
 const script = ref('')
+const aiGuide = ref('')
+const loading = ref(false)
 const executing = ref(false)
 const results = ref([])
 const showHelp = ref(false)
 const jsonError = ref(null)
 const validationResult = ref(null)
+
+async function copyAll() {
+  loading.value = true
+  try {
+    const { data } = await api.get('/admin/script/template')
+    script.value = data.template
+    aiGuide.value = data.aiGuide
+    jsonError.value = null
+    validationResult.value = null
+
+    const fullContent = `===========================================
+# TEMPLATE JSON - AppSchool
+===========================================
+${data.template}
+
+===========================================
+# GUÍA IA PARA CREAR TEORÍAS - AppSchool
+===========================================
+Copiá esta guía y usala como contexto cuando le pidas a una IA que te ayude a crear contenido teórico para la app.
+
+${data.aiGuide}
+`
+    await navigator.clipboard.writeText(fullContent)
+    snackbar.success('Template JSON + Guía IA copiados al portapapeles')
+  } catch (e) {
+    snackbar.error('Error al obtener template: ' + (e.message || 'Error desconocido'))
+  } finally {
+    loading.value = false
+  }
+}
 
 async function copyTemplate() {
   try {

@@ -3,16 +3,19 @@
     <v-navigation-drawer
       v-model="drawer"
       color="primary"
-      rail
-      expand-on-hover
+      :rail="rail"
       permanent
     >
-      <div class="pa-3 text-center">
+      <div v-if="!rail" class="pa-4">
         <div class="text-h6 text-white font-weight-bold">AppSchool</div>
         <div class="text-caption text-grey-lighten-1">Admin Panel</div>
       </div>
 
-      <v-divider class="mb-2" />
+      <div v-if="rail" class="pa-2 text-center">
+        <v-icon icon="mdi-book-open-variant" color="white" size="28" />
+      </div>
+
+      <v-divider v-if="!rail" class="mb-2" />
 
       <v-list nav density="compact">
         <v-list-item
@@ -67,6 +70,13 @@
     </v-navigation-drawer>
 
     <v-app-bar color="white" elevation="1" density="compact">
+      <v-btn
+        icon="mdi-menu"
+        variant="text"
+        @click="toggleDrawer"
+        class="ml-2"
+      />
+
       <v-breadcrumbs :items="breadcrumbs" class="py-0">
         <template #divider>
           <v-icon icon="mdi-chevron-right" size="small" />
@@ -105,7 +115,12 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const drawer = ref(true)
+const rail = ref(true)
 const username = computed(() => localStorage.getItem('username') || '')
+
+function toggleDrawer() {
+  rail.value = !rail.value
+}
 
 const breadcrumbs = computed(() => {
   const items = [{ title: 'Inicio', to: '/' }]
