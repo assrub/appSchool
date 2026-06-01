@@ -233,8 +233,6 @@ private fun ExerciseContent(
     val scrollState = rememberScrollState()
 
     var draggingWord by remember { mutableStateOf<String?>(null) }
-    var dragWordRootPos by remember { mutableStateOf(Offset.Zero) }
-    var dragAccumulated by remember { mutableStateOf(Offset.Zero) }
     var isOverDropZone by remember { mutableStateOf(false) }
     var dropZoneRect by remember { mutableStateOf(Rect.Zero) }
 
@@ -401,21 +399,21 @@ private fun ExerciseContent(
 
             if (inputMode == "tap" && uiState.isCorrect == null && options.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
-                Text("Arrastrá la palabra al hueco o tocá", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Text("Arrastrá la palabra al hueco", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                 ) {
                     options.forEach { option ->
+                        var cardRootBounds by remember { mutableStateOf(Rect.Zero) }
                         var dragDelta by remember { mutableStateOf(Offset.Zero) }
-                        val scale by animateFloatAsState(targetValue = 1f, animationSpec = spring(stiffness = Spring.StiffnessMedium), label = "scale")
 
                         Card(
                             modifier = Modifier
-                                .scale(if (dragDelta != Offset.Zero) 1.08f else scale)
                                 .offset { IntOffset(dragDelta.x.roundToInt(), dragDelta.y.roundToInt()) }
                                 .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
+                                .onGloballyPositioned { coords -> cardRootBounds = coords.boundsInRoot() }
                                 .pointerInput(option) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { _ ->
@@ -426,9 +424,11 @@ private fun ExerciseContent(
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             dragDelta += dragAmount
-                                            isOverDropZone = dropZoneRect.contains(
-                                                Offset(dropZoneRect.center.x, dropZoneRect.center.y)
+                                            val fingerRootPos = Offset(
+                                                cardRootBounds.center.x + dragDelta.x,
+                                                cardRootBounds.center.y + dragDelta.y
                                             )
+                                            isOverDropZone = dropZoneRect.contains(fingerRootPos)
                                         },
                                         onDragEnd = {
                                             if (isOverDropZone && draggingWord != null) {
@@ -445,10 +445,6 @@ private fun ExerciseContent(
                                             dragDelta = Offset.Zero
                                         }
                                     )
-                                }
-                                .clickable {
-                                    viewModel.selectOption(option)
-                                    viewModel.checkTextAnswer()
                                 },
                             shape = RoundedCornerShape(16.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -482,24 +478,6 @@ private fun ExerciseContent(
             }
 
             Spacer(Modifier.height(80.dp))
-        }
-
-        if (draggingWord != null) {
-            val scrollOffset = with(density) { scrollState.value.toDp().toPx() }
-            val x = dragWordRootPos.x + dragAccumulated.x
-            val y = dragWordRootPos.y + dragAccumulated.y - scrollOffset
-
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset((x - 55f).roundToInt(), (y - 25f).roundToInt()) }
-                    .widthIn(min = 80.dp)
-                    .shadow(16.dp, RoundedCornerShape(14.dp))
-                    .background(Primary, RoundedCornerShape(14.dp))
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(draggingWord!!, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-            }
         }
 
         AnimatedVisibility(
