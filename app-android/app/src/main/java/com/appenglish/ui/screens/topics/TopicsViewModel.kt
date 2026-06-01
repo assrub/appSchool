@@ -17,6 +17,7 @@ data class TopicsUiState(
     val isLoading: Boolean = true,
     val subjectName: String = "",
     val topics: List<TopicSummary> = emptyList(),
+    val selectedTab: Int = 0,
     val error: String? = null
 )
 

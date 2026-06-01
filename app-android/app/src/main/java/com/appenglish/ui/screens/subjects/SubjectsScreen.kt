@@ -23,6 +23,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.Subject
 import com.appenglish.ui.theme.Primary
@@ -45,7 +48,7 @@ fun SubjectsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-Scaffold(
+    Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("AppEnglish", fontWeight = FontWeight.Bold) },
@@ -56,44 +59,128 @@ Scaffold(
             )
         }
     ) { padding ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            TabRow(selectedTabIndex = uiState.selectedTab) {
+                Tab(
+                    selected = uiState.selectedTab == 0,
+                    onClick = { viewModel.selectTab(0) },
+                    text = { Text("MATERIAS", fontWeight = if (uiState.selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
+                )
+                Tab(
+                    selected = uiState.selectedTab == 1,
+                    onClick = { viewModel.selectTab(1) },
+                    text = { Text("TEMAS", fontWeight = if (uiState.selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
+                )
             }
-        } else if (uiState.error != null) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+
+            when (uiState.selectedTab) {
+                0 -> SubjectsListContent(
+                    subjects = uiState.subjects,
+                    isLoading = uiState.isLoading,
+                    error = uiState.error,
+                    onSubjectClick = onSubjectClick,
+                    onRetry = { viewModel.loadSubjects() }
+                )
+                1 -> AllTopicsContent(
+                    subjects = uiState.subjects,
+                    isLoading = uiState.isLoading,
+                    error = uiState.error,
+                    onSubjectClick = onSubjectClick,
+                    onRetry = { viewModel.loadSubjects() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubjectsListContent(
+    subjects: List<Subject>,
+    isLoading: Boolean,
+    error: String?,
+    onSubjectClick: (String) -> Unit,
+    onRetry: () -> Unit
+) {
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        }
+    } else if (error != null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(error, color = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Reintentar", color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { onRetry() })
+            }
+        }
+    } else if (subjects.isEmpty()) {
+        EmptyState()
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(subjects) { subject ->
+                SubjectCard(subject = subject, onClick = { onSubjectClick(subject.id) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun AllTopicsContent(
+    subjects: List<Subject>,
+    isLoading: Boolean,
+    error: String?,
+    onSubjectClick: (String) -> Unit,
+    onRetry: () -> Unit
+) {
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        }
+    } else if (error != null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(error, color = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Reintentar", color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { onRetry() })
+            }
+        }
+    } else {
+        val allTopics = subjects.flatMap { subject ->
+            subject.topics.map { topic -> subject to topic }
+        }
+        if (allTopics.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
+                    Text("📚", style = MaterialTheme.typography.displayLarge)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Reintentar",
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { viewModel.loadSubjects() }
-                    )
+                    Text("No hay temas disponibles", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (uiState.subjects.isEmpty()) {
-                    item {
-                        EmptyState()
-                    }
-                } else {
-                    items(uiState.subjects) { subject ->
-                        SubjectCard(
-                            subject = subject,
-                            onClick = { onSubjectClick(subject.id) }
-                        )
+                items(allTopics) { (subject, topic) ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().clickable { onSubjectClick(subject.id) },
+                        shape = MaterialTheme.shapes.medium,
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(topic.icon, fontSize = 24.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(topic.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text(subject.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Ir", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
