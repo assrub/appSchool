@@ -561,6 +561,7 @@ private fun ExerciseTabContent(
                                 .pointerInput(option) {
                                     detectDragGestures(
                                         onDragStart = { _ ->
+                                            onSelectOption(option)
                                             onDraggingWordChange(option)
                                             dragDelta = Offset.Zero
                                             onIsOverDropZoneChange(true)
@@ -570,9 +571,6 @@ private fun ExerciseTabContent(
                                             dragDelta += dragAmount
                                         },
                                         onDragEnd = {
-                                            if (draggingWord != null) {
-                                                onSelectOption(draggingWord!!)
-                                            }
                                             onDraggingWordChange(null)
                                             onIsOverDropZoneChange(false)
                                             dragDelta = Offset.Zero
