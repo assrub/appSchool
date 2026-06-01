@@ -9,7 +9,9 @@ import com.appenglish.domain.model.Topic
 import com.appenglish.domain.model.Theory
 import com.appenglish.domain.model.Tip
 import com.appenglish.domain.model.UnitTheory
+import com.appenglish.domain.model.BlockTheory
 import com.appenglish.domain.model.TheorySection
+import com.appenglish.domain.model.TheoryBlock
 import com.appenglish.domain.model.Unit
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.ExerciseItem
@@ -82,6 +84,16 @@ class TopicViewModel @Inject constructor(
                             soundIncorrectUrl = unitDto.soundIncorrectUrl,
                             theory = unitTheory,
                             blocks = unitDto.blocks.map { blockDto ->
+                                val blockTheory = blockDto.theory?.let { bt ->
+                                    BlockTheory(
+                                        text = bt.text,
+                                        sections = bt.sections?.map { TheorySection(it.title, it.text, it.examples ?: emptyList()) } ?: emptyList(),
+                                        headers = bt.table?.headers ?: emptyList(),
+                                        rows = bt.table?.rows ?: emptyList(),
+                                        tips = bt.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),
+                                        blocks = bt.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
+                                    )
+                                }
                                 ExerciseBlock(
                                     title = blockDto.title,
                                     items = blockDto.items.map { itemDto ->
@@ -94,7 +106,8 @@ class TopicViewModel @Inject constructor(
                                             answers = itemDto.answers,
                                             options = itemDto.options
                                         )
-                                    }
+                                    },
+                                    theory = blockTheory
                                 )
                             },
                             completedItems = local?.completedItems ?: unitDto.progress?.completedItems ?: 0,

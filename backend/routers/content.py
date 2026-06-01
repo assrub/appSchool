@@ -7,12 +7,12 @@ from sqlalchemy.orm import selectinload
 
 from database import get_db
 from models import Subject, Topic, TopicTheory, TheorySection, TheoryVideo
-from models import ExerciseUnit, UnitTheory, UnitTheorySection, ExerciseBlock, ExerciseItem
+from models import ExerciseUnit, UnitTheory, UnitTheorySection, ExerciseBlock, ExerciseItem, BlockTheory
 from schemas.content import (
     SubjectsResponse, SubjectResponse, TopicResponse, TopicSummary, TopicProgress,
     TestResponse, TestQuestion,
     Unit, UnitProgress, UnitTheoryDto, TheorySectionDto,
-    ExerciseBlockDto, ExerciseItemDto, TheoryDto, TableDto, TipDto, TestConfigDto,
+    ExerciseBlockDto, ExerciseItemDto, TheoryDto, TableDto, TipDto, TestConfigDto, BlockTheoryDto,
 )
 
 router = APIRouter()
@@ -84,6 +84,7 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
             selectinload(Topic.theory).selectinload(TopicTheory.sections),
             selectinload(Topic.videos),
             selectinload(Topic.units).selectinload(ExerciseUnit.theory).selectinload(UnitTheory.sections),
+            selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.theory),
             selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.items),
             selectinload(Topic.subject),
         )
@@ -153,7 +154,32 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
                 )
                 for item in block.items
             ]
-            blocks_dto.append(ExerciseBlockDto(title=block.title, items=items_dto))
+
+            block_theory_dto = None
+            if block.theory:
+                import json
+                blocks = None
+                try:
+                    parsed = json.loads(block.theory.text or "")
+                    if isinstance(parsed, list):
+                        blocks = parsed
+                except:
+                    pass
+                block_theory_dto = BlockTheoryDto(
+                    text=block.theory.text if not blocks else "",
+                    sections=[
+                        TheorySectionDto(title=s.title, text=s.text, examples=s.examples or [])
+                        for s in (block.theory.sections or [])
+                    ],
+                    table=TableDto(
+                        headers=block.theory.table_headers or [],
+                        rows=block.theory.table_rows or [],
+                    ) if block.theory.table_headers else None,
+                    tips=[TipDto(emoji=t["emoji"], text=t["text"]) for t in (block.theory.tips or [])],
+                    blocks=blocks,
+                )
+
+            blocks_dto.append(ExerciseBlockDto(title=block.title, items=items_dto, theory=block_theory_dto))
 
         total_items = sum(len(b.items) for b in unit.blocks)
         units_dto.append(

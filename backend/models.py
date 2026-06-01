@@ -146,6 +146,36 @@ class ExerciseBlock(Base):
 
     unit: Mapped["ExerciseUnit"] = relationship(back_populates="blocks")
     items: Mapped[list["ExerciseItem"]] = relationship(back_populates="block", order_by="ExerciseItem.sort_order")
+    theory: Mapped["BlockTheory | None"] = relationship(back_populates="block", uselist=False)
+
+
+class BlockTheory(Base):
+    __tablename__ = "block_theory"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    block_id: Mapped[int] = mapped_column(Integer, ForeignKey("exercise_blocks.id"), unique=True, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    table_headers: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    table_rows: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    tips: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    block: Mapped["ExerciseBlock"] = relationship(back_populates="theory")
+    sections: Mapped[list["BlockTheorySection"]] = relationship(back_populates="block_theory", order_by="BlockTheorySection.sort_order")
+
+
+class BlockTheorySection(Base):
+    __tablename__ = "block_theory_sections"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    block_theory_id: Mapped[int] = mapped_column(Integer, ForeignKey("block_theory.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    examples: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+    block_theory: Mapped["BlockTheory"] = relationship(back_populates="sections")
 
 
 class ExerciseItem(Base):

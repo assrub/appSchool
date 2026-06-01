@@ -172,15 +172,28 @@ let autosaveTimer = null
 
 const currentBlock = computed(() => blocks.value[openPanels.value[0]] || null)
 
-const title = computed(() => type === 'topic' ? 'Teoría del tema' : 'Teoría de la unidad')
-
-const backRoute = computed(() => {
-  const sid = route.query.subjectId || route.query.topicId
-  if (type === 'topic') return sid ? `/subjects/${sid}/topics` : null
-  return route.query.topicId ? `/topics/${route.query.topicId}/units` : null
+const title = computed(() => {
+  if (type === 'topic') return 'Teoría del tema'
+  if (type === 'unit') return 'Teoría de la unidad'
+  return 'Teoría del bloque'
 })
 
-const backLabel = computed(() => type === 'topic' ? 'Temas' : 'Unidades')
+const backRoute = computed(() => {
+  if (type === 'topic') {
+    const sid = route.query.subjectId || route.query.topicId
+    return sid ? `/subjects/${sid}/topics` : null
+  }
+  if (type === 'unit') {
+    return route.query.topicId ? `/topics/${route.query.topicId}/units` : null
+  }
+  return route.query.unitId ? `/units/${route.query.unitId}/blocks` : null
+})
+
+const backLabel = computed(() => {
+  if (type === 'topic') return 'Temas'
+  if (type === 'unit') return 'Unidades'
+  return 'Bloques'
+})
 
 const previewHtml = computed(() => {
   return blocks.value.map(b => {
@@ -237,7 +250,8 @@ async function fetchData() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get(`/admin/${type}s/${id}/theory`)
+    const endpoint = type === 'block' ? `/admin/blocks/${id}/theory` : `/admin/${type}s/${id}/theory`
+    const { data } = await api.get(endpoint)
     if (data.blocks && data.blocks.length) {
       blocks.value = data.blocks.map(b => ({
         ...b,
@@ -281,7 +295,8 @@ async function save(silent = false) {
   if (!silent) saving.value = true
   try {
     const payload = { blocks: blocks.value, tips: globalTips.value }
-    await api.put(`/admin/${type}s/${id}/theory`, payload)
+    const endpoint = type === 'block' ? `/admin/blocks/${id}/theory` : `/admin/${type}s/${id}/theory`
+    await api.put(endpoint, payload)
 
     if (type === 'topic' && videos.value.length) {
       for (const v of videos.value) {

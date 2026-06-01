@@ -54,6 +54,15 @@ data class UnitTheory(
     val blocks: List<TheoryBlock> = emptyList()
 )
 
+data class BlockTheory(
+    val text: String,
+    val sections: List<TheorySection>,
+    val headers: List<String>,
+    val rows: List<List<String>>,
+    val tips: List<Tip>,
+    val blocks: List<TheoryBlock> = emptyList()
+)
+
 data class TheoryBlock(
     val title: String?,
     val html: String?
@@ -84,7 +93,8 @@ data class Unit(
 
 data class ExerciseBlock(
     val title: String,
-    val items: List<ExerciseItem>
+    val items: List<ExerciseItem>,
+    val theory: BlockTheory? = null
 )
 
 data class ExerciseItem(

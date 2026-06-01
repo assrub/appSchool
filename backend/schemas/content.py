@@ -46,6 +46,15 @@ class ExerciseItemDto(BaseModel):
 class ExerciseBlockDto(BaseModel):
     title: str
     items: list[ExerciseItemDto]
+    theory: "BlockTheoryDto | None" = None
+
+
+class BlockTheoryDto(BaseModel):
+    text: str
+    sections: list[TheorySectionDto] = []
+    table: TableDto | None = None
+    tips: list[TipDto] = []
+    blocks: list[dict] | None = None
 
 
 class UnitProgress(BaseModel):

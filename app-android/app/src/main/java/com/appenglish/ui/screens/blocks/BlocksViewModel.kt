@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.appenglish.data.repository.ContentRepository
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.ExerciseItem
+import com.appenglish.domain.model.BlockTheory
 import com.appenglish.domain.model.TheoryBlock
 import com.appenglish.domain.model.UnitTheory
 import com.appenglish.domain.model.TheorySection
@@ -25,6 +26,7 @@ data class BlocksUiState(
     val blocks: List<ExerciseBlock> = emptyList(),
     val topicTheory: UnitTheory? = null,
     val unitTheory: UnitTheory? = null,
+    val selectedTab: Int = 0,
     val error: String? = null
 )
 
@@ -42,6 +44,10 @@ class BlocksViewModel @Inject constructor(
     val uiState: StateFlow<BlocksUiState> = _uiState.asStateFlow()
 
     init { loadBlocks() }
+
+    fun selectTab(index: Int) {
+        _uiState.value = _uiState.value.copy(selectedTab = index)
+    }
 
     fun loadBlocks() {
         viewModelScope.launch {
@@ -79,7 +85,17 @@ class BlocksViewModel @Inject constructor(
                                             topicTheory = topicTheory,
                                             unitTheory = unitTheory,
                                             blocks = unit.blocks.map { b ->
-                                                ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint) })
+                                                val blockTheory = b.theory?.let { bt ->
+                                                    BlockTheory(
+                                                        text = bt.text,
+                                                        sections = emptyList(),
+                                                        headers = bt.table?.headers ?: emptyList(),
+                                                        rows = bt.table?.rows ?: emptyList(),
+                                                        tips = bt.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),
+                                                        blocks = bt.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
+                                                    )
+                                                }
+                                                ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint) }, blockTheory)
                                             }
                                         )
                                         return@launch

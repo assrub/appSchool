@@ -6,10 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.appenglish.data.repository.ContentRepository
 import com.appenglish.data.repository.ProgressRepository
 import com.appenglish.domain.model.Unit as DomainUnit
-import com.appenglish.domain.model.ExerciseBlock
-import com.appenglish.domain.model.ExerciseItem
 import com.appenglish.domain.model.UnitTheory
-import com.appenglish.domain.model.TheorySection
+import com.appenglish.domain.model.Theory
 import com.appenglish.domain.model.Tip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +19,9 @@ import javax.inject.Inject
 data class UnitsUiState(
     val isLoading: Boolean = true,
     val topicName: String = "",
+    val topicTheory: Theory? = null,
     val units: List<DomainUnit> = emptyList(),
+    val selectedTab: Int = 0,
     val error: String? = null
 )
 
@@ -49,7 +49,7 @@ class UnitsViewModel @Inject constructor(
                     val localProgress = progressRepository.getTopicProgress(topicId)
                     val units = response.units.map { unitDto ->
                         val local = localProgress.find { it.unitId == unitDto.id }
-                        val total = unitDto.blocks.sumOf { it.items.size }
+                        val total = unitDto.blocks.sumOf { b -> b.items.size }
                         DomainUnit(
                             id = unitDto.id, title = unitDto.title, exerciseType = unitDto.exerciseType,
                             explanation = unitDto.explanation, isLocked = unitDto.isLocked,
@@ -58,9 +58,16 @@ class UnitsViewModel @Inject constructor(
                             totalItems = total
                         )
                     }
+                    val topicTheory = Theory(
+                        text = response.theory.text,
+                        headers = response.theory.table?.headers ?: emptyList(),
+                        rows = response.theory.table?.rows ?: emptyList(),
+                        tips = response.theory.tips.map { Tip(it.emoji, it.text) }
+                    )
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         topicName = response.name,
+                        topicTheory = topicTheory,
                         units = units
                     )
                 },
@@ -69,5 +76,9 @@ class UnitsViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    fun selectTab(index: Int) {
+        _uiState.value = _uiState.value.copy(selectedTab = index)
     }
 }

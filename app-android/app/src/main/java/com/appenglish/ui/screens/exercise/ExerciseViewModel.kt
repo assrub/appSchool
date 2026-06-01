@@ -8,7 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.appenglish.data.repository.ContentRepository
 import com.appenglish.data.repository.ProgressRepository
 import com.appenglish.domain.model.UnitTheory
+import com.appenglish.domain.model.BlockTheory
 import com.appenglish.domain.model.TheorySection
+import com.appenglish.domain.model.TheoryBlock
 import com.appenglish.domain.model.Tip
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.ExerciseItem
@@ -95,7 +97,19 @@ class UnitExerciseViewModel @Inject constructor(
                     val unitDto = response.units.find { it.id == unitId }
                     if (unitDto == null) { _uiState.value = _uiState.value.copy(isLoading = false, error = "Unidad no encontrada"); return@fold }
 
-                    val blocks = unitDto.blocks.map { b -> ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint, it.itemType, it.inputMode, it.answers, it.options) }) }
+                    val blocks = unitDto.blocks.map { b ->
+                        val blockTheory = b.theory?.let { bt ->
+                            BlockTheory(
+                                text = bt.text,
+                                sections = bt.sections?.map { TheorySection(it.title, it.text, it.examples ?: emptyList()) } ?: emptyList(),
+                                headers = bt.table?.headers ?: emptyList(),
+                                rows = bt.table?.rows ?: emptyList(),
+                                tips = bt.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),
+                                blocks = bt.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
+                            )
+                        }
+                        ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint, it.itemType, it.inputMode, it.answers, it.options) }, blockTheory)
+                    }
                     val totalItems = blocks.sumOf { it.items.size }
 
                     // Load saved progress from local DB

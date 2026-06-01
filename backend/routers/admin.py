@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from database import get_db
 from dependencies import get_current_admin
-from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, Progress, AnswerHistory, StudySession, DictionaryEntry, AppUser
+from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, BlockTheory, BlockTheorySection, Progress, AnswerHistory, StudySession, DictionaryEntry, AppUser
 from schemas.admin import (
     SubjectCreate, SubjectUpdate, SubjectResponse as AdminSubjectResponse,
     TopicCreate, TopicUpdate, TopicResponse as AdminTopicResponse,
@@ -620,6 +620,48 @@ async def save_unit_theory(unit_id: str, data: TheorySaveRequest, db: AsyncSessi
     await db.execute(delete(UnitTheorySection).where(UnitTheorySection.unit_theory_id == theory.id))
     for idx, s in enumerate(data.sections):
         db.add(UnitTheorySection(unit_theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
+
+    theory.table_headers = data.table_headers
+    theory.table_rows = data.table_rows
+    theory.tips = data.tips
+    await db.commit()
+    return MessageResponse(message="Theory saved")
+
+
+# ── Theory (Block) ─────────────────────────────────────────
+
+@router.get("/blocks/{block_id}/theory", response_model=TheorySaveRequest)
+async def get_block_theory(block_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(BlockTheory).where(BlockTheory.block_id == block_id).options(selectinload(BlockTheory.sections)))
+    theory = result.scalar_one_or_none()
+    if not theory: return TheorySaveRequest()
+    import json
+    blocks = None
+    try:
+        parsed = json.loads(theory.text)
+        if isinstance(parsed, list): blocks = parsed
+    except: pass
+    return TheorySaveRequest(text=theory.text if not blocks else "", sections=[{"title": s.title, "text": s.text, "examples": s.examples or []} for s in (theory.sections or [])], table_headers=theory.table_headers, table_rows=theory.table_rows, tips=theory.tips, blocks=blocks)
+
+
+@router.put("/blocks/{block_id}/theory", response_model=MessageResponse)
+async def save_block_theory(block_id: int, data: TheorySaveRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(select(BlockTheory).where(BlockTheory.block_id == block_id))
+    theory = result.scalar_one_or_none()
+    if not theory:
+        theory = BlockTheory(block_id=block_id, text="")
+        db.add(theory)
+        await db.flush()
+
+    if data.blocks:
+        import json
+        theory.text = json.dumps(data.blocks, ensure_ascii=False)
+    else:
+        theory.text = data.text
+
+    await db.execute(delete(BlockTheorySection).where(BlockTheorySection.block_theory_id == theory.id))
+    for idx, s in enumerate(data.sections):
+        db.add(BlockTheorySection(block_theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
 
     theory.table_headers = data.table_headers
     theory.table_rows = data.table_rows

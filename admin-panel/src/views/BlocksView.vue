@@ -79,6 +79,18 @@
                       />
                     </template>
                   </v-tooltip>
+                  <v-tooltip text="Editar teoría" location="top">
+                    <template #activator="{ props: tp }">
+                      <v-btn
+                        icon="mdi-book-open-page-variant"
+                        v-bind="tp"
+                        variant="text"
+                        size="small"
+                        color="info"
+                        :to="{ path: `/theory/block/${b.id}`, query: { unitId } }"
+                      />
+                    </template>
+                  </v-tooltip>
                   <v-tooltip text="Eliminar" location="top">
                     <template #activator="{ props: tp }">
                       <v-btn

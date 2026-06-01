@@ -105,7 +105,16 @@ data class UnitProgressDto(
 
 data class ExerciseBlockDto(
     val title: String,
-    val items: List<ExerciseItemDto>
+    val items: List<ExerciseItemDto>,
+    val theory: BlockTheoryDto? = null
+)
+
+data class BlockTheoryDto(
+    val text: String,
+    val sections: List<TheorySectionDto>?,
+    val table: TableDto?,
+    val tips: List<TipDto>?,
+    val blocks: List<TheoryBlockDto>?
 )
 
 data class ExerciseItemDto(
