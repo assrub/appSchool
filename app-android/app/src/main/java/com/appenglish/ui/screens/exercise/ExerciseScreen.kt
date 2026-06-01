@@ -242,28 +242,6 @@ private fun ExerciseContent(
     val options = viewModel.getOptions()
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        if (uiState.unitTheory != null) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(containerColor = CorrectBackground),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        Modifier.padding(14.dp).clickable { },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("📖", fontSize = 24.sp)
-                        Spacer(Modifier.width(10.dp))
-                        Text("Ver explicación", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                        Text("→", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-            }
-        }
-
         item {
             Text("${uiState.completedItems} / ${uiState.totalItems} items", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             LinearProgressIndicator(
