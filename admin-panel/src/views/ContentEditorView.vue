@@ -269,29 +269,18 @@ function getIconForType(type) {
 }
 
 const previewHtml = computed(() => {
-  if (!selectedNode.value) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">Seleccioná un contenido</div>'
+  const header = '<div style="background:#4CAF50;color:white;padding:12px 16px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="flex:1">AppEnglish</div></div>'
+  const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#4CAF50;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
+
+  if (!selectedNode.value) {
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#757575;font-size:14px;padding:20px">Seleccioná un contenido</div>${bottomNav}</div>`
+  }
+
   const title = selectedNode.value.name || selectedNode.value.title || 'Sin título'
   const type = selectedNode.value.type
-  const icon = type === 'subject' ? selectedNode.value.icon : type === 'topic' ? selectedNode.value.icon : ''
-  return `<div style="display:flex;flex-direction:column;height:100%">
-    <div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5">
-      <div style="margin:0 12px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
-        <div style="display:flex;align-items:center;padding:20px">
-          <div style="font-size:28px;margin-right:16px">${icon}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:20px;font-weight:bold;color:#212121;line-height:1.2">${title}</div>
-            <div style="font-size:13px;color:#757575;margin-top:4px;text-transform:capitalize">${type}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="bottom-nav">
-      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
-      <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
-      <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
-      <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
-    </div>
-  </div>`
+  const icon = type === 'subject' ? (selectedNode.value.icon || '') : type === 'topic' ? (selectedNode.value.icon || '') : ''
+
+  return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;overflow-y:auto;background:#f5f5f5;padding:12px"><div style="margin:0 12px;background:white;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)"><div style="display:flex;align-items:center;padding:20px"><div style="font-size:28px;margin-right:16px;flex-shrink:0">${icon}</div><div style="flex:1;min-width:0"><div style="font-size:22px;font-weight:bold;color:#212121;line-height:1.2">${title}</div><div style="font-size:14px;color:#757575;margin-top:4px;text-transform:capitalize">${type}</div></div></div></div></div>${bottomNav}</div>`
 })
 
 async function loadContentTree() {

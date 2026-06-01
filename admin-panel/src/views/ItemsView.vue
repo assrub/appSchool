@@ -399,12 +399,7 @@ const validationRules = computed(() => ({
 
 const previewExerciseHtml = computed(() => {
   const t = form.value.item_type
-  const bottomNav = `<div class="bottom-nav">
-    <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
-    <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
-    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
-    <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
-  </div>`
+  const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#757575;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
   if (t === 'fill-blank') {
     const s = form.value.sentence || '...'
     const opts = optionsList.value.filter(o => o.trim())

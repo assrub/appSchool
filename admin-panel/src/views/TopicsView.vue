@@ -86,7 +86,7 @@
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <AppPreview />
+        <MobilePreview :html="topicsPreviewHtml" />
       </v-col>
     </v-row>
 
@@ -148,7 +148,7 @@
 import { ref, watch, onMounted, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
-import AppPreview from '../components/AppPreview.vue'
+import MobilePreview from '../components/MobilePreview.vue'
 import { useValidate } from '../composables/useValidation'
 
 const route = useRoute()
@@ -183,6 +183,36 @@ const validationRules = {
   difficulty: { required: true, numeric: true, min: 1, max: 5 },
   sort_order: { numeric: true, min: 0 }
 }
+
+const topicsPreviewHtml = computed(() => {
+  const header = `<div style="background:#4CAF50;color:white;padding:12px 8px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="font-size:18px;margin-right:8px">←</div><div style="flex:1;text-align:center;margin-right:24px">${subjectName.value || 'Temas'}</div></div>`
+  const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#4CAF50;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
+
+  if (!items.value.length) {
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#757575;font-size:14px;padding:20px">No hay temas</div>${bottomNav}</div>`
+  }
+
+  let cards = '<div style="padding:16px 16px 8px 16px"><div style="font-size:22px;font-weight:bold;color:#4CAF50;line-height:1.2">TEMAS</div></div>'
+  cards += items.value.map(t => {
+    const stars = '★'.repeat(t.difficulty || 1) + '<span style="color:#e0e0e0">★</span>'.repeat(5 - (t.difficulty || 1))
+    return `<div style="margin:0 12px 12px 12px;background:white;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)">
+      <div style="display:flex;align-items:center;padding:16px">
+        <div style="font-size:28px;margin-right:14px;flex-shrink:0">${t.icon||''}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:18px;font-weight:bold;color:#212121;line-height:1.2">${t.name}</div>
+          <div style="font-size:12px;color:#FFA726;margin-top:4px;letter-spacing:2px">${stars}</div>
+          <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:6px;overflow:hidden">
+            <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
+          </div>
+          <div style="font-size:11px;color:#757575;margin-top:4px">0 / 0 unidades</div>
+        </div>
+        <div style="font-size:20px;color:#4CAF50;flex-shrink:0">→</div>
+      </div>
+    </div>`
+  }).join('')
+
+  return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;overflow-y:auto;background:#f5f5f5">${cards}</div>${bottomNav}</div>`
+})
 
 async function fetchData() {
   loading.value = true

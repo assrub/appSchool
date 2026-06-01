@@ -187,70 +187,46 @@ const validationRules = {
 }
 
 const previewHtml = computed(() => {
-  const icon = form.value.icon
+  const icon = form.value.icon || ''
   const title = form.value.title || 'Nombre de la unidad'
   const mode = form.value.input_mode === 'tap' ? 'Tocar' : 'Escribir'
-  const locked = form.value.is_locked
-  return `<div style="display:flex;flex-direction:column;height:100%">
-    <div style="flex:1;overflow-y:auto;background:#f5f5f5;padding:12px">
-      <div style="margin:0 8px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
-        <div style="display:flex;align-items:center;padding:20px">
-          <div style="font-size:28px;margin-right:16px">${locked ? '🔒' : (icon || '')}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:20px;font-weight:bold;color:${locked ? '#999' : '#212121'};line-height:1.2">${title}</div>
-            <div style="font-size:14px;color:#757575;margin-top:4px">${mode}</div>
-            <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:8px;overflow:hidden">
-              <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
-            </div>
-            <div style="font-size:12px;color:#757575;margin-top:4px">0 / 0 items</div>
-          </div>
-          <div style="font-size:24px;color:${locked ? '#999' : '#4CAF50'}">${locked ? '🔒' : '→'}</div>
-        </div>
-      </div>
-    </div>
-    <div class="bottom-nav">
-      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
-      <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
-      <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
-      <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
-    </div>
-  </div>`
+  const header = '<div style="background:#4CAF50;color:white;padding:12px 16px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="flex:1">Unidad</div></div>'
+  const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#757575;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
+
+  return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;overflow-y:auto;background:#f5f5f5;padding:12px"><div style="margin:0 8px;background:white;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)"><div style="display:flex;align-items:center;padding:20px"><div style="font-size:28px;margin-right:16px;flex-shrink:0">${icon}</div><div style="flex:1;min-width:0"><div style="font-size:20px;font-weight:bold;color:#212121;line-height:1.2">${title}</div><div style="font-size:14px;color:#757575;margin-top:4px">${mode}</div><div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:8px;overflow:hidden"><div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div></div><div style="font-size:12px;color:#757575;margin-top:4px">0 / 0 items</div></div><div style="font-size:24px;color:#4CAF50;flex-shrink:0">→</div></div></div></div>${bottomNav}</div>`
 })
 
 const listPreviewHtml = computed(() => {
-  if (!items.value.length) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">No hay unidades</div>'
-  let html = `<div style="display:flex;flex-direction:column;height:100%">
-    <div style="flex:1;overflow-y:auto;background:#f5f5f5">
-      <div style="padding:8px 0"></div>
-      ${items.value.map((u) => {
-        const icon = u.icon
-        const title = u.title || u.id
-        const mode = u.input_mode === 'tap' ? 'Tocar' : 'Escribir'
-        const locked = u.is_locked
-        return `<div style="margin:0 12px 12px 12px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);${locked ? 'opacity:0.5' : ''}">
-          <div style="display:flex;align-items:center;padding:18px">
-            <div style="font-size:28px;margin-right:14px">${locked ? '🔒' : (icon || '')}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:17px;font-weight:bold;color:${locked ? '#999' : '#212121'};line-height:1.2">${title}</div>
-              <div style="font-size:12px;color:#757575;margin-top:2px">${mode}</div>
-              <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:8px;overflow:hidden">
-                <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
-              </div>
-              <div style="font-size:12px;color:#757575;margin-top:4px">0 / 0 items</div>
-            </div>
-            <div style="font-size:24px;color:${locked ? '#999' : '#4CAF50'}">${locked ? '🔒' : '→'}</div>
+  const header = `<div style="background:#4CAF50;color:white;padding:12px 8px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="font-size:18px;margin-right:8px">←</div><div style="flex:1;text-align:center;margin-right:24px">${topicName.value || 'Unidades'}</div></div>`
+  const tabs = '<div style="display:flex;background:white;border-bottom:1px solid #e0e0e0;flex-shrink:0"><div style="flex:1;text-align:center;padding:12px 0;font-size:10px;font-weight:bold;color:#4CAF50;border-bottom:2px solid #4CAF50">UNIDADES</div><div style="flex:1;text-align:center;padding:12px 0;font-size:10px;font-weight:500;color:#757575">TEORÍA</div></div>'
+  const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#4CAF50;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
+
+  if (!items.value.length) {
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#757575;font-size:14px;padding:20px">No hay unidades</div>${bottomNav}</div>`
+  }
+
+  let cards = '<div style="padding:8px 0"></div>'
+  cards += items.value.map(u => {
+    const icon = u.icon || ''
+    const locked = u.is_locked
+    const mode = u.input_mode === 'tap' ? 'Tocar' : 'Escribir'
+    return `<div style="margin:0 12px 12px 12px;background:white;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);${locked ? 'opacity:0.5' : ''}">
+      <div style="display:flex;align-items:center;padding:18px">
+        <div style="font-size:28px;margin-right:14px;flex-shrink:0">${locked ? '🔒' : icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:17px;font-weight:bold;color:${locked ? '#999' : '#212121'};line-height:1.2">${u.title||u.id}</div>
+          <div style="font-size:12px;color:#757575;margin-top:2px">${mode}</div>
+          <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:8px;overflow:hidden">
+            <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
           </div>
-        </div>`
-      }).join('')}
-    </div>
-    <div class="bottom-nav">
-      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
-      <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
-      <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
-      <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
-    </div>
-  </div>`
-  return html
+          <div style="font-size:12px;color:#757575;margin-top:4px">0 / 0 items</div>
+        </div>
+        <div style="font-size:24px;color:${locked ? '#999' : '#4CAF50'};flex-shrink:0">${locked ? '🔒' : '→'}</div>
+      </div>
+    </div>`
+  }).join('')
+
+  return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;background:#f5f5f5">${cards}</div>${bottomNav}</div>`
 })
 
 async function fetchData() {

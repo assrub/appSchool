@@ -102,7 +102,7 @@
       </v-col>
 
       <v-col cols="12" md="5" class="d-flex align-start">
-        <AppPreview />
+        <MobilePreview :html="dashboardPreviewHtml" />
       </v-col>
     </v-row>
   </div>
@@ -112,7 +112,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
-import AppPreview from '../components/AppPreview.vue'
+import MobilePreview from '../components/MobilePreview.vue'
 
 const route = useRoute()
 const subjects = ref([])
@@ -125,6 +125,31 @@ const totalUsers = computed(() => users.value.length)
 const activeUnits = computed(() => subjects.value.reduce((acc, s) => {
   return acc + (s.topicsCount || 0) * 3
 }, 0))
+
+const dashboardPreviewHtml = computed(() => {
+  const header = '<div style="background:#4CAF50;color:white;padding:12px 16px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="flex:1">AppEnglish</div></div>'
+  const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#4CAF50;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
+
+  if (!subjects.value.length) {
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#757575;font-size:14px;padding:20px">No hay materias</div>${bottomNav}</div>`
+  }
+
+  let cards = '<div style="padding:16px 16px 8px 16px"><div style="font-size:22px;font-weight:bold;color:#4CAF50;line-height:1.2">MATERIAS</div></div>'
+  cards += subjects.value.map(s => `
+    <div style="margin:0 12px 16px 12px;background:white;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)">
+      <div style="display:flex;align-items:center;padding:20px">
+        <div style="font-size:28px;margin-right:16px;flex-shrink:0">${s.icon||''}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:22px;font-weight:bold;color:#212121;line-height:1.2">${s.name}</div>
+          <div style="font-size:14px;color:#757575;margin-top:4px">${s.topicsCount||0} temas</div>
+        </div>
+        <div style="font-size:24px;color:#4CAF50;flex-shrink:0">→</div>
+      </div>
+    </div>
+  `).join('')
+
+  return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;overflow-y:auto;background:#f5f5f5">${cards}</div>${bottomNav}</div>`
+})
 
 async function fetchData() {
   loading.value = true

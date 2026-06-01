@@ -162,19 +162,20 @@ const backLabel = computed(() => {
 })
 
 const previewHtml = computed(() => {
-  if (!blocks.value.length) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">Agregá un bloque de teoría</div>'
-  const bottomNav = `<div class="bottom-nav" style="position:sticky;bottom:0">
-    <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
-    <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
-    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
-    <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
-  </div>`
+  const header = '<div style="background:#4CAF50;color:white;padding:12px 8px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="font-size:18px;margin-right:8px">←</div><div style="flex:1;text-align:center;margin-right:24px">Teoría</div></div>'
+  const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#757575;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
+
+  if (!blocks.value.length) {
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f5f5f5;color:#757575;font-size:14px;padding:20px">Agregá un bloque de teoría</div>${bottomNav}</div>`
+  }
+
   let content = blocks.value.map(b => {
     const title = b.title ? `<div style="font-size:18px;font-weight:bold;color:#4CAF50;margin-bottom:12px;padding-top:8px">${b.title}</div>` : ''
     const text = b.html ? b.html.replace(/<[^>]*>/g, '') : ''
-    return `<div style="margin:0 12px 16px 12px;background:white;border-radius:16px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">${title}<div style="font-size:15px;color:#333;line-height:1.6">${text || '<span style="color:#999">Sin contenido</span>'}</div></div>`
+    return `<div style="margin:0 12px 16px 12px;background:white;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)">${title}<div style="font-size:15px;color:#333;line-height:1.6">${text || '<span style="color:#999">Sin contenido</span>'}</div></div>`
   }).join('<div style="height:8px"></div>')
-  return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px 0;background:#f5f5f5">${content}</div>${bottomNav}</div>`
+
+  return `<div style="display:flex;flex-direction:column;height:100%">${header}<div style="flex:1;overflow-y:auto;background:#f5f5f5;padding:12px 0">${content}</div>${bottomNav}</div>`
 })
 
 function goBack() {
