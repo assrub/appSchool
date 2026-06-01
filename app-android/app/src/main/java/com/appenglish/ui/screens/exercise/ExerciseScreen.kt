@@ -391,10 +391,10 @@ private fun ExerciseContent(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            horizontalArrangement = Arrangement.Center,
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.RemoveRedEye, null, tint = InfoBlue, modifier = Modifier.size(24.dp))
@@ -472,6 +472,8 @@ private fun ExerciseContent(
 
                         Card(
                             modifier = Modifier
+                                .weight(1f)
+                                .widthIn(max = 150.dp)
                                 .offset { IntOffset(dragDelta.x.roundToInt(), dragDelta.y.roundToInt()) }
                                 .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
                                 .onGloballyPositioned { coords ->

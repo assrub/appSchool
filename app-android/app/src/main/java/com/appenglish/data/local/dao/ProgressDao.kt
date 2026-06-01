@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.appenglish.data.local.entity.BlockProgressEntity
 import com.appenglish.data.local.entity.ProgressEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -38,4 +39,15 @@ interface ProgressDao {
 
     @Query("UPDATE progress SET testScore = :testScore WHERE deviceId = :deviceId AND topicId = :topicId")
     suspend fun updateTestScore(deviceId: String, topicId: String, testScore: Int)
+
+    // ── Block Progress ──
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertBlockProgress(blockProgress: BlockProgressEntity)
+
+    @Query("SELECT * FROM block_progress WHERE deviceId = :deviceId AND topicId = :topicId AND unitId = :unitId AND blockIndex = :blockIndex")
+    suspend fun getBlockProgress(deviceId: String, topicId: String, unitId: String, blockIndex: Int): BlockProgressEntity?
+
+    @Query("SELECT * FROM block_progress WHERE deviceId = :deviceId AND topicId = :topicId AND unitId = :unitId ORDER BY blockIndex")
+    suspend fun getAllBlockProgress(deviceId: String, topicId: String, unitId: String): List<BlockProgressEntity>
 }

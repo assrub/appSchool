@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.appenglish.data.repository.ContentRepository
+import com.appenglish.data.repository.ProgressRepository
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.ExerciseItem
 import com.appenglish.domain.model.BlockTheory
@@ -18,12 +19,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class BlockProgressData(
+    val blockIndex: Int,
+    val score: Int = 0,
+    val totalItems: Int = 0,
+    val completed: Boolean = false
+)
+
 data class BlocksUiState(
     val isLoading: Boolean = true,
     val unitName: String = "",
     val topicId: String = "",
     val unitId: String = "",
     val blocks: List<ExerciseBlock> = emptyList(),
+    val blockProgress: Map<Int, BlockProgressData> = emptyMap(),
     val topicTheory: UnitTheory? = null,
     val unitTheory: UnitTheory? = null,
     val selectedTab: Int = 0,
@@ -33,7 +42,8 @@ data class BlocksUiState(
 @HiltViewModel
 class BlocksViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val contentRepository: ContentRepository
+    private val contentRepository: ContentRepository,
+    private val progressRepository: ProgressRepository
 ) : ViewModel() {
 
     private val unitId: String = savedStateHandle.get<String>("unitId") ?: "affirmative"
@@ -60,6 +70,15 @@ class BlocksViewModel @Inject constructor(
                                 onSuccess = { topic ->
                                     val unit = topic.units.find { it.id == unitId }
                                     if (unit != null) {
+                                        val blockProgressList = progressRepository.getAllBlockProgress(topic.id, unit.id)
+                                        val blockProgress = blockProgressList.associate {
+                                            it.blockIndex to BlockProgressData(
+                                                blockIndex = it.blockIndex,
+                                                score = it.score,
+                                                totalItems = it.totalItems,
+                                                completed = it.completed
+                                            )
+                                        }
                                         val topicTheory = UnitTheory(
                                             text = topic.theory.text,
                                             sections = emptyList(),
@@ -84,7 +103,8 @@ class BlocksViewModel @Inject constructor(
                                             unitId = unit.id,
                                             topicTheory = topicTheory,
                                             unitTheory = unitTheory,
-                                            blocks = unit.blocks.map { b ->
+                                            blockProgress = blockProgress,
+                                            blocks = unit.blocks.mapIndexed { idx, b ->
                                                 val blockTheory = b.theory?.let { bt ->
                                                     BlockTheory(
                                                         text = bt.text,

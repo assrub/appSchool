@@ -1,5 +1,8 @@
 package com.appenglish.ui.screens.blocks
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,14 +13,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,6 +34,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -37,12 +47,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.UnitTheory
+import com.appenglish.ui.theme.CorrectBackground
+import com.appenglish.ui.theme.CorrectGreen
+import com.appenglish.ui.theme.ErrorRed
+import com.appenglish.ui.theme.IncorrectBackground
 import com.appenglish.ui.theme.Primary
 import com.appenglish.ui.theme.WarningOrange
 
@@ -111,6 +127,7 @@ fun BlocksScreen(
                 selectedTab == 0 || !hasUnitTheory -> {
                     BlocksListContent(
                         blocks = uiState.blocks,
+                        blockProgress = uiState.blockProgress,
                         topicId = uiState.topicId,
                         unitId = uiState.unitId,
                         onBlockClick = onBlockClick
@@ -127,6 +144,7 @@ fun BlocksScreen(
 @Composable
 private fun BlocksListContent(
     blocks: List<ExerciseBlock>,
+    blockProgress: Map<Int, BlockProgressData>,
     topicId: String,
     unitId: String,
     onBlockClick: (String, String) -> Unit
@@ -142,21 +160,77 @@ private fun BlocksListContent(
         ) {
             item { Spacer(modifier = Modifier.height(4.dp)) }
 
-            items(blocks) { block ->
+            itemsIndexed(blocks) { idx, block ->
+                val progress = blockProgress[idx]
+                val percent = if (progress != null && progress.totalItems > 0) {
+                    (progress.score.toFloat() / progress.totalItems)
+                } else 0f
+                val isComplete = progress?.completed == true
+
+                val animatedProgress by animateFloatAsState(
+                    targetValue = percent,
+                    animationSpec = tween(600),
+                    label = "blockProgress"
+                )
+
+                val barColor = when {
+                    isComplete -> CorrectGreen
+                    animatedProgress >= 0.7f -> WarningOrange
+                    else -> Primary
+                }
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onBlockClick(topicId, unitId) },
                     shape = MaterialTheme.shapes.large,
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isComplete) CorrectBackground else Color.White
+                    )
                 ) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                            Text("${block.items.size} ejercicios", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text("${block.items.size} ejercicios", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (isComplete) {
+                                Icon(Icons.Default.CheckCircle, "Completado", tint = CorrectGreen, modifier = Modifier.size(28.dp))
+                            } else {
+                                Icon(Icons.Default.PlayArrow, "Ir", tint = Primary)
+                            }
                         }
-                        Icon(Icons.Default.PlayArrow, contentDescription = "Ir", tint = Primary)
+
+                        if (progress != null) {
+                            Spacer(Modifier.height(10.dp))
+                            LinearProgressIndicator(
+                                progress = { animatedProgress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = barColor,
+                                trackColor = barColor.copy(alpha = 0.15f)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "${(animatedProgress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = barColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "${progress.score}/${progress.totalItems}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }

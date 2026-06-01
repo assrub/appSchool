@@ -359,7 +359,10 @@ class UnitExerciseViewModel @Inject constructor(
             return generateOptions(wrong?.correctAnswer ?: "am", _uiState.value.blocks.firstOrNull()?.items?.firstOrNull())
         }
         val item = getCurrentItem() ?: return listOf("am", "is", "are")
-        if (item.options != null && item.options.isNotEmpty()) return item.options
+        if (item.options != null) {
+            val filtered = item.options.filter { it.isNotBlank() }
+            if (filtered.isNotEmpty()) return filtered
+        }
         return generateOptions(item.answer, item)
     }
 
@@ -390,6 +393,20 @@ class UnitExerciseViewModel @Inject constructor(
                 topicId = topicId, unitId = unitId,
                 completedItems = items,
                 score = state.score, totalItems = state.totalItems, completed = completed
+            )
+
+            // Save per-block progress
+            val block = state.blocks.getOrNull(state.currentBlockIndex) ?: return@launch
+            val blockScore = block.items.count { item ->
+                state.wrongItems.none { it.sentence == item.sentence && it.correctAnswer == item.answer }
+            }
+            val blockCompleted = blockScore == block.items.size
+            progressRepository.saveBlockProgress(
+                topicId = topicId, unitId = unitId,
+                blockIndex = state.currentBlockIndex,
+                score = blockScore,
+                totalItems = block.items.size,
+                completed = blockCompleted
             )
             // Sync to backend
             try {

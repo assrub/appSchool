@@ -73,36 +73,6 @@
             </v-row>
             <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addVideo">Agregar video</v-btn>
           </v-card-text>
-
-          <v-expand-transition>
-            <v-card-text v-if="showVideosPanel">
-              <v-row v-for="(v, i) in videos" :key="i" class="mb-3" align="center">
-                <v-col cols="5"><v-text-field v-model="v.title" label="Título" variant="outlined" density="compact" hide-details /></v-col>
-                <v-col cols="5"><v-text-field v-model="v.url" label="URL de YouTube" variant="outlined" density="compact" hide-details placeholder="https://youtube.com/..." /></v-col>
-                <v-col cols="2"><v-btn icon="mdi-delete" variant="text" color="error" @click="removeVideo(i)" /></v-col>
-              </v-row>
-              <v-btn variant="tonal" size="small" prepend-icon="mdi-plus" @click="addVideo">Agregar video</v-btn>
-            </v-card-text>
-          </v-expand-transition>
-
-          <v-card-text v-if="type === 'topic'">
-            <div class="d-flex align-center mb-3">
-              <v-icon class="mr-2">mdi-video</v-icon>
-              <span class="text-subtitle-2 font-weight-medium">Videos de YouTube</span>
-            </div>
-            <v-row v-for="(v, i) in videos" :key="i" class="mb-3" align="center">
-              <v-col cols="5">
-                <v-text-field v-model="v.title" label="Título" variant="outlined" density="compact" hide-details />
-              </v-col>
-              <v-col cols="5">
-                <v-text-field v-model="v.url" label="URL de YouTube" variant="outlined" density="compact" hide-details placeholder="https://youtube.com/..." />
-              </v-col>
-              <v-col cols="2">
-                <v-btn icon="mdi-delete" variant="text" color="error" @click="removeVideo(i)" />
-              </v-col>
-            </v-row>
-            <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addVideo">Agregar video</v-btn>
-          </v-card-text>
         </v-card>
       </v-col>
 
