@@ -185,7 +185,7 @@ class UnitExerciseViewModel @Inject constructor(
 
         if (correct) {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundCorrectUrl) }
+            viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundCorrectUrl, isCorrect = true) }
             val fullSentence = currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer)
             val newScore = state.score + 1
             val newCompleted = state.completedItems + 1
@@ -202,7 +202,7 @@ class UnitExerciseViewModel @Inject constructor(
             }
         } else {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundIncorrectUrl) }
+            viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundIncorrectUrl, isCorrect = false) }
 
             val wrong = WrongAnswer(
                 blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex,
@@ -303,7 +303,7 @@ class UnitExerciseViewModel @Inject constructor(
 
         if (correct) {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundCorrectUrl) }
+            viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundCorrectUrl, isCorrect = true) }
             val remainingWrongs = state.wrongItems.toMutableList()
             remainingWrongs.removeAt(state.retryIndex)
             _uiState.value = state.copy(
@@ -314,7 +314,7 @@ class UnitExerciseViewModel @Inject constructor(
             // Don't auto-advance — wait for user to tap modal button
         } else {
             val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { playCustomSound(app, state.soundIncorrectUrl) }
+            viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundIncorrectUrl, isCorrect = false) }
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = false,
                 showAcceptButton = true
@@ -409,9 +409,10 @@ class UnitExerciseViewModel @Inject constructor(
         }
     }
 
-    private suspend fun playCustomSound(app: Application, url: String?) {
+    private suspend fun playFeedbackSound(app: Application, url: String?, isCorrect: Boolean) {
         if (url.isNullOrBlank()) {
-            SoundHelper.playCorrect(app)
+            if (isCorrect) SoundHelper.playCorrect(app)
+            else SoundHelper.playIncorrect(app)
             return
         }
         withContext(Dispatchers.IO) {
@@ -420,7 +421,7 @@ class UnitExerciseViewModel @Inject constructor(
                 val client = OkHttpClient()
                 val request = Request.Builder().url(fullUrl).build()
                 val response = client.newCall(request).execute()
-                if (!response.isSuccessful) { SoundHelper.playCorrect(app); return@withContext }
+                if (!response.isSuccessful) { if (isCorrect) SoundHelper.playCorrect(app) else SoundHelper.playIncorrect(app); return@withContext }
                 val bytes = response.body?.bytes() ?: return@withContext
                 val tempFile = File(app.cacheDir, "sound_${System.currentTimeMillis()}.mp3")
                 FileOutputStream(tempFile).use { it.write(bytes) }
@@ -432,7 +433,7 @@ class UnitExerciseViewModel @Inject constructor(
                         setOnCompletionListener { release() }
                     }
                 }
-            } catch (_: Exception) { SoundHelper.playCorrect(app) }
+            } catch (_: Exception) { if (isCorrect) SoundHelper.playCorrect(app) else SoundHelper.playIncorrect(app) }
         }
     }
 }

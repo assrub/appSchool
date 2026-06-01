@@ -1,10 +1,8 @@
 package com.appenglish.ui.components
 
 import android.content.Context
-import android.media.AudioManager
-import android.media.Ringtone
-import android.media.RingtoneManager
-import android.net.Uri
+import android.media.MediaPlayer
+import com.appenglish.R
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -68,18 +66,17 @@ fun isUnderscoreWord(word: String): Boolean {
 object SoundHelper {
     fun playCorrect(context: Context) {
         try {
-            val uri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            if (uri != null) {
-                val ringtone: Ringtone = RingtoneManager.getRingtone(context, uri)
-                ringtone?.play()
-            }
+            val mp = MediaPlayer.create(context, R.raw.correct)
+            mp?.setOnCompletionListener { it.release() }
+            mp?.start()
         } catch (_: Exception) {}
     }
 
     fun playIncorrect(context: Context) {
         try {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-            audioManager?.playSoundEffect(AudioManager.FX_KEYPRESS_INVALID, 0.5f)
+            val mp = MediaPlayer.create(context, R.raw.fail)
+            mp?.setOnCompletionListener { it.release() }
+            mp?.start()
         } catch (_: Exception) {}
     }
 }

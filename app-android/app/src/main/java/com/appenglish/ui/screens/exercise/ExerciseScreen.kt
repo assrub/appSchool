@@ -318,7 +318,9 @@ private fun ExerciseContent(
                             horizontalArrangement = Arrangement.Center,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            if (beforeText.isNotEmpty()) TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
+                            if (beforeText.isNotEmpty()) {
+                                TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier.padding(top = 2.dp))
+                            }
 
                             Spacer(Modifier.width(6.dp))
 
@@ -342,7 +344,7 @@ private fun ExerciseContent(
                                     .background(color = dropBg, shape = RoundedCornerShape(12.dp))
                                     .border(if (isOverDropZone && draggingWord != null) 3.dp else 2.dp, dropBorder, RoundedCornerShape(12.dp))
                                     .onGloballyPositioned { coords -> dropZoneRect = coords.boundsInRoot() }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (uiState.showingAnswer) {
@@ -360,7 +362,9 @@ private fun ExerciseContent(
                             }
 
                             Spacer(Modifier.width(6.dp))
-                            if (afterText.isNotEmpty()) TranslateableText(text = afterText, fontSize = 24, modifier = Modifier)
+                            if (afterText.isNotEmpty()) {
+                                TranslateableText(text = afterText, fontSize = 24, modifier = Modifier.padding(top = 2.dp))
+                            }
                         }
 
                         if (uiState.playingFullAudio) {
@@ -498,7 +502,13 @@ private fun ExerciseContent(
                 isCorrect = true,
                 sentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem.answer) ?: "",
                 hint = currentItem?.hint,
-                onContinue = { if (uiState.retryMode) viewModel.retryNextAfterCorrect() else viewModel.nextItem() },
+                onContinue = {
+                    scope.launch {
+                        delay(250)
+                        if (uiState.retryMode) viewModel.retryNextAfterCorrect()
+                        else viewModel.nextItem()
+                    }
+                },
                 buttonText = if (uiState.readyForNext) "Siguiente →" else "Continuar"
             )
         }
