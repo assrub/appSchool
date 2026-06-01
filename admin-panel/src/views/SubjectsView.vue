@@ -261,24 +261,28 @@ const filteredUsers = computed(() => {
 
 const listPreviewHtml = computed(() => {
   if (!items.value.length) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">No hay materias disponibles</div>'
-  let html = '<div style="padding:16px 16px 8px 16px"><div style="font-size:20px;font-weight:bold;color:#4CAF50">MATERIAS</div></div>'
-  html += items.value.map(s => {
-    return `<div class="subject-card">
-      <div style="display:flex;align-items:center;padding:20px">
-        <div style="font-size:28px;margin-right:16px">${s.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:22px;font-weight:bold;color:#212121;line-height:1.2">${s.name}</div>
-          <div style="font-size:14px;color:#757575;margin-top:4px">${(s.topicsCount || 0)} temas</div>
+  let html = `<div style="display:flex;flex-direction:column;height:100%">
+    <div style="flex:1;overflow-y:auto;background:#f5f5f5">
+      <div style="padding:16px 16px 8px 16px"><div style="font-size:20px;font-weight:bold;color:#4CAF50">MATERIAS</div></div>
+      ${items.value.map(s => `
+        <div class="card" style="margin:0 12px 12px 12px">
+          <div style="display:flex;align-items:center;padding:20px">
+            <div style="font-size:28px;margin-right:16px">${s.icon||''}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:22px;font-weight:bold;color:#212121;line-height:1.2">${s.name}</div>
+              <div style="font-size:14px;color:#757575;margin-top:4px">${(s.topicsCount || 0)} temas</div>
+            </div>
+            <div style="font-size:24px;color:#4CAF50">→</div>
+          </div>
         </div>
-        <div style="font-size:24px;color:#4CAF50">→</div>
-      </div>
-    </div>`
-  }).join('')
-  html += `<div class="bottom-nav" style="position:sticky;bottom:0">
-    <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
-    <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
-    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
-    <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
+      `).join('')}
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
+      <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
+      <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
+      <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
+    </div>
   </div>`
   return html
 })

@@ -192,8 +192,8 @@ const previewHtml = computed(() => {
   const mode = form.value.input_mode === 'tap' ? 'Tocar' : 'Escribir'
   const locked = form.value.is_locked
   return `<div style="display:flex;flex-direction:column;height:100%">
-    <div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5">
-      <div class="unit-card" style="margin:0 8px">
+    <div style="flex:1;overflow-y:auto;background:#f5f5f5;padding:12px">
+      <div style="margin:0 8px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
         <div style="display:flex;align-items:center;padding:20px">
           <div style="font-size:28px;margin-right:16px">${locked ? '🔒' : (icon || '')}</div>
           <div style="flex:1;min-width:0">
@@ -219,32 +219,36 @@ const previewHtml = computed(() => {
 
 const listPreviewHtml = computed(() => {
   if (!items.value.length) return '<div style="text-align:center;color:#999;padding:40px 20px;font-size:14px">No hay unidades</div>'
-  let html = '<div style="padding:16px 16px 8px 16px"><div style="font-size:20px;font-weight:bold;color:#4CAF50">UNIDADES</div></div>'
-  html += items.value.map((u) => {
-    const icon = u.icon
-    const title = u.title || u.id
-    const mode = u.input_mode === 'tap' ? 'Tocar' : 'Escribir'
-    const locked = u.is_locked
-    return `<div class="unit-card" style="${locked ? 'opacity:0.5' : ''}">
-      <div style="display:flex;align-items:center;padding:18px">
-        <div style="font-size:28px;margin-right:14px">${locked ? '🔒' : (icon || '')}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:17px;font-weight:bold;color:${locked ? '#999' : '#212121'};line-height:1.2">${title}</div>
-          <div style="font-size:12px;color:#757575;margin-top:2px">${mode}</div>
-          <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:8px;overflow:hidden">
-            <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
+  let html = `<div style="display:flex;flex-direction:column;height:100%">
+    <div style="flex:1;overflow-y:auto;background:#f5f5f5">
+      <div style="padding:8px 0"></div>
+      ${items.value.map((u) => {
+        const icon = u.icon
+        const title = u.title || u.id
+        const mode = u.input_mode === 'tap' ? 'Tocar' : 'Escribir'
+        const locked = u.is_locked
+        return `<div style="margin:0 12px 12px 12px;background:white;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);${locked ? 'opacity:0.5' : ''}">
+          <div style="display:flex;align-items:center;padding:18px">
+            <div style="font-size:28px;margin-right:14px">${locked ? '🔒' : (icon || '')}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:17px;font-weight:bold;color:${locked ? '#999' : '#212121'};line-height:1.2">${title}</div>
+              <div style="font-size:12px;color:#757575;margin-top:2px">${mode}</div>
+              <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:8px;overflow:hidden">
+                <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
+              </div>
+              <div style="font-size:12px;color:#757575;margin-top:4px">0 / 0 items</div>
+            </div>
+            <div style="font-size:24px;color:${locked ? '#999' : '#4CAF50'}">${locked ? '🔒' : '→'}</div>
           </div>
-          <div style="font-size:12px;color:#757575;margin-top:4px">0 / 0 items</div>
-        </div>
-        <div style="font-size:24px;color:${locked ? '#999' : '#4CAF50'}">${locked ? '🔒' : '→'}</div>
-      </div>
-    </div>`
-  }).join('')
-  html += `<div class="bottom-nav" style="position:sticky;bottom:0">
-    <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
-    <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
-    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
-    <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
+        </div>`
+      }).join('')}
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
+      <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
+      <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
+      <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Ajustes</div></div>
+    </div>
   </div>`
   return html
 })

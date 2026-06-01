@@ -399,7 +399,7 @@ const validationRules = computed(() => ({
 
 const previewExerciseHtml = computed(() => {
   const t = form.value.item_type
-  const bottomNav = `<div class="bottom-nav" style="position:sticky;bottom:0">
+  const bottomNav = `<div class="bottom-nav">
     <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Inicio</div></div>
     <div class="nav-item"><div class="nav-icon">📖</div><div class="nav-label">Diccionario</div></div>
     <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progreso</div></div>
