@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-import os
+import os, sys
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +11,21 @@ from routers import auth, admin
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Read version from project root version.properties
+_VERSION_CODE = 1
+_VERSION_NAME = "1.0.0"
+try:
+    version_path = os.path.join(os.path.dirname(__file__), "..", "version.properties")
+    if os.path.exists(version_path):
+        with open(version_path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("versionCode="):
+                    _VERSION_CODE = int(line.split("=")[1])
+                elif line.startswith("versionName="):
+                    _VERSION_NAME = line.split("=")[1]
+except: pass
 
 
 @asynccontextmanager
@@ -52,7 +67,7 @@ async def health():
 @app.get("/api/v1/version")
 async def version():
     return {
-        "versionCode": 29,
-        "versionName": "3.2.0",
+        "versionCode": _VERSION_CODE,
+        "versionName": _VERSION_NAME,
         "apkUrl": "/uploads/app-release.apk",
     }

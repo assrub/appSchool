@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
 }
+
+val versionProps = Properties()
+val versionFile = rootProject.file("../version.properties")
+if (versionFile.exists()) {
+    versionProps.load(versionFile.reader())
+}
+val appVersionCode = versionProps.getProperty("versionCode", "29").toInt()
+val appVersionName = versionProps.getProperty("versionName", "3.2.0")
 
 android {
     namespace = "com.appenglish"
@@ -13,8 +23,8 @@ android {
         applicationId = "com.appenglish"
         minSdk = 26
         targetSdk = 34
-        versionCode = 29
-        versionName = "3.2.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
