@@ -407,8 +407,30 @@ const form = ref({
   input_mode: null,
   audio_url: '',
   pairs: null,
-  is_correct_boolean: null,
+  is_correct_boolean: false,
   sort_order: 0
+})
+
+// Clear type-specific fields when switching exercise types
+watch(() => form.value.item_type, () => {
+  form.value.sentence = ''
+  form.value.answer = ''
+  form.value.hint = ''
+  form.value.question = ''
+  form.value.answers = null
+  form.value.options = null
+  form.value.words = null
+  form.value.correct_order = null
+  form.value.audio_url = ''
+  form.value.pairs = null
+  form.value.is_correct_boolean = false
+  answersList.value = []
+  optionsList.value = []
+  formOptions.value = ['', '', '']
+  formPairs.value = [{ left: '', right: '' }, { left: '', right: '' }]
+  wordsText.value = ''
+  correctOrderText.value = ''
+  v.clearAllErrors()
 })
 
 const v = useValidate({
@@ -418,7 +440,7 @@ const v = useValidate({
 })
 
 const validationRules = computed(() => ({
-  sentence: form.value.item_type === 'fill-blank' || form.value.item_type === 'listening' || form.value.item_type === 'true-false' ? { required: true } : {},
+  sentence: form.value.item_type === 'fill-blank' || form.value.item_type === 'listening' || form.value.item_type === 'true-false' ? { required: true, minLength: 1 } : {},
   answer: form.value.item_type === 'fill-blank' || form.value.item_type === 'multiple-choice' || form.value.item_type === 'listening' ? { required: true } : {},
   question: form.value.item_type === 'multiple-choice' ? { required: true } : {}
 }))
@@ -434,7 +456,7 @@ const previewExerciseHtml = computed(() => {
     if (mode === 'type') {
       return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:22px;text-align:center;margin:0 0 20px 0;font-weight:bold">${blankHtml}</p><div style="border:2px solid #e0e0e0;border-radius:12px;padding:18px;text-align:center;color:#999;font-size:18px">Escribí tu respuesta...</div><div style="text-align:center;margin-top:16px"><span style="background:#4CAF50;color:white;padding:14px 36px;border-radius:12px;font-size:18px;font-weight:bold;display:inline-block">Corregir</span></div></div></div>${bottomNav}</div>`
     }
-    const btns = opts.length ? opts : ['am', 'is', 'are']
+    const btns = opts.length ? opts : ['Opción 1', 'Opción 2', 'Opción 3']
     return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:22px;text-align:center;margin:0 0 20px 0;font-weight:bold">${blankHtml}</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">${btns.map(o => `<span style="background:#f5f5f5;border-radius:12px;padding:14px 22px;font-weight:bold;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,0.1)">${o}</span>`).join('')}</div></div></div>${bottomNav}</div>`
   }
   if (t === 'multiple-choice') {
@@ -452,9 +474,13 @@ const previewExerciseHtml = computed(() => {
   }
   if (t === 'matching') {
     const pairs = formPairs.value.filter(p => p.left.trim() || p.right.trim())
+    if (pairs.length === 0) {
+      pairs.push({ left: 'Izquierda', right: 'Derecha' }, { left: 'Uno', right: 'Dos' })
+    }
     const left = pairs.map(p => p.left || '?')
-    const right = pairs.map(p => p.right || '?').sort(() => Math.random() - 0.5)
-    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><div style="display:flex;gap:20px;justify-content:center;align-items:center">${[0, 1, 2].map(i => `<div style="text-align:center"><div style="background:#e8f5e9;border-radius:12px;padding:14px 18px;margin-bottom:8px;font-weight:bold;font-size:16px">${left[i] || '?'}</div><div style="font-size:28px;color:#999;margin:4px 0">↔</div><div style="background:#e3f2fd;border-radius:12px;padding:14px 18px;font-weight:bold;font-size:16px">${right[i] || '?'}</div></div>`).join('')}</div></div></div>${bottomNav}</div>`
+    const right = [...pairs].sort(() => Math.random() - 0.5).map(p => p.right || '?')
+    const pairsHtml = pairs.map((_, i) => `<div style="text-align:center;flex:1"><div style="background:#e8f5e9;border-radius:12px;padding:12px 14px;margin-bottom:6px;font-weight:bold;font-size:15px">${left[i]}</div><div style="font-size:20px;color:#999;margin:2px 0">↔</div><div style="background:#e3f2fd;border-radius:12px;padding:12px 14px;font-weight:bold;font-size:15px">${right[i]}</div></div>`).join('')
+    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><div style="display:flex;gap:16px;justify-content:center;align-items:flex-start">${pairsHtml}</div></div></div>${bottomNav}</div>`
   }
   if (t === 'true-false') {
     const s = form.value.sentence || 'Frase...'
@@ -486,10 +512,30 @@ function openDialog(item = null) {
   editing.value = item
   v.clearAllErrors()
   if (item) {
-    form.value = { ...item }
+    form.value = {
+      block_id: item.block_id || Number(blockId),
+      item_type: item.item_type || 'fill-blank',
+      sentence: item.sentence || '',
+      answer: item.answer || '',
+      answers: item.answers || null,
+      hint: item.hint || '',
+      question: item.question || '',
+      options: item.options || null,
+      words: item.words || null,
+      correct_order: item.correct_order || null,
+      input_mode: item.input_mode || null,
+      audio_url: item.audio_url || '',
+      pairs: item.pairs || null,
+      is_correct_boolean: item.is_correct_boolean ?? false,
+      sort_order: item.sort_order || 0
+    }
     answersList.value = item.answers || []
     optionsList.value = item.options || []
-    formOptions.value = item.options || ['', '', '']
+    formOptions.value = item.options?.length ? item.options : ['', '', '']
+    formPairs.value = item.pairs?.length ? item.pairs : [{ left: '', right: '' }, { left: '', right: '' }]
+    wordsText.value = (item.words || []).join('\n')
+    correctOrderText.value = (item.correct_order || []).join(' ')
+  } else {
     formPairs.value = item.pairs || [{ left: '', right: '' }]
     wordsText.value = (item.words || []).join('\n')
     correctOrderText.value = (item.correct_order || []).join(' ')
@@ -531,19 +577,34 @@ async function save() {
   saving.value = true
   try {
     const p = { ...form.value, block_id: Number(blockId) }
-    const a = answersList.value.filter(x => x.trim())
-    p.answers = a.length > 0 ? a : null
 
+    // Populate type-specific fields
     if (p.item_type === 'fill-blank') {
+      const a = answersList.value.filter(x => x.trim())
+      p.answers = a.length > 0 ? a : null
       const o = optionsList.value.filter(x => x.trim())
       p.options = o.length > 0 ? o : null
+      p.question = null; p.words = null; p.correct_order = null; p.pairs = null; p.is_correct_boolean = null
     }
-    if (p.item_type === 'multiple-choice') p.options = formOptions.value.filter(o => o.trim())
+    if (p.item_type === 'multiple-choice') {
+      p.options = formOptions.value.filter(o => o.trim())
+      p.sentence = null; p.answers = null; p.words = null; p.correct_order = null; p.pairs = null; p.is_correct_boolean = null
+    }
     if (p.item_type === 'reorder') {
       p.words = wordsText.value.split('\n').map(w => w.trim()).filter(w => w)
       p.correct_order = correctOrderText.value.split(' ').filter(w => w)
+      p.options = null; p.answers = null; p.question = null; p.pairs = null; p.is_correct_boolean = null
     }
-    if (p.item_type === 'matching') p.pairs = formPairs.value.filter(x => x.left.trim() || x.right.trim())
+    if (p.item_type === 'listening') {
+      p.options = null; p.answers = null; p.question = null; p.words = null; p.correct_order = null; p.pairs = null; p.is_correct_boolean = null
+    }
+    if (p.item_type === 'matching') {
+      p.pairs = formPairs.value.filter(x => x.left.trim() || x.right.trim())
+      p.options = null; p.answers = null; p.question = null; p.words = null; p.correct_order = null; p.is_correct_boolean = null
+    }
+    if (p.item_type === 'true-false') {
+      p.options = null; p.answers = null; p.question = null; p.words = null; p.correct_order = null; p.pairs = null
+    }
 
     if (editing.value) {
       await api.put(`/admin/items/${editing.value.id}`, p)
