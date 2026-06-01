@@ -63,7 +63,7 @@
               >
                 {{ i.input_mode === 'tap' ? 'Tap' : 'Type' }}
               </v-chip>
-              <span v-else class="text-caption text-grey">hereda</span>
+              <span v-else class="text-caption text-grey">Hereda de la unidad</span>
             </td>
             <td style="max-width: 200px" class="text-truncate">
               {{ i.sentence || i.question || '-' }}
@@ -447,6 +447,8 @@ const validationRules = computed(() => ({
 
 const previewExerciseHtml = computed(() => {
   const t = form.value.item_type
+  const header = '<div style="background:#4CAF50;color:white;padding:12px 8px;font-weight:bold;font-size:14px;flex-shrink:0;display:flex;align-items:center"><div style="font-size:18px;margin-right:8px">←</div><div style="flex:1;text-align:center;margin-right:24px">Ejercicio</div></div>'
+  const tabs = '<div style="display:flex;background:white;border-bottom:1px solid #e0e0e0;flex-shrink:0"><div style="flex:1;text-align:center;padding:12px 0;font-size:10px;font-weight:bold;color:#4CAF50;border-bottom:2px solid #4CAF50">EJERCICIOS</div></div>'
   const bottomNav = '<div style="display:flex;justify-content:space-around;background:white;border-top:1px solid #e0e0e0;padding:8px 0 6px 0;flex-shrink:0"><div style="text-align:center;flex:1"><div style="font-size:18px">🏠</div><div style="font-size:10px;color:#757575;margin-top:2px">Inicio</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📖</div><div style="font-size:10px;color:#757575;margin-top:2px">Diccionario</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">📊</div><div style="font-size:10px;color:#757575;margin-top:2px">Progreso</div></div><div style="text-align:center;flex:1"><div style="font-size:18px">⚙️</div><div style="font-size:10px;color:#757575;margin-top:2px">Ajustes</div></div></div>'
   if (t === 'fill-blank') {
     const s = form.value.sentence || '...'
@@ -454,23 +456,23 @@ const previewExerciseHtml = computed(() => {
     const mode = form.value.input_mode || 'tap'
     const blankHtml = s.replace(/_+/g, '<span style="border-bottom:2px dashed #999;padding:2px 12px;margin:0 4px;display:inline-block;font-size:22px">______</span>')
     if (mode === 'type') {
-      return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:22px;text-align:center;margin:0 0 20px 0;font-weight:bold">${blankHtml}</p><div style="border:2px solid #e0e0e0;border-radius:12px;padding:18px;text-align:center;color:#999;font-size:18px">Escribí tu respuesta...</div><div style="text-align:center;margin-top:16px"><span style="background:#4CAF50;color:white;padding:14px 36px;border-radius:12px;font-size:18px;font-weight:bold;display:inline-block">Corregir</span></div></div></div>${bottomNav}</div>`
+      return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:22px;text-align:center;margin:0 0 20px 0;font-weight:bold">${blankHtml}</p><div style="border:2px solid #e0e0e0;border-radius:12px;padding:18px;text-align:center;color:#999;font-size:18px">Escribí tu respuesta...</div><div style="text-align:center;margin-top:16px"><span style="background:#4CAF50;color:white;padding:14px 36px;border-radius:12px;font-size:18px;font-weight:bold;display:inline-block">Corregir</span></div></div></div>${bottomNav}</div>`
     }
     const btns = opts.length ? opts : ['Opción 1', 'Opción 2', 'Opción 3']
-    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:22px;text-align:center;margin:0 0 20px 0;font-weight:bold">${blankHtml}</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">${btns.map(o => `<span style="background:#f5f5f5;border-radius:12px;padding:14px 22px;font-weight:bold;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,0.1)">${o}</span>`).join('')}</div></div></div>${bottomNav}</div>`
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:22px;text-align:center;margin:0 0 20px 0;font-weight:bold">${blankHtml}</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">${btns.map(o => `<span style="background:#f5f5f5;border-radius:12px;padding:14px 22px;font-weight:bold;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,0.1)">${o}</span>`).join('')}</div></div></div>${bottomNav}</div>`
   }
   if (t === 'multiple-choice') {
     const q = form.value.question || 'Pregunta...'
     const opts = formOptions.value.filter(o => o.trim())
     if (opts.length === 0) opts.push('Opción 1', 'Opción 2', 'Opción 3')
-    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:18px;font-weight:bold;text-align:center;margin:0 0 20px 0">${q}</p><div>${opts.map((o, i) => `<div style="border:2px solid #e0e0e0;border-radius:12px;padding:16px;margin-bottom:10px;font-size:16px;text-align:center;cursor:pointer">${String.fromCharCode(65 + i)}) ${o}</div>`).join('')}</div></div></div>${bottomNav}</div>`
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:18px;font-weight:bold;text-align:center;margin:0 0 20px 0">${q}</p><div>${opts.map((o, i) => `<div style="border:2px solid #e0e0e0;border-radius:12px;padding:16px;margin-bottom:10px;font-size:16px;text-align:center;cursor:pointer">${String.fromCharCode(65 + i)}) ${o}</div>`).join('')}</div></div></div>${bottomNav}</div>`
   }
   if (t === 'reorder') {
     const words = wordsText.value ? wordsText.value.split('\n').filter(w => w.trim()) : ['palabra1', 'palabra2', 'palabra3']
-    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:14px;text-align:center;color:#999;margin:0 0 16px 0">Ordená las palabras:</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0">${words.map(w => `<span style="background:#e3f2fd;border-radius:12px;padding:12px 18px;font-weight:bold;font-size:18px">${w.trim()}</span>`).join('')}</div><div style="border:2px dashed #4CAF50;border-radius:12px;padding:14px;min-height:50px;text-align:center;color:#999;margin-top:12px;font-size:15px">Soltá acá</div></div></div>${bottomNav}</div>`
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:14px;text-align:center;color:#999;margin:0 0 16px 0">Ordená las palabras:</p><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0">${words.map(w => `<span style="background:#e3f2fd;border-radius:12px;padding:12px 18px;font-weight:bold;font-size:18px">${w.trim()}</span>`).join('')}</div><div style="border:2px dashed #4CAF50;border-radius:12px;padding:14px;min-height:50px;text-align:center;color:#999;margin-top:12px;font-size:15px">Soltá acá</div></div></div>${bottomNav}</div>`
   }
   if (t === 'listening') {
-    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:28px;box-shadow:0 4px 12px rgba(0,0,0,0.15);text-align:center"><span style="font-size:60px;display:block">🔊</span><p style="color:#999;margin:12px 0 20px 0;font-size:15px">Escuchá y escribí</p><div style="border:2px solid #e0e0e0;border-radius:12px;padding:16px;min-height:40px;color:#ccc;font-size:16px">Escribí tu respuesta...</div></div></div>${bottomNav}</div>`
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:28px;box-shadow:0 4px 12px rgba(0,0,0,0.15);text-align:center"><span style="font-size:60px;display:block">🔊</span><p style="color:#999;margin:12px 0 20px 0;font-size:15px">Escuchá y escribí</p><div style="border:2px solid #e0e0e0;border-radius:12px;padding:16px;min-height:40px;color:#ccc;font-size:16px">Escribí tu respuesta...</div></div></div>${bottomNav}</div>`
   }
   if (t === 'matching') {
     const pairs = formPairs.value.filter(p => p.left.trim() || p.right.trim())
@@ -480,14 +482,14 @@ const previewExerciseHtml = computed(() => {
     const left = pairs.map(p => p.left || '?')
     const right = [...pairs].sort(() => Math.random() - 0.5).map(p => p.right || '?')
     const pairsHtml = pairs.map((_, i) => `<div style="text-align:center;flex:1"><div style="background:#e8f5e9;border-radius:12px;padding:12px 14px;margin-bottom:6px;font-weight:bold;font-size:15px">${left[i]}</div><div style="font-size:20px;color:#999;margin:2px 0">↔</div><div style="background:#e3f2fd;border-radius:12px;padding:12px 14px;font-weight:bold;font-size:15px">${right[i]}</div></div>`).join('')
-    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><div style="display:flex;gap:16px;justify-content:center;align-items:flex-start">${pairsHtml}</div></div></div>${bottomNav}</div>`
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><div style="display:flex;gap:16px;justify-content:center;align-items:flex-start">${pairsHtml}</div></div></div>${bottomNav}</div>`
   }
   if (t === 'true-false') {
     const s = form.value.sentence || 'Frase...'
     const correct = form.value.is_correct_boolean ? '✅ Correcta' : '❌ Incorrecta'
-    return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:28px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:20px;text-align:center;font-weight:bold;margin:0 0 20px 0">${s}</p><p style="text-align:center;font-size:24px;margin:0">${correct}</p></div></div>${bottomNav}</div>`
+    return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;overflow-y:auto;padding:12px;background:#f5f5f5"><div style="margin:0 8px 12px 8px;background:white;border-radius:16px;padding:28px;box-shadow:0 4px 12px rgba(0,0,0,0.15)"><p style="font-size:20px;text-align:center;font-weight:bold;margin:0 0 20px 0">${s}</p><p style="text-align:center;font-size:24px;margin:0">${correct}</p></div></div>${bottomNav}</div>`
   }
-  return `<div style="display:flex;flex-direction:column;height:100%"><div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;color:#999;font-size:14px">Seleccioná un tipo de ejercicio</div>${bottomNav}</div>`
+  return `<div style="display:flex;flex-direction:column;height:100%">${header}${tabs}<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;color:#999;font-size:14px">Seleccioná un tipo de ejercicio</div>${bottomNav}</div>`
 })
 
 async function fetchData() {

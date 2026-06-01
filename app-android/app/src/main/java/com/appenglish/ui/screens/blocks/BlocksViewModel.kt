@@ -115,7 +115,7 @@ class BlocksViewModel @Inject constructor(
                                                         blocks = bt.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
                                                     )
                                                 }
-                                                ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint) }, blockTheory)
+                                                ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint, it.itemType, it.inputMode, it.answers, it.options, it.question, it.words, it.correctOrder, it.audioUrl, it.pairs, it.isCorrect) }, blockTheory)
                                             }
                                         )
                                         return@launch

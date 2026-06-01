@@ -105,7 +105,13 @@ class TopicViewModel @Inject constructor(
                                             itemType = itemDto.itemType,
                                             inputMode = itemDto.inputMode,
                                             answers = itemDto.answers,
-                                            options = itemDto.options
+                                            options = itemDto.options,
+                                            question = itemDto.question,
+                                            words = itemDto.words,
+                                            correctOrder = itemDto.correctOrder,
+                                            audioUrl = itemDto.audioUrl,
+                                            pairs = itemDto.pairs,
+                                            isCorrect = itemDto.isCorrect
                                         )
                                     },
                                     theory = blockTheory

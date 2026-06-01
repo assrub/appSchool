@@ -106,7 +106,13 @@ data class ExerciseItem(
     val itemType: String = "fill-blank",
     val inputMode: String? = null,
     val answers: List<String>? = null,
-    val options: List<String>? = null
+    val options: List<String>? = null,
+    val question: String? = null,
+    val words: List<String>? = null,
+    val correctOrder: List<String>? = null,
+    val audioUrl: String? = null,
+    val pairs: List<Map<String, String>>? = null,
+    val isCorrect: Boolean? = null
 )
 
 data class TestConfig(
