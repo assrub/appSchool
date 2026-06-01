@@ -278,6 +278,7 @@ private fun ExerciseContent(
                 } else if (itemType == "listening") {
                     ListeningCard(item = currentItem!!, userInput = uiState.userInput, onInputChanged = { viewModel.onInputChanged(it) }, onCheck = { viewModel.checkTextAnswer() })
                 } else {
+                    androidx.compose.runtime.key("ex_${selectedTab}_${uiState.currentBlockIndex}_${uiState.currentItemIndex}") {
                     ExerciseTabContent(
                     uiState = uiState,
                     currentItem = currentItem,
@@ -309,6 +310,7 @@ private fun ExerciseContent(
                     onInputChanged = { viewModel.onInputChanged(it) },
                     onCheckTextAnswer = { viewModel.checkTextAnswer() }
                 )
+                    } // key
                 }
             }
             selectedTab == 1 && hasTheory -> {

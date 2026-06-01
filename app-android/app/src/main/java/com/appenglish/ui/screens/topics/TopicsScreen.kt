@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.TopicSummary
 import com.appenglish.ui.theme.Primary
+import com.appenglish.ui.theme.PrimaryDark
 import com.appenglish.ui.theme.WarningOrange
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.Subject
 import com.appenglish.ui.theme.Primary
+import com.appenglish.ui.theme.PrimaryDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
