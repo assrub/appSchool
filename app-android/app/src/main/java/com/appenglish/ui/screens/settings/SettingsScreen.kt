@@ -1,5 +1,6 @@
 package com.appenglish.ui.screens.settings
 
+import android.content.pm.PackageInfo
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,11 @@ fun SettingsScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
+    val packageInfo: PackageInfo? = try {
+        context.packageManager.getPackageInfo(context.packageName, 0)
+    } catch (e: Exception) { null }
+    val versionName = packageInfo?.versionName ?: "?"
+    val versionCode = packageInfo?.versionCode?.toString() ?: "?"
 
     Scaffold(
         topBar = {
@@ -65,7 +71,7 @@ fun SettingsScreen(
             Card(shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(Modifier.padding(16.dp).fillMaxWidth()) {
                     Text("Versión", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                    Text("1.5.0 (12)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("$versionName ($versionCode)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(Modifier.height(16.dp))

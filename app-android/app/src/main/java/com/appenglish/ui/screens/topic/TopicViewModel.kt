@@ -80,6 +80,7 @@ class TopicViewModel @Inject constructor(
                             exerciseType = unitDto.exerciseType,
                             explanation = unitDto.explanation,
                             isLocked = unitDto.isLocked,
+                            icon = unitDto.icon,
                             soundCorrectUrl = unitDto.soundCorrectUrl,
                             soundIncorrectUrl = unitDto.soundIncorrectUrl,
                             theory = unitTheory,

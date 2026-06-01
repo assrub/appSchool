@@ -60,35 +60,13 @@ fun SubjectsScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            TabRow(selectedTabIndex = uiState.selectedTab) {
-                Tab(
-                    selected = uiState.selectedTab == 0,
-                    onClick = { viewModel.selectTab(0) },
-                    text = { Text("MATERIAS", fontWeight = if (uiState.selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
-                )
-                Tab(
-                    selected = uiState.selectedTab == 1,
-                    onClick = { viewModel.selectTab(1) },
-                    text = { Text("TEMAS", fontWeight = if (uiState.selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
-                )
-            }
-
-            when (uiState.selectedTab) {
-                0 -> SubjectsListContent(
-                    subjects = uiState.subjects,
-                    isLoading = uiState.isLoading,
-                    error = uiState.error,
-                    onSubjectClick = onSubjectClick,
-                    onRetry = { viewModel.loadSubjects() }
-                )
-                1 -> AllTopicsContent(
-                    subjects = uiState.subjects,
-                    isLoading = uiState.isLoading,
-                    error = uiState.error,
-                    onSubjectClick = onSubjectClick,
-                    onRetry = { viewModel.loadSubjects() }
-                )
-            }
+            SubjectsListContent(
+                subjects = uiState.subjects,
+                isLoading = uiState.isLoading,
+                error = uiState.error,
+                onSubjectClick = onSubjectClick,
+                onRetry = { viewModel.loadSubjects() }
+            )
         }
     }
 }

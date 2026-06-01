@@ -95,6 +95,7 @@
             <v-col cols="7">
               <v-text-field v-model="form.id" label="ID" :disabled="!!editing" :error-messages="v.errors.id" class="mb-2" />
               <v-text-field v-model="form.title" label="Título" :error-messages="v.errors.title" class="mb-2" />
+              <v-text-field v-model="form.icon" label="Ícono (emoji)" :error-messages="v.errors.icon" class="mb-2" />
               <v-textarea v-model="form.explanation" label="Explicación" variant="outlined" rows="2" class="mb-3" />
               <div class="text-caption mb-1">Sonido de acierto</div>
               <div class="d-flex align-center mb-2">
@@ -168,6 +169,7 @@ const form = ref({
   exercise_type: 'fill-blank',
   input_mode: 'tap',
   explanation: '',
+  icon: '',
   sound_correct_url: '',
   sound_incorrect_url: ''
 })
@@ -185,7 +187,7 @@ const validationRules = {
 }
 
 const previewHtml = computed(() => {
-  const icon = form.value.id ? '✏️' : '📝'
+  const icon = form.value.icon || '📝'
   const title = form.value.title || 'Nombre de la unidad'
   const mode = form.value.input_mode === 'tap' ? 'Tocar' : 'Escribir'
   return `<div style="padding:8px 12px">
@@ -205,9 +207,8 @@ const previewHtml = computed(() => {
 
 const listPreviewHtml = computed(() => {
   if (!items.value.length) return '<p style="color:#999;text-align:center;padding:20px">Sin unidades</p>'
-  const unitIcons = ['✏️', '❌', '❓', '✅', '🔄', '📝']
-  return items.value.map((u, i) => {
-    const icon = unitIcons[i % unitIcons.length]
+  return items.value.map((u) => {
+    const icon = u.icon || '📝'
     const title = u.title || u.id
     const mode = u.input_mode === 'tap' ? 'Tocar' : 'Escribir'
     const locked = u.is_locked
@@ -255,6 +256,7 @@ function openDialog(unit = null) {
     exercise_type: 'fill-blank',
     input_mode: 'tap',
     explanation: '',
+    icon: '',
     sound_correct_url: '',
     sound_incorrect_url: ''
   }

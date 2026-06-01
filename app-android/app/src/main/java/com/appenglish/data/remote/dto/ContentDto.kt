@@ -69,6 +69,7 @@ data class UnitDto(
     val exerciseType: String,
     val explanation: String,
     val isLocked: Boolean = false,
+    val icon: String = "",
     val soundCorrectUrl: String? = null,
     val soundIncorrectUrl: String? = null,
     val progress: UnitProgressDto?,

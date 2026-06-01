@@ -15,7 +15,6 @@ import javax.inject.Inject
 data class SubjectsUiState(
     val isLoading: Boolean = true,
     val subjects: List<Subject> = emptyList(),
-    val selectedTab: Int = 0,
     val error: String? = null
 )
 
@@ -71,9 +70,5 @@ class SubjectsViewModel @Inject constructor(
                 }
             )
         }
-    }
-
-    fun selectTab(index: Int) {
-        _uiState.value = _uiState.value.copy(selectedTab = index)
     }
 }

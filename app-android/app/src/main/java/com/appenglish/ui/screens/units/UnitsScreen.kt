@@ -157,10 +157,10 @@ private fun UnitsListContent(
         }
     } else {
         val allComplete = units.all { it.percent >= 100.0 }
-        val unitIcons = listOf("✏️", "❌", "❓", "✅")
 
         LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            itemsIndexed(units) { idx, u ->
+            itemsIndexed(units) { _, u ->
+                val displayIcon = if (u.icon.isNotBlank()) u.icon else "📝"
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -178,7 +178,7 @@ private fun UnitsListContent(
                         Modifier.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(unitIcons.getOrElse(idx % unitIcons.size) { "📝" }, style = MaterialTheme.typography.headlineMedium)
+                        Text(displayIcon, style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(

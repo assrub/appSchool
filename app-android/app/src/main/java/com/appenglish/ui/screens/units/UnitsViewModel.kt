@@ -53,6 +53,7 @@ class UnitsViewModel @Inject constructor(
                         DomainUnit(
                             id = unitDto.id, title = unitDto.title, exerciseType = unitDto.exerciseType,
                             explanation = unitDto.explanation, isLocked = unitDto.isLocked,
+                            icon = unitDto.icon,
                             blocks = emptyList(),
                             completedItems = local?.completedItems ?: unitDto.progress?.completedItems ?: 0,
                             totalItems = total

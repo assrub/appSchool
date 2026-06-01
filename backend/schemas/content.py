@@ -68,6 +68,7 @@ class Unit(BaseModel):
     exerciseType: str
     explanation: str
     isLocked: bool = False
+    icon: str = ""
     soundCorrectUrl: str | None = None
     soundIncorrectUrl: str | None = None
     progress: UnitProgress | None = None
