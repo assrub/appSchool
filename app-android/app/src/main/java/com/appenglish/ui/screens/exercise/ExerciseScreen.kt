@@ -18,6 +18,8 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -214,6 +216,7 @@ private fun CompletionContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExerciseContent(
     uiState: UnitExerciseUiState,
@@ -224,13 +227,13 @@ private fun ExerciseContent(
     val currentItem = viewModel.getCurrentItem()
     val options = viewModel.getOptions()
     val scope = rememberCoroutineScope()
-    val density = LocalDensity.current
     var showTranslation by remember { mutableStateOf(false) }
     var translatedText by remember { mutableStateOf<String?>(null) }
     var isTranslating by remember { mutableStateOf(false) }
 
     val inputMode = currentItem?.inputMode ?: "tap"
     val scrollState = rememberScrollState()
+    val density = LocalDensity.current
 
     var draggingWord by remember { mutableStateOf<String?>(null) }
     var isOverDropZone by remember { mutableStateOf(false) }
@@ -310,10 +313,10 @@ private fun ExerciseContent(
                         val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
                         val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.Center
                         ) {
                             if (beforeText.isNotEmpty()) TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
 
@@ -406,14 +409,18 @@ private fun ExerciseContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
                 ) {
                     options.forEach { option ->
-                        var cardRootBounds by remember { mutableStateOf(Rect.Zero) }
                         var dragDelta by remember { mutableStateOf(Offset.Zero) }
+                        var localOrigin by remember { mutableStateOf(Rect.Zero) }
 
                         Card(
                             modifier = Modifier
                                 .offset { IntOffset(dragDelta.x.roundToInt(), dragDelta.y.roundToInt()) }
                                 .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
-                                .onGloballyPositioned { coords -> cardRootBounds = coords.boundsInRoot() }
+                                .onGloballyPositioned { coords ->
+                                    if (draggingWord == null) {
+                                        localOrigin = coords.boundsInRoot()
+                                    }
+                                }
                                 .pointerInput(option) {
                                     detectDragGestures(
                                         onDragStart = { _ ->
@@ -425,18 +432,12 @@ private fun ExerciseContent(
                                             change.consume()
                                             dragDelta += dragAmount
                                             val wordRect = Rect(
-                                                cardRootBounds.left + dragDelta.x,
-                                                cardRootBounds.top + dragDelta.y,
-                                                cardRootBounds.right + dragDelta.x,
-                                                cardRootBounds.bottom + dragDelta.y
+                                                left = localOrigin.left + dragDelta.x,
+                                                top = localOrigin.top + dragDelta.y,
+                                                right = localOrigin.right + dragDelta.x,
+                                                bottom = localOrigin.bottom + dragDelta.y
                                             )
-                                            val expandedDrop = Rect(
-                                                dropZoneRect.left - 20f,
-                                                dropZoneRect.top - 20f,
-                                                dropZoneRect.right + 20f,
-                                                dropZoneRect.bottom + 20f
-                                            )
-                                            isOverDropZone = wordRect.overlaps(expandedDrop)
+                                            isOverDropZone = wordRect.overlaps(dropZoneRect)
                                         },
                                         onDragEnd = {
                                             if (isOverDropZone && draggingWord != null) {
