@@ -39,7 +39,7 @@
             <v-icon start size="18">mdi-content-copy</v-icon>
             Copiar todo (Template + Guía IA)
           </v-btn>
-          <v-btn color="success" prepend-icon="mdi-play" @click="executeScript" :loading="executing" size="small">
+           <v-btn color="success" prepend-icon="mdi-play" @click="confirmExecute" :loading="executing" size="small">
             Ejecutar script
           </v-btn>
           <v-btn variant="outlined" prepend-icon="mdi-format-validation" @click="validateJson" :disabled="!script.trim()" size="small">
@@ -96,7 +96,7 @@
               <v-btn variant="text" size="x-small" color="grey" @click="results = []">Limpiar</v-btn>
             </div>
             <div class="results-scroll" style="max-height: 300px; overflow-y: auto">
-              <div v-for="r in results" :key="r.index" class="d-flex align-start py-2 px-1" :class="r.status === 'error' ? 'bg-red-lighten-5' : 'bg-green-lighten-5' + ' rounded mb-1'">
+              <div v-for="r in results" :key="r.index" class="d-flex align-start py-2 px-1 rounded mb-1" :class="r.status === 'error' ? 'bg-red-lighten-5' : 'bg-green-lighten-5'">
                 <v-icon :color="r.status === 'error' ? 'error' : 'success'" size="18" class="mt-1 mr-2">
                   {{ r.status === 'error' ? 'mdi-close-circle' : 'mdi-check-circle' }}
                 </v-icon>
@@ -111,11 +111,37 @@
         </v-card>
       </v-card-text>
     </v-card>
+
+    <v-dialog v-model="confirmDialog" max-width="500">
+      <v-card rounded="lg">
+        <v-card-title class="text-warning">
+          <v-icon class="mr-2">mdi-alert</v-icon>
+          ¿Ejecutar script?
+        </v-card-title>
+        <v-card-text>
+          <p>Se ejecutarán <b>{{ actionCount }}</b> acciones que pueden <b>crear, modificar o eliminar</b> contenido.</p>
+          <v-chip v-if="actionCount" size="small" color="warning" variant="tonal" class="mt-2">
+            Revisá bien el JSON antes de ejecutar
+          </v-chip>
+          <div v-if="actionSummary.length" class="mt-3">
+            <div class="text-caption text-grey mb-1">Resumen:</div>
+            <div v-for="s in actionSummary" :key="s.label" class="text-caption">
+              • {{ s.label }}: <b>{{ s.count }}</b>
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="confirmDialog = false">Cancelar</v-btn>
+          <v-btn color="success" @click="confirmedExecute">Ejecutar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref, computed, inject } from 'vue'
 import api from '../api/client'
 
 const snackbar = inject('snackbar')
@@ -129,6 +155,20 @@ const results = ref([])
 const showHelp = ref(false)
 const jsonError = ref(null)
 const validationResult = ref(null)
+const confirmDialog = ref(false)
+let pendingScript = null
+
+const actionCount = computed(() => pendingScript?.actions?.length || 0)
+
+const actionSummary = computed(() => {
+  if (!pendingScript?.actions) return []
+  const counts = {}
+  pendingScript.actions.forEach(a => {
+    const action = a.action || 'unknown'
+    counts[action] = (counts[action] || 0) + 1
+  })
+  return Object.entries(counts).map(([label, count]) => ({ label, count }))
+})
 
 async function copyAll() {
   loading.value = true
@@ -169,31 +209,6 @@ ${data.aiGuide}
     snackbar.error('Error al obtener template: ' + (e.message || 'Error desconocido'))
   } finally {
     loading.value = false
-  }
-}
-
-async function copyTemplate() {
-  try {
-    const { data } = await api.get('/admin/script/template')
-    script.value = data.template
-    jsonError.value = null
-    validationResult.value = null
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(data.template)
-    } else {
-      const textarea = document.createElement('textarea')
-      textarea.value = data.template
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
-    }
-    snackbar.success('Template copiado al portapapeles')
-  } catch (e) {
-    snackbar.error('Error al obtener template')
   }
 }
 
@@ -246,24 +261,33 @@ function validateJson() {
   }
 }
 
-async function executeScript() {
+function confirmExecute() {
   if (!script.value.trim()) {
     snackbar.warning('Pegá un script JSON primero')
     return
   }
-
-  let parsed
   try {
-    parsed = JSON.parse(script.value)
+    pendingScript = JSON.parse(script.value)
+    if (!pendingScript.actions || !Array.isArray(pendingScript.actions)) {
+      snackbar.error('El JSON debe tener un array "actions"')
+      return
+    }
+    validateJson()
+    confirmDialog.value = true
   } catch (e) {
     snackbar.error('JSON inválido: ' + e.message)
-    return
   }
+}
 
-  if (!parsed.actions || !Array.isArray(parsed.actions)) {
-    snackbar.error('El JSON debe tener un array "actions"')
-    return
-  }
+async function confirmedExecute() {
+  confirmDialog.value = false
+  if (!pendingScript) return
+  await executeScript()
+}
+
+async function executeScript() {
+  const parsed = pendingScript
+  if (!parsed) return
 
   executing.value = true
   results.value = []
@@ -279,6 +303,7 @@ async function executeScript() {
     snackbar.error('Error al ejecutar script')
   } finally {
     executing.value = false
+    pendingScript = null
   }
 }
 
@@ -287,6 +312,7 @@ function clearAll() {
   results.value = []
   jsonError.value = null
   validationResult.value = null
+  pendingScript = null
 }
 </script>
 
