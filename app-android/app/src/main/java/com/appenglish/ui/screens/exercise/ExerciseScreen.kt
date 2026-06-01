@@ -561,6 +561,7 @@ private fun ExerciseTabContent(
                                 .pointerInput(option) {
                                     detectDragGestures(
                                         onDragStart = { _ ->
+                                            onSelectOption(option)
                                             onDraggingWordChange(option)
                                             dragDelta = Offset.Zero
                                             onIsOverDropZoneChange(false)
@@ -568,18 +569,8 @@ private fun ExerciseTabContent(
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             dragDelta += dragAmount
-                                            val wordRect = Rect(
-                                                left = localOrigin.left + dragDelta.x,
-                                                top = localOrigin.top + dragDelta.y,
-                                                right = localOrigin.right + dragDelta.x,
-                                                bottom = localOrigin.bottom + dragDelta.y
-                                            )
-                                            onIsOverDropZoneChange(wordRect.overlaps(dropZoneRect))
                                         },
                                         onDragEnd = {
-                                            if (draggingWord != null) {
-                                                onSelectOption(draggingWord!!)
-                                            }
                                             onDraggingWordChange(null)
                                             onIsOverDropZoneChange(false)
                                             dragDelta = Offset.Zero
