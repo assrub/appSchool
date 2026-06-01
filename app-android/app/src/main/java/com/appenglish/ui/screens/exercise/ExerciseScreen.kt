@@ -278,7 +278,7 @@ private fun ExerciseContent(
                 } else if (itemType == "listening") {
                     ListeningCard(item = currentItem!!, userInput = uiState.userInput, onInputChanged = { viewModel.onInputChanged(it) }, onCheck = { viewModel.checkTextAnswer() })
                 } else {
-                ExerciseTabContent(
+                    ExerciseTabContent(
                     uiState = uiState,
                     currentItem = currentItem,
                     options = options,
@@ -291,6 +291,8 @@ private fun ExerciseContent(
                     draggingWord = draggingWord,
                     isOverDropZone = isOverDropZone,
                     dropZoneRect = dropZoneRect,
+                    blockCompleted = viewModel.getBlockCompletedItems(),
+                    blockTotal = viewModel.getBlockTotalItems(),
                     onTranslationToggle = {
                         if (!isTranslating && translatedText == null) {
                             isTranslating = true
@@ -379,6 +381,8 @@ private fun ExerciseTabContent(
     draggingWord: String?,
     isOverDropZone: Boolean,
     dropZoneRect: Rect,
+    blockCompleted: Int,
+    blockTotal: Int,
     getCurrentBlockTitle: () -> String,
     onTranslationToggle: () -> Unit,
     onDraggingWordChange: (String?) -> Unit,
@@ -400,12 +404,12 @@ private fun ExerciseTabContent(
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
             Column(Modifier.padding(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("${uiState.completedItems} / ${uiState.totalItems}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, fontWeight = FontWeight.Medium)
+                    Text("${blockCompleted} / ${blockTotal}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, fontWeight = FontWeight.Medium)
                     Text(getCurrentBlockTitle(), style = MaterialTheme.typography.bodySmall, color = Primary, fontWeight = FontWeight.SemiBold)
                 }
                 Spacer(Modifier.height(6.dp))
                 LinearProgressIndicator(
-                    progress = { if (uiState.totalItems > 0) uiState.completedItems.toFloat() / uiState.totalItems else 0f },
+                    progress = { if (blockTotal > 0) blockCompleted.toFloat() / blockTotal else 0f },
                     modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)),
                     color = Primary, trackColor = Primary.copy(alpha = 0.2f)
                 )
