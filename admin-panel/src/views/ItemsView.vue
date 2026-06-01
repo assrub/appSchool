@@ -536,10 +536,6 @@ function openDialog(item = null) {
     wordsText.value = (item.words || []).join('\n')
     correctOrderText.value = (item.correct_order || []).join(' ')
   } else {
-    formPairs.value = item.pairs || [{ left: '', right: '' }]
-    wordsText.value = (item.words || []).join('\n')
-    correctOrderText.value = (item.correct_order || []).join(' ')
-  } else {
     form.value = {
       block_id: Number(blockId),
       item_type: 'fill-blank',
@@ -554,7 +550,7 @@ function openDialog(item = null) {
       input_mode: null,
       audio_url: '',
       pairs: null,
-      is_correct_boolean: null,
+      is_correct_boolean: false,
       sort_order: 0
     }
     answersList.value = []
