@@ -61,15 +61,17 @@
             </v-expansion-panel>
           </v-expansion-panels>
 
-          <v-divider class="my-2" />
-
-          <v-card-text class="d-flex ga-2 pb-0">
-            <v-btn size="small" variant="tonal" prepend-icon="mdi-lightbulb-outline" color="warning" @click="showTipsModal = true">
-              Tips ({{ globalTips.length }})
-            </v-btn>
-            <v-btn v-if="type === 'topic'" size="small" variant="tonal" prepend-icon="mdi-video" @click="showVideosPanel = !showVideosPanel">
-              Videos ({{ videos.length }})
-            </v-btn>
+          <v-card-text v-if="type === 'topic'">
+            <div class="d-flex align-center mb-3">
+              <v-icon class="mr-2">mdi-video</v-icon>
+              <span class="text-subtitle-2 font-weight-medium">Videos de YouTube</span>
+            </div>
+            <v-row v-for="(v, i) in videos" :key="i" class="mb-3" align="center">
+              <v-col cols="5"><v-text-field v-model="v.title" label="Título" variant="outlined" density="compact" hide-details /></v-col>
+              <v-col cols="5"><v-text-field v-model="v.url" label="URL de YouTube" variant="outlined" density="compact" hide-details placeholder="https://youtube.com/..." /></v-col>
+              <v-col cols="2"><v-btn icon="mdi-delete" variant="text" color="error" @click="removeVideo(i)" /></v-col>
+            </v-row>
+            <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addVideo">Agregar video</v-btn>
           </v-card-text>
 
           <v-expand-transition>
@@ -134,29 +136,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="showTipsModal" max-width="500">
-      <v-card rounded="lg">
-        <v-card-title class="d-flex align-center">
-          <v-icon class="mr-2" color="warning">mdi-lightbulb-outline</v-icon> Tips y consejos
-        </v-card-title>
-        <v-card-text>
-          <p class="text-body-2 text-grey mb-3">Los tips aparecen al final de la teoría.</p>
-          <div v-for="(tip, i) in globalTips" :key="i" class="d-flex align-center mb-2">
-            <v-text-field v-model="globalTips[i]" variant="outlined" density="compact" hide-details placeholder="Escribí un tip..." class="flex-grow-1">
-              <template #prepend-inner><v-icon size="small" color="warning">mdi-lightbulb</v-icon></template>
-            </v-text-field>
-            <v-btn icon="mdi-close" variant="text" size="small" color="grey" @click="removeGlobalTip(i)" class="ml-1" />
-          </div>
-          <v-btn variant="text" size="small" prepend-icon="mdi-plus" @click="globalTips.push('')" class="mt-1">
-            Agregar tip
-          </v-btn>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showTipsModal = false">Cerrar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
@@ -181,8 +160,6 @@ const openPanels = ref([])
 const blocks = ref([{ title: '', html: '', tips: [] }])
 const globalTips = ref([])
 const videos = ref([])
-const showTipsModal = ref(false)
-const showVideosPanel = ref(false)
 
 const removeDialog = ref(false)
 const blockToRemove = ref(0)
@@ -243,18 +220,6 @@ function doRemoveBlock() {
   }
   openPanels.value = [Math.min(blockToRemove.value, blocks.value.length - 1)]
   removeDialog.value = false
-}
-
-function addTip() {
-  globalTips.value.push('')
-}
-
-function removeTip(i) {
-  globalTips.value.splice(i, 1)
-}
-
-function removeGlobalTip(i) {
-  globalTips.value.splice(i, 1)
 }
 
 function addVideo() {

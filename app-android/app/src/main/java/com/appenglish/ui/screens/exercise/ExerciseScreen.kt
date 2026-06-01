@@ -18,6 +18,8 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -215,6 +217,7 @@ private fun CompletionContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExerciseContent(
     uiState: UnitExerciseUiState,
@@ -320,10 +323,10 @@ private fun ExerciseContent(
                         val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
                         val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
 
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.Center
                         ) {
                             if (beforeText.isNotEmpty()) {
                                 TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
