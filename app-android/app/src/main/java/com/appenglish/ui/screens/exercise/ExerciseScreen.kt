@@ -2,16 +2,19 @@ package com.appenglish.ui.screens.exercise
 
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,21 +32,21 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.RemoveRedEye
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -57,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,19 +69,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.ui.components.TtsButton
 import com.appenglish.ui.components.TranslateableText
 import com.appenglish.ui.components.translateWord
-import com.appenglish.ui.screens.topic.UnitTheoryView
 import com.appenglish.ui.theme.CorrectBackground
 import com.appenglish.ui.theme.CorrectGreen
 import com.appenglish.ui.theme.ErrorRed
@@ -89,6 +100,7 @@ import com.appenglish.ui.theme.WarningOrange
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,7 +111,6 @@ fun UnitExerciseScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
 
     val tts = remember {
         TextToSpeech(context) { status -> }
@@ -132,13 +143,13 @@ fun UnitExerciseScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary, titleContentColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary, titleContentColor = Color.White)
             )
         }
     ) { padding ->
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                CircularProgressIndicator(color = Primary)
             }
         } else if (uiState.error != null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
@@ -148,13 +159,15 @@ fun UnitExerciseScreen(
             CompletionContent(
                 uiState = uiState,
                 onRetryClick = { viewModel.startRetryWrongItems() },
-                onBackClick = onBackClick
+                onBackClick = onBackClick,
+                modifier = Modifier.padding(padding)
             )
         } else {
             ExerciseContent(
                 uiState = uiState,
                 viewModel = viewModel,
-                focusManager = focusManager
+                onTheoryClick = onTheoryClick,
+                modifier = Modifier.padding(padding)
             )
         }
     }
@@ -164,10 +177,11 @@ fun UnitExerciseScreen(
 private fun CompletionContent(
     uiState: UnitExerciseUiState,
     onRetryClick: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
@@ -236,43 +250,90 @@ private fun CompletionContent(
 private fun ExerciseContent(
     uiState: UnitExerciseUiState,
     viewModel: UnitExerciseViewModel,
-    focusManager: androidx.compose.ui.focus.FocusManager
+    onTheoryClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val currentItem = viewModel.getCurrentItem()
     val options = viewModel.getOptions()
+    val scope = rememberCoroutineScope()
+    var showTranslation by remember { mutableStateOf(false) }
+    var translatedText by remember { mutableStateOf<String?>(null) }
+    var isTranslating by remember { mutableStateOf(false) }
 
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        item {
-            Text("${uiState.completedItems} / ${uiState.totalItems} items", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            LinearProgressIndicator(
-                progress = { if (uiState.totalItems > 0) uiState.completedItems.toFloat() / uiState.totalItems else 0f },
-                modifier = Modifier.fillMaxWidth().height(8.dp).padding(vertical = 4.dp),
-                color = MaterialTheme.colorScheme.primary, trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(viewModel.getCurrentBlockTitle(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(12.dp))
-        }
+    var isDragging by remember { mutableStateOf(false) }
+    var draggedOption by remember { mutableStateOf<String?>(null) }
+    var dragOffsetX by remember { mutableFloatStateOf(0f) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var dropZonePosition by remember { mutableStateOf(0f) }
+    var isOverDropZone by remember { mutableStateOf(false) }
 
-        if (currentItem != null) {
-            item {
-                val scope = rememberCoroutineScope()
-                var showTranslation by remember { mutableStateOf(false) }
-                var translatedText by remember { mutableStateOf<String?>(null) }
-                var isTranslating by remember { mutableStateOf(false) }
+    val inputMode = currentItem?.inputMode ?: "tap"
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = if (inputMode == "tap" && uiState.isCorrect == null) 120.dp else 0.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item { Spacer(Modifier.height(8.dp)) }
+
+            if (uiState.unitTheory != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(containerColor = CorrectBackground),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        onClick = onTheoryClick
                     ) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("Completá el espacio:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Row {
+                        Row(
+                            Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("📖", fontSize = 24.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Ver explicación", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text("Revisá la teoría antes de ejercitar", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            }
+                            Text("→", fontSize = 20.sp, color = Primary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("${uiState.completedItems} / ${uiState.totalItems} items", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                LinearProgressIndicator(
+                    progress = { if (uiState.totalItems > 0) uiState.completedItems.toFloat() / uiState.totalItems else 0f },
+                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                    color = Primary, trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(viewModel.getCurrentBlockTitle(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Primary)
+            }
+
+            if (currentItem != null) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                                 val ttsText = if (uiState.showingAnswer) currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer) else currentItem.sentence
                                 TtsButton(text = ttsText)
                                 IconButton(
@@ -291,260 +352,442 @@ private fun ExerciseContent(
                                     Icon(Icons.Default.RemoveRedEye, "Ver traducción", modifier = Modifier.size(22.dp))
                                 }
                             }
-                        }
 
-                        Spacer(Modifier.height(20.dp))
+                            Spacer(Modifier.height(12.dp))
 
-                        val partsBefore = currentItem.sentence.split(Regex("_{2,}"), limit = 2)
-                        val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
-                        val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
+                            val partsBefore = currentItem.sentence.split(Regex("_{2,}"), limit = 2)
+                            val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
+                            val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (beforeText.isNotEmpty()) {
-                                TranslateableText(text = beforeText, fontSize = 22, modifier = Modifier)
-                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (beforeText.isNotEmpty()) {
+                                    TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
+                                }
 
-                            Spacer(Modifier.width(6.dp))
+                                Spacer(Modifier.width(8.dp))
 
-                            AnimatedContent(
-                                targetState = uiState.showingAnswer,
-                                transitionSpec = {
-                                    if (targetState) {
-                                        (slideInVertically(tween(400)) { it } + fadeIn(tween(400))).togetherWith(fadeOut(tween(200)))
+                                Box(
+                                    modifier = Modifier
+                                        .widthIn(min = 100.dp)
+                                        .onGloballyPositioned { coordinates ->
+                                            dropZonePosition = coordinates.positionInRoot().x
+                                        }
+                                        .background(
+                                            color = when {
+                                                isOverDropZone && isDragging -> Primary.copy(alpha = 0.2f)
+                                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectBackground
+                                                uiState.showingAnswer && uiState.isCorrect == false -> IncorrectBackground
+                                                else -> Color.Transparent
+                                            },
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .border(
+                                            width = if (isOverDropZone && isDragging) 3.dp else 2.dp,
+                                            color = when {
+                                                isOverDropZone && isDragging -> Primary
+                                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectGreen
+                                                uiState.showingAnswer && uiState.isCorrect == false -> ErrorRed
+                                                else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                            },
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (uiState.showingAnswer) {
+                                        Text(
+                                            currentItem.answer,
+                                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (uiState.isCorrect == true) CorrectGreen else if (uiState.isCorrect == false) ErrorRed else Primary
+                                        )
+                                    } else if (draggedOption != null && isDragging) {
+                                        Text(
+                                            draggedOption!!,
+                                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                            fontWeight = FontWeight.Bold,
+                                            color = Primary
+                                        )
                                     } else {
-                                        (fadeIn(tween(200))).togetherWith(fadeOut(tween(200)))
-                                    }.using(SizeTransform(clip = false))
-                                },
-                                label = "answer"
-                            ) { showing ->
-                                if (showing) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(MaterialTheme.shapes.medium)
-                                            .border(2.dp, CorrectGreen, MaterialTheme.shapes.medium)
-                                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(currentItem.answer, style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp), fontWeight = FontWeight.Bold, color = CorrectGreen)
+                                        Text(
+                                            "_______",
+                                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        )
                                     }
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(MaterialTheme.shapes.medium)
-                                            .border(2.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
-                                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("______", style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
+                                }
+
+                                Spacer(Modifier.width(8.dp))
+
+                                if (afterText.isNotEmpty()) {
+                                    TranslateableText(text = afterText, fontSize = 24, modifier = Modifier)
                                 }
                             }
 
-                            Spacer(Modifier.width(6.dp))
+                            if (uiState.playingFullAudio) {
+                                Spacer(Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Primary)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Reproduciendo...", style = MaterialTheme.typography.bodySmall, color = Primary)
+                                }
+                            }
 
-                            if (afterText.isNotEmpty()) {
-                                TranslateableText(text = afterText, fontSize = 22, modifier = Modifier)
+                            AnimatedVisibility(visible = showTranslation && translatedText != null) {
+                                Spacer(Modifier.height(8.dp))
+                                Card(
+                                    shape = MaterialTheme.shapes.medium,
+                                    colors = CardDefaults.cardColors(containerColor = InfoBackground)
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text("Traducción:", style = MaterialTheme.typography.labelSmall, color = InfoBlue)
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(translatedText ?: "", style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp), fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
                             }
                         }
+                    }
+                }
 
-                        Spacer(Modifier.height(20.dp))
+                if (inputMode == "type" && uiState.isCorrect == null) {
+                    item {
+                        OutlinedTextField(
+                            value = uiState.userInput,
+                            onValueChange = { viewModel.onInputChanged(it) },
+                            label = { Text("Escribí tu respuesta") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    viewModel.checkTextAnswer()
+                                }
+                            )
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Button(
+                            onClick = { viewModel.checkTextAnswer() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                            shape = MaterialTheme.shapes.large,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Corregir", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
 
-                        val inputMode = currentItem.inputMode ?: "tap"
+        if (inputMode == "tap" && uiState.isCorrect == null && currentItem != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        color = Color.White,
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 20.dp)
+                    .shadow(8.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            ) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(options) { option ->
+                        val isBeingDragged = isDragging && draggedOption == option
+                        val scale by animateFloatAsState(
+                            targetValue = if (isBeingDragged) 1.1f else 1f,
+                            animationSpec = spring(stiffness = Spring.StiffnessLow),
+                            label = "scale"
+                        )
 
-                        if (uiState.isCorrect == null) {
-                            if (inputMode == "type") {
-                                OutlinedTextField(
-                                    value = uiState.userInput,
-                                    onValueChange = { viewModel.onInputChanged(it) },
-                                    label = { Text("Escribí tu respuesta") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                    keyboardActions = KeyboardActions(
-                                        onDone = {
-                                            viewModel.checkTextAnswer()
-                                            focusManager.clearFocus()
+                        Box(
+                            modifier = Modifier
+                                .scale(scale)
+                                .shadow(if (isBeingDragged) 8.dp else 4.dp, CircleShape)
+                                .background(
+                                    color = if (isBeingDragged) Primary else Primary.copy(alpha = 0.9f),
+                                    shape = CircleShape
+                                )
+                                .padding(horizontal = 20.dp, vertical = 14.dp)
+                                .pointerInput(option) {
+                                    detectDragGestures(
+                                        onDragStart = {
+                                            isDragging = true
+                                            draggedOption = option
+                                            dragOffsetX = 0f
+                                            dragOffsetY = 0f
+                                        },
+                                        onDragEnd = {
+                                            if (isOverDropZone && draggedOption != null) {
+                                                viewModel.selectOption(draggedOption!!)
+                                            }
+                                            isDragging = false
+                                            draggedOption = null
+                                            isOverDropZone = false
+                                            dragOffsetX = 0f
+                                            dragOffsetY = 0f
+                                        },
+                                        onDragCancel = {
+                                            isDragging = false
+                                            draggedOption = null
+                                            isOverDropZone = false
+                                            dragOffsetX = 0f
+                                            dragOffsetY = 0f
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            dragOffsetX += dragAmount.x
+                                            dragOffsetY += dragAmount.y
+                                            val centerX = dropZonePosition + 50
+                                            val draggedX = change.position.x + dragOffsetX
+                                            isOverDropZone = kotlin.math.abs(draggedX - centerX) < 120
                                         }
                                     )
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Button(
-                                    onClick = { viewModel.checkTextAnswer(); focusManager.clearFocus() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                    shape = MaterialTheme.shapes.medium,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) { Text("Corregir", color = Color.White) }
-                            } else {
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                                    items(options) { option ->
-                                        FilterChip(
-                                            selected = uiState.userInput == option,
-                                            onClick = { viewModel.selectOption(option) },
-                                            label = { Text(option, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) },
-                                            modifier = Modifier.padding(vertical = 4.dp),
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        if (uiState.isCorrect == true) {
-                            Spacer(Modifier.height(8.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                                items(options) { option ->
-                                    val isCorrectOpt = option.trim().lowercase() == currentItem.answer.trim().lowercase()
-                                    val wasSelected = uiState.userInput == option
-                                    FilterChip(
-                                        selected = false,
-                                        onClick = {},
-                                        label = { Text(option, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) },
-                                        enabled = false,
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            containerColor = when {
-                                                isCorrectOpt -> CorrectBackground
-                                                wasSelected && !isCorrectOpt -> IncorrectBackground
-                                                else -> MaterialTheme.colorScheme.surfaceVariant
-                                            },
-                                            selectedContainerColor = Color.Transparent,
-                                            labelColor = when {
-                                                isCorrectOpt -> CorrectGreen
-                                                wasSelected && !isCorrectOpt -> ErrorRed
-                                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                            }
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                        if (uiState.isCorrect == false) {
-                            Spacer(Modifier.height(8.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                                items(options) { option ->
-                                    val wasSelected = uiState.userInput == option
-                                    FilterChip(
-                                        selected = false,
-                                        onClick = {},
-                                        label = { Text(option, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) },
-                                        enabled = false,
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            containerColor = if (wasSelected) IncorrectBackground else MaterialTheme.colorScheme.surfaceVariant,
-                                            selectedContainerColor = Color.Transparent,
-                                            labelColor = if (wasSelected) ErrorRed else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    )
-                                }
-                            }
-                        }
-
-                        if (uiState.playingFullAudio) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
-                                Spacer(Modifier.width(8.dp))
-                                Text("🔊 Reproduciendo...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
-                }
-
-                if (uiState.isCorrect == true && uiState.showingAnswer) {
-                    val isRetry = uiState.retryMode
-                    AlertDialog(
-                        onDismissRequest = {},
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    if (isRetry) viewModel.retryNextAfterCorrect()
-                                    else viewModel.nextItem()
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = MaterialTheme.shapes.medium
-                            ) { Text(if (uiState.readyForNext) "Siguiente →" else "🎉 Continuar", color = Color.White) }
-                        },
-                        title = {
-                            Text("🎉 ¡Muy bien!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = CorrectGreen)
-                        },
-                        text = {
-                            Column {
-                                val fullSentence = currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer)
-                                Text(fullSentence, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                                if (currentItem.hint != null) {
-                                    Spacer(Modifier.height(4.dp))
-                                    Text("💡 ${currentItem.hint}", style = MaterialTheme.typography.bodyMedium, color = WarningOrange)
-                                }
-                            }
-                        },
-                        containerColor = Color.White,
-                        shape = MaterialTheme.shapes.large
-                    )
-                }
-
-                if (uiState.showAcceptButton) {
-                    AlertDialog(
-                        onDismissRequest = {},
-                        confirmButton = {
-                            Button(
-                                onClick = { viewModel.onAcceptClick() },
-                                colors = ButtonDefaults.buttonColors(containerColor = WarningOrange),
-                                shape = MaterialTheme.shapes.medium
-                            ) { Text("Aceptar →", color = Color.White) }
-                        },
-                        title = {
-                            Text("❌ Incorrecto", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = ErrorRed)
-                        },
-                        text = {
-                            Column {
-                                Text("Respondiste: ${uiState.userInput}", style = MaterialTheme.typography.bodyMedium)
-                                Spacer(Modifier.height(4.dp))
-                                val answerToShow = if (uiState.retryMode) {
-                                    val wrong = uiState.wrongItems.getOrNull(uiState.retryIndex)
-                                    wrong?.correctAnswer ?: currentItem?.answer ?: ""
-                                } else currentItem?.answer ?: ""
-                                Text("Respuesta correcta: $answerToShow", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            }
-                        },
-                        containerColor = Color.White,
-                        shape = MaterialTheme.shapes.large
-                    )
-                }
-
-                AnimatedContent(
-                    targetState = showTranslation,
-                    transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                    label = "translation"
-                ) { visible ->
-                    if (visible) {
-                        Spacer(Modifier.height(4.dp))
-                        Card(
-                            shape = MaterialTheme.shapes.medium,
-                            colors = CardDefaults.cardColors(containerColor = InfoBackground),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            contentAlignment = Alignment.Center
                         ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                if (isTranslating) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = InfoBlue)
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Traduciendo...", style = MaterialTheme.typography.bodySmall)
-                                    }
-                                } else if (translatedText != null) {
-                                    Text("Traducción:", style = MaterialTheme.typography.labelSmall, color = InfoBlue)
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(translatedText!!, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                                }
+                            Text(
+                                option,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (inputMode == "tap" && (uiState.isCorrect == true || uiState.isCorrect == false)) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        color = Color.White,
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                items(options) { option ->
+                    val isCorrectOpt = option.trim().lowercase() == currentItem?.answer?.trim()?.lowercase()
+                    val wasSelected = uiState.userInput == option
+
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = when {
+                                    isCorrectOpt -> CorrectBackground
+                                    wasSelected && !isCorrectOpt -> IncorrectBackground
+                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = 2.dp,
+                                color = when {
+                                    isCorrectOpt -> CorrectGreen
+                                    wasSelected && !isCorrectOpt -> ErrorRed
+                                    else -> Color.Transparent
+                                },
+                                shape = CircleShape
+                            )
+                            .padding(horizontal = 20.dp, vertical = 14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            option,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = when {
+                                isCorrectOpt -> CorrectGreen
+                                wasSelected && !isCorrectOpt -> ErrorRed
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = uiState.isCorrect == true && uiState.showingAnswer,
+            enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.7f),
+            exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.7f)
+        ) {
+            ResultPopup(
+                isCorrect = true,
+                sentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem.answer) ?: "",
+                hint = currentItem?.hint,
+                onContinue = {
+                    if (uiState.retryMode) viewModel.retryNextAfterCorrect()
+                    else viewModel.nextItem()
+                },
+                buttonText = if (uiState.readyForNext) "Siguiente →" else "Continuar"
+            )
+        }
+
+        AnimatedVisibility(
+            visible = uiState.showAcceptButton,
+            enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.7f),
+            exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.7f)
+        ) {
+            ResultPopup(
+                isCorrect = false,
+                userAnswer = uiState.userInput,
+                correctAnswer = if (uiState.retryMode) {
+                    uiState.wrongItems.getOrNull(uiState.retryIndex)?.correctAnswer ?: currentItem?.answer ?: ""
+                } else currentItem?.answer ?: "",
+                onAccept = { viewModel.onAcceptClick() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResultPopup(
+    isCorrect: Boolean,
+    sentence: String = "",
+    hint: String? = null,
+    userAnswer: String = "",
+    correctAnswer: String = "",
+    onContinue: () -> Unit = {},
+    onAccept: () -> Unit = {},
+    buttonText: String = "Continuar"
+) {
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(32.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val emoji = if (isCorrect) "🎉" else "❌"
+                val title = if (isCorrect) "¡Muy bien!" else "Incorrecto"
+                val titleColor = if (isCorrect) CorrectGreen else ErrorRed
+
+                Text(emoji, fontSize = 72.sp)
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = titleColor
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                if (isCorrect) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = CorrectBackground)
+                    ) {
+                        Text(
+                            sentence,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(20.dp),
+                            color = CorrectGreen
+                        )
+                    }
+                    if (hint != null) {
+                        Spacer(Modifier.height(12.dp))
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = WarningBackground)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("💡", fontSize = 20.sp)
+                                Spacer(Modifier.width(8.dp))
+                                Text(hint, style = MaterialTheme.typography.bodyMedium, color = WarningOrange, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
+                } else {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = IncorrectBackground)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Close, "Error", tint = ErrorRed, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Respondiste:", style = MaterialTheme.typography.bodyLarge, color = ErrorRed)
+                            }
+                            Text(
+                                userAnswer.ifBlank { "(vacío)" },
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = ErrorRed
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = CorrectBackground)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Check, "Correcto", tint = CorrectGreen, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Respuesta correcta:", style = MaterialTheme.typography.bodyLarge, color = CorrectGreen)
+                            }
+                            Text(
+                                correctAnswer,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = CorrectGreen
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(28.dp))
+
+                Button(
+                    onClick = { if (isCorrect) onContinue() else onAccept() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isCorrect) CorrectGreen else Primary
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Text(
+                        buttonText,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }
