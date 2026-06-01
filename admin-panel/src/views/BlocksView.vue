@@ -161,7 +161,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, inject } from 'vue'
+import { ref, computed, watch, onMounted, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../api/client'
 import MobilePreview from '../components/MobilePreview.vue'
