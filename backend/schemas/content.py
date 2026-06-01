@@ -41,6 +41,12 @@ class ExerciseItemDto(BaseModel):
     inputMode: str | None = None
     answers: list[str] | None = None
     options: list[str] | None = None
+    question: str | None = None
+    words: list[str] | None = None
+    correctOrder: list[str] | None = None
+    audioUrl: str | None = None
+    pairs: list[dict] | None = None
+    isCorrect: bool | None = None
 
 
 class ExerciseBlockDto(BaseModel):
@@ -67,6 +73,7 @@ class Unit(BaseModel):
     title: str
     exerciseType: str
     explanation: str
+    inputMode: str = "tap"
     isLocked: bool = False
     icon: str = ""
     soundCorrectUrl: str | None = None

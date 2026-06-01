@@ -52,7 +52,8 @@ class UnitsViewModel @Inject constructor(
                         val total = unitDto.blocks.sumOf { b -> b.items.size }
                         DomainUnit(
                             id = unitDto.id, title = unitDto.title, exerciseType = unitDto.exerciseType,
-                            explanation = unitDto.explanation, isLocked = unitDto.isLocked,
+                            explanation = unitDto.explanation, inputMode = unitDto.inputMode,
+                            isLocked = unitDto.isLocked,
                             icon = unitDto.icon,
                             blocks = emptyList(),
                             completedItems = local?.completedItems ?: unitDto.progress?.completedItems ?: 0,

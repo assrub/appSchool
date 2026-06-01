@@ -79,6 +79,7 @@ data class Unit(
     val title: String,
     val exerciseType: String,
     val explanation: String,
+    val inputMode: String = "tap",
     val isLocked: Boolean = false,
     val icon: String = "",
     val soundCorrectUrl: String? = null,

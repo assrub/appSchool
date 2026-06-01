@@ -449,6 +449,8 @@ async def create_block(
     block = ExerciseBlock(
         unit_id=data.unit_id,
         title=data.title,
+        icon=data.icon,
+        shuffle=data.shuffle,
         sort_order=data.sort_order,
     )
     db.add(block)
@@ -538,6 +540,7 @@ async def create_item(
         audio_url=data.audio_url,
         pairs=data.pairs,
         is_correct_boolean=data.is_correct_boolean,
+        input_mode=data.input_mode,
         sort_order=data.sort_order,
     )
     db.add(item)
@@ -1751,15 +1754,20 @@ async def _upsert_topic(db: AsyncSession, data: dict):
         for k in ["name", "icon", "difficulty", "subject_id"]:
             if k in data: setattr(topic, k, data[k])
 
-    theory_data = data.get("theory", {}).get("blocks")
-    if theory_data:
+    theory_data = data.get("theory", {})
+    blocks_data = theory_data.get("blocks")
+    tips_data = theory_data.get("tips")
+    if blocks_data or tips_data:
         theory = (await db.execute(select(TopicTheory).where(TopicTheory.topic_id == data["id"]))).scalar_one_or_none()
         if not theory:
             theory = TopicTheory(topic_id=data["id"], text="")
             db.add(theory)
             await db.flush()
         import json
-        theory.text = json.dumps(theory_data, ensure_ascii=False)
+        if blocks_data:
+            theory.text = json.dumps(blocks_data, ensure_ascii=False)
+        if tips_data:
+            theory.tips = tips_data
 
         await db.execute(delete(TheorySection).where(TheorySection.theory_id == theory.id))
         await db.execute(delete(TheoryVideo).where(TheoryVideo.topic_id == data["id"]))
@@ -1794,6 +1802,24 @@ async def _upsert_unit(db: AsyncSession, data: dict):
             await db.flush()
             for item_data in exercises:
                 _add_item(db, block.id, item_data)
+
+    # Unit theory
+    theory_data = data.get("theory")
+    if theory_data:
+        blocks = theory_data.get("blocks")
+        tips = theory_data.get("tips", [])
+        if blocks or tips:
+            existing = (await db.execute(select(UnitTheory).where(UnitTheory.unit_id == data["id"]))).scalar_one_or_none()
+            if not existing:
+                existing = UnitTheory(unit_id=data["id"], text="")
+                db.add(existing)
+                await db.flush()
+            import json
+            if blocks:
+                existing.text = json.dumps(blocks, ensure_ascii=False)
+            if tips:
+                existing.tips = tips
+            await db.execute(delete(UnitTheorySection).where(UnitTheorySection.theory_id == existing.id))
 
 
 def _add_item(db, block_id: int, data: dict):

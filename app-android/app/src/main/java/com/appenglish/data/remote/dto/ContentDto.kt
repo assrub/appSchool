@@ -68,6 +68,7 @@ data class UnitDto(
     val title: String,
     val exerciseType: String,
     val explanation: String,
+    val inputMode: String = "tap",
     val isLocked: Boolean = false,
     val icon: String = "",
     val soundCorrectUrl: String? = null,
@@ -125,7 +126,13 @@ data class ExerciseItemDto(
     val itemType: String = "fill-blank",
     val inputMode: String? = null,
     val answers: List<String>? = null,
-    val options: List<String>? = null
+    val options: List<String>? = null,
+    val question: String? = null,
+    val words: List<String>? = null,
+    val correctOrder: List<String>? = null,
+    val audioUrl: String? = null,
+    val pairs: List<Map<String, String>>? = null,
+    val isCorrect: Boolean? = null
 )
 
 data class TestConfigDto(
