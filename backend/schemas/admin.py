@@ -31,6 +31,7 @@ class SubjectResponse(BaseModel):
     color: str
     sort_order: int
     is_active: bool
+    topics_count: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -62,6 +63,7 @@ class TopicResponse(BaseModel):
     difficulty: int
     sort_order: int
     is_active: bool
+    units_count: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -106,6 +108,8 @@ class UnitResponse(BaseModel):
     sound_correct_url: str | None
     sound_incorrect_url: str | None
     sort_order: int
+    items_count: int = 0
+    blocks_count: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -134,6 +138,7 @@ class BlockResponse(BaseModel):
     icon: str
     shuffle: bool
     sort_order: int
+    items_count: int = 0
 
     model_config = {"from_attributes": True}
 

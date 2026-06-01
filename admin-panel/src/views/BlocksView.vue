@@ -204,7 +204,7 @@ const blocksPreviewHtml = computed(() => {
       <div style="display:flex;align-items:center;padding:16px">
         <div style="flex:1;min-width:0">
           <div style="font-size:17px;font-weight:600;color:#4CAF50;line-height:1.2">📋 ${b.title}</div>
-          <div style="font-size:13px;color:#757575;margin-top:4px">${b.items?.length||0} ejercicios</div>
+          <div style="font-size:13px;color:#757575;margin-top:4px">${b.items_count||0} ejercicios</div>
         </div>
         <div style="font-size:24px;color:#4CAF50;flex-shrink:0">→</div>
       </div>

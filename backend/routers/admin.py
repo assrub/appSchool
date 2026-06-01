@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import os
 import uuid
 import aiofiles
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload
 
 from database import get_db
@@ -29,10 +29,27 @@ async def list_subjects(
     db: AsyncSession = Depends(get_db),
     admin: dict = Depends(get_current_admin),
 ):
-    result = await db.execute(
-        select(Subject).order_by(Subject.sort_order)
+    # Subquery: count active topics per subject
+    topics_count_subq = (
+        select(Topic.subject_id, func.count(Topic.id).label("cnt"))
+        .where(Topic.is_active == True, Topic.subject_id == Subject.id)
+        .group_by(Topic.subject_id)
+        .subquery()
     )
-    return [AdminSubjectResponse.model_validate(s) for s in result.scalars().all()]
+
+    result = await db.execute(
+        select(Subject.id, Subject.name, Subject.icon, Subject.color,
+               Subject.sort_order, Subject.is_active,
+               Subject.created_at, Subject.updated_at,
+               func.coalesce(topics_count_subq.c.cnt, 0).label("topics_count"))
+        .order_by(Subject.sort_order)
+    )
+    rows = result.all()
+    return [AdminSubjectResponse(
+        id=r.id, name=r.name, icon=r.icon, color=r.color,
+        sort_order=r.sort_order, is_active=r.is_active,
+        topics_count=r.topics_count, created_at=r.created_at, updated_at=r.updated_at
+    ) for r in rows]
 
 
 @router.post("/subjects", response_model=AdminSubjectResponse, status_code=201)
@@ -94,12 +111,27 @@ async def list_topics(
     db: AsyncSession = Depends(get_db),
     admin: dict = Depends(get_current_admin),
 ):
+    # Subquery to count units per topic
+    unit_count_subq = (
+        select(ExerciseUnit.topic_id, func.count(ExerciseUnit.id).label("cnt"))
+        .where(ExerciseUnit.topic_id == Topic.id)
+        .group_by(ExerciseUnit.topic_id)
+        .subquery()
+    )
+
     result = await db.execute(
-        select(Topic)
+        select(Topic.id, Topic.subject_id, Topic.name, Topic.icon, Topic.difficulty,
+               Topic.sort_order, Topic.is_active, Topic.created_at, Topic.updated_at,
+               func.coalesce(unit_count_subq.c.cnt, 0).label("units_count"))
         .where(Topic.subject_id == subject_id, Topic.is_active == True)
         .order_by(Topic.sort_order)
     )
-    return [AdminTopicResponse.model_validate(t) for t in result.scalars().all()]
+    rows = result.all()
+    return [AdminTopicResponse(
+        id=r.id, subject_id=r.subject_id, name=r.name, icon=r.icon,
+        difficulty=r.difficulty, sort_order=r.sort_order, is_active=r.is_active,
+        units_count=r.units_count, created_at=r.created_at, updated_at=r.updated_at
+    ) for r in rows]
 
 
 @router.post("/topics", response_model=AdminTopicResponse, status_code=201)
@@ -180,12 +212,43 @@ async def list_units(
     db: AsyncSession = Depends(get_db),
     admin: dict = Depends(get_current_admin),
 ):
+    # Subquery: count blocks per unit
+    blocks_count_subq = (
+        select(ExerciseBlock.unit_id, func.count(ExerciseBlock.id).label("cnt"))
+        .where(ExerciseBlock.unit_id == ExerciseUnit.id)
+        .group_by(ExerciseBlock.unit_id)
+        .subquery()
+    )
+
+    # Subquery: count items across all blocks of a unit
+    items_count_subq = (
+        select(ExerciseBlock.unit_id, func.count(ExerciseItem.id).label("cnt"))
+        .join(ExerciseItem, ExerciseItem.block_id == ExerciseBlock.id)
+        .where(ExerciseBlock.unit_id == ExerciseUnit.id)
+        .group_by(ExerciseBlock.unit_id)
+        .subquery()
+    )
+
     result = await db.execute(
-        select(ExerciseUnit)
+        select(ExerciseUnit.id, ExerciseUnit.topic_id, ExerciseUnit.title,
+               ExerciseUnit.exercise_type, ExerciseUnit.explanation,
+               ExerciseUnit.input_mode, ExerciseUnit.is_locked, ExerciseUnit.icon,
+               ExerciseUnit.sound_correct_url, ExerciseUnit.sound_incorrect_url,
+               ExerciseUnit.sort_order, ExerciseUnit.created_at, ExerciseUnit.updated_at,
+               func.coalesce(blocks_count_subq.c.cnt, 0).label("blocks_count"),
+               func.coalesce(items_count_subq.c.cnt, 0).label("items_count"))
         .where(ExerciseUnit.topic_id == topic_id)
         .order_by(ExerciseUnit.sort_order)
     )
-    return [UnitResponse.model_validate(u) for u in result.scalars().all()]
+    rows = result.all()
+    return [UnitResponse(
+        id=r.id, topic_id=r.topic_id, title=r.title, exercise_type=r.exercise_type,
+        explanation=r.explanation, input_mode=r.input_mode, is_locked=r.is_locked,
+        icon=r.icon, sound_correct_url=r.sound_correct_url,
+        sound_incorrect_url=r.sound_incorrect_url,
+        sort_order=r.sort_order, blocks_count=r.blocks_count,
+        items_count=r.items_count, created_at=r.created_at, updated_at=r.updated_at
+    ) for r in rows]
 
 
 @router.post("/units", response_model=UnitResponse, status_code=201)
@@ -355,12 +418,26 @@ async def list_blocks(
     db: AsyncSession = Depends(get_db),
     admin: dict = Depends(get_current_admin),
 ):
+    # Subquery: count items per block
+    items_count_subq = (
+        select(ExerciseItem.block_id, func.count(ExerciseItem.id).label("cnt"))
+        .where(ExerciseItem.block_id == ExerciseBlock.id)
+        .group_by(ExerciseItem.block_id)
+        .subquery()
+    )
+
     result = await db.execute(
-        select(ExerciseBlock)
+        select(ExerciseBlock.id, ExerciseBlock.unit_id, ExerciseBlock.title,
+               ExerciseBlock.icon, ExerciseBlock.shuffle, ExerciseBlock.sort_order,
+               func.coalesce(items_count_subq.c.cnt, 0).label("items_count"))
         .where(ExerciseBlock.unit_id == unit_id)
         .order_by(ExerciseBlock.sort_order)
     )
-    return [BlockResponse.model_validate(b) for b in result.scalars().all()]
+    rows = result.all()
+    return [BlockResponse(
+        id=r.id, unit_id=r.unit_id, title=r.title, icon=r.icon,
+        shuffle=r.shuffle, sort_order=r.sort_order, items_count=r.items_count
+    ) for r in rows]
 
 
 @router.post("/blocks", response_model=BlockResponse, status_code=201)

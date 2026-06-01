@@ -141,7 +141,7 @@ const dashboardPreviewHtml = computed(() => {
         <div style="font-size:28px;margin-right:16px;flex-shrink:0">${s.icon||''}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:22px;font-weight:bold;color:#212121;line-height:1.2">${s.name}</div>
-          <div style="font-size:14px;color:#757575;margin-top:4px">${s.topicsCount||0} temas</div>
+          <div style="font-size:14px;color:#757575;margin-top:4px">${s.topics_count||s.topicsCount||0} temas</div>
         </div>
         <div style="font-size:24px;color:#4CAF50;flex-shrink:0">→</div>
       </div>

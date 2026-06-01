@@ -204,7 +204,7 @@ const topicsPreviewHtml = computed(() => {
           <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:6px;overflow:hidden">
             <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
           </div>
-          <div style="font-size:11px;color:#757575;margin-top:4px">0 / 0 unidades</div>
+          <div style="font-size:11px;color:#757575;margin-top:4px">${t.units_count||0} unidades</div>
         </div>
         <div style="font-size:20px;color:#4CAF50;flex-shrink:0">→</div>
       </div>

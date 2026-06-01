@@ -219,7 +219,7 @@ const listPreviewHtml = computed(() => {
           <div style="height:6px;border-radius:3px;background:#e0e0e0;margin-top:8px;overflow:hidden">
             <div style="width:0%;height:100%;border-radius:3px;background:#4CAF50"></div>
           </div>
-          <div style="font-size:12px;color:#757575;margin-top:4px">0 / 0 items</div>
+<div style="font-size:12px;color:#757575;margin-top:4px">${u.items_count||0} items</div>
         </div>
         <div style="font-size:24px;color:${locked ? '#999' : '#4CAF50'};flex-shrink:0">${locked ? '🔒' : '→'}</div>
       </div>
