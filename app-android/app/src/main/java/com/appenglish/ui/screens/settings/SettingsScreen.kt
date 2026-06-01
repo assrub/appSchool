@@ -62,6 +62,13 @@ fun SettingsScreen(
                 }
             }
             Spacer(Modifier.height(16.dp))
+            Card(shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+                Column(Modifier.padding(16.dp).fillMaxWidth()) {
+                    Text("Versión", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                    Text("1.5.0 (12)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
             Button(
                 onClick = { UpdateManager().checkForUpdate(context) },
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
