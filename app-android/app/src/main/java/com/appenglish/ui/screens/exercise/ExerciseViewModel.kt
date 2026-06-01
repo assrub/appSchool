@@ -66,7 +66,13 @@ data class UnitExerciseUiState(
     val retryMode: Boolean = false,
     val retryIndex: Int = 0,
     val selectedTab: Int = 0,
-    val currentBlockTheory: BlockTheory? = null
+    val currentBlockTheory: BlockTheory? = null,
+    // Multi-type support
+    val mcSelectedIndex: Int? = null,
+    val reorderWords: List<String> = emptyList(),
+    val reorderSlots: List<String?> = emptyList(),
+    val matchedPairs: Int = 0,
+    val tfAnswer: Boolean? = null
 )
 
 data class Feedback(
@@ -110,7 +116,7 @@ class UnitExerciseViewModel @Inject constructor(
                                 blocks = bt.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
                             )
                         }
-                        ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint, it.itemType, it.inputMode, it.answers, it.options, it.question, it.words, it.correctOrder, it.audioUrl, it.pairs, it.isCorrect) }, blockTheory)
+                        ExerciseBlock(b.title, b.items.map { ExerciseItem(it.sentence, it.answer, it.hint, it.itemType, it.inputMode, it.answers, it.options) }, blockTheory)
                     }
                     val totalItems = blocks.sumOf { it.items.size }
 
@@ -192,43 +198,9 @@ class UnitExerciseViewModel @Inject constructor(
     private fun checkAnswer(userAnswer: String) {
         val state = _uiState.value
         if (state.isCorrect == true || state.showAcceptButton) return
-
         val currentItem = getCurrentItem() ?: return
         val correct = isAnswerCorrect(currentItem, userAnswer)
-
-        if (correct) {
-            val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundCorrectUrl, isCorrect = true) }
-            val fullSentence = currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer)
-            val newScore = state.score + 1
-            val newCompleted = state.completedItems + 1
-            _uiState.value = state.copy(
-                userInput = userAnswer, isCorrect = true,
-                feedback = Feedback("¡Muy bien! ✅", true),
-                score = newScore, completedItems = newCompleted,
-                showingAnswer = true
-            )
-            saveProgress()
-            viewModelScope.launch {
-                delay(600)
-                _uiState.value = _uiState.value.copy(playingFullAudio = true, fullSentenceToPlay = fullSentence)
-            }
-        } else {
-            val app = getApplication<Application>()
-            viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundIncorrectUrl, isCorrect = false) }
-
-            val wrong = WrongAnswer(
-                blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex,
-                sentence = currentItem.sentence, givenAnswer = userAnswer, correctAnswer = currentItem.answer
-            )
-
-            _uiState.value = state.copy(
-                userInput = userAnswer, isCorrect = false,
-                feedback = Feedback("❌ Incorrecto", false),
-                showAcceptButton = true,
-                wrongItems = state.wrongItems + wrong
-            )
-        }
+        handleAnswer(correct, currentItem, userAnswer)
     }
 
     fun onAcceptClick() {
@@ -358,6 +330,91 @@ class UnitExerciseViewModel @Inject constructor(
         }
         val block = state.blocks.getOrNull(state.currentBlockIndex) ?: return null
         return block.items.getOrNull(state.currentItemIndex)
+    }
+
+    fun getItemType(): String = getCurrentItem()?.itemType ?: "fill-blank"
+
+    fun selectMcOption(index: Int) {
+        val state = _uiState.value
+        if (state.isCorrect != null) return
+        val item = getCurrentItem() ?: return
+        val options = item.options?.filter { it.isNotBlank() } ?: emptyList()
+        val selected = options.getOrNull(index) ?: return
+        _uiState.value = state.copy(mcSelectedIndex = index)
+        checkAnswer(selected)
+    }
+
+    fun initReorder() {
+        val item = getCurrentItem() ?: return
+        val words = item.words?.shuffled() ?: emptyList()
+        _uiState.value = _uiState.value.copy(reorderWords = words, reorderSlots = List(words.size) { null })
+    }
+
+    fun selectReorderWord(word: String) {
+        val state = _uiState.value
+        val slots = state.reorderSlots.toMutableList()
+        val firstEmpty = slots.indexOfFirst { it == null }
+        if (firstEmpty >= 0) {
+            slots[firstEmpty] = word
+            _uiState.value = state.copy(reorderSlots = slots, reorderWords = state.reorderWords - word)
+        }
+    }
+
+    fun removeReorderWord(index: Int) {
+        val state = _uiState.value
+        val slots = state.reorderSlots.toMutableList()
+        val removed = slots[index] ?: return
+        slots[index] = null
+        _uiState.value = state.copy(reorderSlots = slots, reorderWords = state.reorderWords + removed)
+    }
+
+    fun checkReorderAnswer() {
+        val item = getCurrentItem() ?: return
+        val userOrder: List<String> = _uiState.value.reorderSlots.filterNotNull()
+        val correctOrder: List<String> = item.correctOrder ?: emptyList()
+        val correct = userOrder == correctOrder
+        handleAnswer(correct, item, userOrder.joinToString(" "))
+    }
+
+    fun selectTfAnswer(answer: Boolean) {
+        val state = _uiState.value
+        if (state.isCorrect != null) return
+        val item = getCurrentItem() ?: return
+        val actualCorrect = item.isCorrect ?: (item.answer.isBlank())
+        val correct = answer == actualCorrect
+        _uiState.value = state.copy(tfAnswer = answer)
+        handleAnswer(correct, item, if (answer) "Verdadero" else "Falso")
+    }
+
+    fun checkMatchingPair(left: String, right: String) {
+        val item = getCurrentItem() ?: return
+        val pairs = item.pairs ?: return
+        val isMatch = pairs.any { (it["left"] == left && it["right"] == right) || (it["left"] == right && it["right"] == left) }
+        if (isMatch) {
+            val newCount = _uiState.value.matchedPairs + 1
+            _uiState.value = _uiState.value.copy(matchedPairs = newCount)
+            if (newCount >= pairs.size) handleAnswer(true, item, "")
+        } else handleAnswer(false, item, "$left ↔ $right")
+    }
+
+    fun resetAllMatched() { _uiState.value = _uiState.value.copy(matchedPairs = 0) }
+
+    private fun handleAnswer(correct: Boolean, item: ExerciseItem, userAnswer: String) {
+        val state = _uiState.value
+        val app = getApplication<Application>()
+        viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, if (correct) state.soundCorrectUrl else state.soundIncorrectUrl, correct) }
+        if (correct) {
+            val newScore = state.score + 1; val newCompleted = state.completedItems + 1
+            _uiState.value = state.copy(isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
+            saveProgress()
+            if (item.itemType == "fill-blank") {
+                val fullSentence = item.sentence.replace(Regex("_{2,}"), item.answer)
+                viewModelScope.launch { delay(600); _uiState.value = _uiState.value.copy(playingFullAudio = true, fullSentenceToPlay = fullSentence) }
+            }
+        } else {
+            val wrong = WrongAnswer(blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex, sentence = item.sentence, givenAnswer = userAnswer, correctAnswer = item.answer)
+            _uiState.value = state.copy(isCorrect = false, feedback = Feedback("❌ Incorrecto", false), showAcceptButton = true, wrongItems = state.wrongItems + wrong)
+        }
     }
 
     fun getCurrentBlockTitle(): String {

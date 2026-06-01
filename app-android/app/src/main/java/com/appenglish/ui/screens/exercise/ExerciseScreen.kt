@@ -266,7 +266,19 @@ private fun ExerciseContent(
 
         when {
             selectedTab == 0 || !hasTheory -> {
-                ExerciseTabContent(
+                val itemType = viewModel.getItemType()
+                if (itemType == "multiple-choice") {
+                    MultipleChoiceCard(item = currentItem!!, isCorrect = uiState.isCorrect, showingAnswer = uiState.showingAnswer, onSelect = { idx -> viewModel.selectMcOption(idx) })
+                } else if (itemType == "true-false") {
+                    TrueFalseCard(item = currentItem!!, isCorrect = uiState.isCorrect, showingAnswer = uiState.showingAnswer, onSelect = { answer -> viewModel.selectTfAnswer(answer) })
+                } else if (itemType == "reorder") {
+                    ReorderCard(uiState = uiState, onSelectWord = { viewModel.selectReorderWord(it) }, onRemoveWord = { viewModel.removeReorderWord(it) }, onCheck = { viewModel.checkReorderAnswer() }, onInit = { viewModel.initReorder() })
+                } else if (itemType == "matching") {
+                    MatchingCard(item = currentItem!!, matchedPairs = uiState.matchedPairs, onMatch = { left, right -> viewModel.checkMatchingPair(left, right) }, onReset = { viewModel.resetAllMatched() })
+                } else if (itemType == "listening") {
+                    ListeningCard(item = currentItem!!, userInput = uiState.userInput, onInputChanged = { viewModel.onInputChanged(it) }, onCheck = { viewModel.checkTextAnswer() })
+                } else {
+                    ExerciseTabContent(
                     uiState = uiState,
                     currentItem = currentItem,
                     options = options,
@@ -297,6 +309,7 @@ private fun ExerciseContent(
                     onInputChanged = { viewModel.onInputChanged(it) },
                     onCheckTextAnswer = { viewModel.checkTextAnswer() }
                 )
+                }
             }
             selectedTab == 1 && hasTheory -> {
                 uiState.currentBlockTheory?.let { blockTheory ->
@@ -769,6 +782,91 @@ private fun ResultPopup(
                     modifier = Modifier.fillMaxWidth().height(60.dp)
                 ) { Text(buttonText, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White) }
             }
+        }
+    }
+}
+@Composable
+private fun MultipleChoiceCard(item: com.appenglish.domain.model.ExerciseItem, isCorrect: Boolean?, showingAnswer: Boolean, onSelect: (Int) -> Unit) {
+    val options = item.options?.filter { it.isNotBlank() } ?: emptyList()
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(item.question ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(16.dp))
+            options.forEachIndexed { idx, option ->
+                val isCorrectOpt = option.trim().lowercase() == item.answer.trim().lowercase()
+                val showResult = isCorrect != null || showingAnswer
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(enabled = isCorrect == null) { onSelect(idx) }, shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = when { showResult && isCorrectOpt -> CorrectBackground; showResult && !isCorrectOpt -> com.appenglish.ui.theme.IncorrectBackground; else -> Primary.copy(alpha = 0.1f) })) {
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Text("${'A' + idx}) ", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Primary); Text(option, style = MaterialTheme.typography.bodyLarge) }
+                }
+            }
+            if (item.hint != null && showingAnswer) { Spacer(Modifier.height(8.dp)); Text("\uD83D\uDCA1 ${item.hint}", style = MaterialTheme.typography.bodyMedium, color = WarningOrange) }
+        }
+    }
+}
+
+@Composable
+private fun TrueFalseCard(item: com.appenglish.domain.model.ExerciseItem, isCorrect: Boolean?, showingAnswer: Boolean, onSelect: (Boolean) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(item.sentence, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = { onSelect(true) }, colors = ButtonDefaults.buttonColors(containerColor = CorrectGreen), modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(16.dp), enabled = isCorrect == null) { Text("\u2705 Verdadero") }
+                Button(onClick = { onSelect(false) }, colors = ButtonDefaults.buttonColors(containerColor = ErrorRed), modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(16.dp), enabled = isCorrect == null) { Text("\u274C Falso") }
+            }
+            if (showingAnswer && !(item.isCorrect ?: false)) { Spacer(Modifier.height(12.dp)); Text("\u2705 ${item.answer}", style = MaterialTheme.typography.titleMedium, color = CorrectGreen, fontWeight = FontWeight.Bold) }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReorderCard(uiState: UnitExerciseUiState, onSelectWord: (String) -> Unit, onRemoveWord: (Int) -> Unit, onCheck: () -> Unit, onInit: () -> Unit) {
+    LaunchedEffect(Unit) { onInit() }
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("Ordena las palabras:", style = MaterialTheme.typography.titleMedium, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth().border(2.dp, Primary, RoundedCornerShape(12.dp)).padding(8.dp), horizontalArrangement = Arrangement.Center) {
+                if (uiState.reorderSlots.isEmpty() || uiState.reorderSlots.all { it == null }) Text("...", color = Color.Gray, modifier = Modifier.padding(8.dp))
+                else Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { uiState.reorderSlots.forEachIndexed { idx, w -> Box(modifier = Modifier.background(Primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp)).clickable { onRemoveWord(idx) }.padding(horizontal = 12.dp, vertical = 8.dp)) { Text(w ?: "_", color = Primary, fontWeight = FontWeight.Bold) } } }
+            }
+            Spacer(Modifier.height(12.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) { uiState.reorderWords.forEach { w -> Box(modifier = Modifier.background(Color(0xFFE3F2FD), RoundedCornerShape(10.dp)).clickable { onSelectWord(w) }.padding(horizontal = 14.dp, vertical = 10.dp)) { Text(w, fontWeight = FontWeight.Bold, color = Primary) } } }
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onCheck, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) { Text("Corregir") }
+        }
+    }
+}
+
+@Composable
+private fun MatchingCard(item: com.appenglish.domain.model.ExerciseItem, matchedPairs: Int, onMatch: (String, String) -> Unit, onReset: () -> Unit) {
+    val pairs = item.pairs ?: emptyList()
+    val leftItems = pairs.map { it["left"] ?: "" }
+    val rightItems = remember { pairs.map { it["right"] ?: "" }.shuffled() }
+    var selL by remember { mutableStateOf("") }; var selR by remember { mutableStateOf("") }
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("Uni las columnas (${matchedPairs}/${pairs.size})", style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Column { leftItems.forEach { l -> Box(modifier = Modifier.background(if (selL == l) Primary.copy(alpha = 0.2f) else Color(0xFFE8F5E9), RoundedCornerShape(10.dp)).clickable { selL = l; if (selR.isNotEmpty()) { onMatch(selL, selR); selL = ""; selR = "" } }.padding(12.dp)) { Text(l, fontWeight = FontWeight.Bold) } } }
+                Column { rightItems.forEach { r -> Box(modifier = Modifier.background(if (selR == r) Primary.copy(alpha = 0.2f) else Color(0xFFE3F2FD), RoundedCornerShape(10.dp)).clickable { selR = r; if (selL.isNotEmpty()) { onMatch(selL, selR); selL = ""; selR = "" } }.padding(12.dp)) { Text(r, fontWeight = FontWeight.Bold) } } }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ListeningCard(item: com.appenglish.domain.model.ExerciseItem, userInput: String, onInputChanged: (String) -> Unit, onCheck: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("\uD83D\uDD0A", fontSize = 60.sp); Spacer(Modifier.height(8.dp))
+            Text("Escucha y escribi", style = MaterialTheme.typography.titleMedium, color = Color.Gray); Spacer(Modifier.height(16.dp))
+            OutlinedTextField(value = userInput, onValueChange = onInputChanged, label = { Text("Tu respuesta") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp))
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onCheck, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp), enabled = userInput.isNotBlank()) { Text("Corregir", color = Color.White, fontWeight = FontWeight.Bold) }
         }
     }
 }
