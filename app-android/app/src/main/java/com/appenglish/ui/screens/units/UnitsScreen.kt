@@ -63,12 +63,8 @@ fun UnitsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val hasTheory = uiState.topicTheory != null && (
-        uiState.topicTheory!!.text.isNotBlank() ||
-        uiState.topicTheory!!.tips.isNotEmpty()
-    )
-
-    val tabs = if (hasTheory) listOf("UNIDADES", "TEORÍA") else listOf("UNIDADES")
+    val hasTheory = true
+    val tabs = listOf("UNIDADES", "TEORÍA")
     val selectedTab = if (hasTheory) uiState.selectedTab else 0
 
     Scaffold(

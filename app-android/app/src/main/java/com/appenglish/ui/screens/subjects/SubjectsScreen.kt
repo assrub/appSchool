@@ -64,7 +64,7 @@ fun SubjectsScreen(
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("MATERIAS", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = Primary)
+                Text("MATERIAS", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = PrimaryDark)
             }
             SubjectsListContent(
                 subjects = uiState.subjects,

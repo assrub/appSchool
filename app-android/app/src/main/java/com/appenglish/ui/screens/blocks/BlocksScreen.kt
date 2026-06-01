@@ -73,13 +73,8 @@ fun BlocksScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val hasUnitTheory = uiState.unitTheory != null && (
-        uiState.unitTheory!!.text.isNotBlank() ||
-        uiState.unitTheory!!.tips.isNotEmpty() ||
-        uiState.unitTheory!!.blocks.isNotEmpty()
-    )
-
-    val tabs = if (hasUnitTheory) listOf("BLOQUES", "TEORÍA") else listOf("BLOQUES")
+    val hasUnitTheory = true
+    val tabs = listOf("BLOQUES", "TEORÍA")
     val selectedTab = if (hasUnitTheory) uiState.selectedTab else 0
 
     Scaffold(

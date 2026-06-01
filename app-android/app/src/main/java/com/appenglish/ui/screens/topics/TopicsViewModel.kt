@@ -46,7 +46,7 @@ class TopicsViewModel @Inject constructor(
                     if (subject != null) {
                         val topics = subject.topics.map { t ->
                             val localProgress = progressRepository.getTopicProgress(t.id)
-                            val totalUnits = localProgress.size
+                            val totalUnits = t.progress?.totalUnits ?: localProgress.size
                             val completedUnits = localProgress.count { it.completed }
                             TopicSummary(
                                 id = t.id,

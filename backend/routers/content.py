@@ -24,7 +24,9 @@ async def get_subjects(db: AsyncSession = Depends(get_db)):
         select(Subject)
         .where(Subject.is_active == True)
         .order_by(Subject.sort_order)
-        .options(selectinload(Subject.topics))
+        .options(
+            selectinload(Subject.topics.and_(Topic.is_active == True)).selectinload(Topic.units)
+        )
     )
     subjects = result.scalars().all()
 
@@ -34,10 +36,7 @@ async def get_subjects(db: AsyncSession = Depends(get_db)):
         for topic in subj.topics:
             if not topic.is_active:
                 continue
-            unit_count = await db.scalar(
-                select(ExerciseUnit).where(ExerciseUnit.topic_id == topic.id)
-            )
-            total_units = 1 if unit_count is None else 0
+            total_units = len(topic.units)
             topic_summaries.append(
                 TopicSummary(
                     id=topic.id,
@@ -46,10 +45,9 @@ async def get_subjects(db: AsyncSession = Depends(get_db)):
                     difficulty=topic.difficulty,
                     icon=topic.icon,
                     isLocked=False,
-                    progress=TopicProgress(),
+                    progress=TopicProgress(totalUnits=total_units),
                 )
             )
-        total_units = await _count_units_for_subject(db, subj.id)
         response_subjects.append(
             SubjectResponse(
                 id=subj.id,

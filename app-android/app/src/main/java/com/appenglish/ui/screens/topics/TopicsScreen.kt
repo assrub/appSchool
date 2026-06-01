@@ -70,7 +70,7 @@ fun TopicsScreen(
                 modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("TEMAS", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = Primary)
+                Text("TEMAS", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, color = PrimaryDark)
             }
             when {
                 uiState.isLoading -> {
