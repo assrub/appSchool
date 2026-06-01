@@ -106,12 +106,14 @@ fun TranslateableText(
                     append(cleanWord)
                 }
             } else {
+                val isSelected = cleanWord == selectedWord && popupVisible
                 pushStringAnnotation("word", cleanWord)
                 withStyle(
                     SpanStyle(
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                         fontSize = fontSize.sp,
-                        textDecoration = TextDecoration.Underline
+                        background = if (isSelected) Primary else Color.Transparent,
+                        textDecoration = if (isSelected) null else TextDecoration.Underline
                     )
                 ) {
                     append(cleanWord)

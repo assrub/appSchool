@@ -87,6 +87,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.ui.components.TtsButton
 import com.appenglish.ui.components.TranslateableText
@@ -329,7 +331,7 @@ private fun ExerciseContent(
                             verticalArrangement = Arrangement.Center
                         ) {
                             if (beforeText.isNotEmpty()) {
-                                TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
+                                TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier.padding(top = 4.dp))
                             }
 
                             Spacer(Modifier.width(6.dp))
@@ -354,7 +356,7 @@ private fun ExerciseContent(
                                     .background(color = dropBg, shape = RoundedCornerShape(12.dp))
                                     .border(if (isOverDropZone && draggingWord != null) 3.dp else 2.dp, dropBorder, RoundedCornerShape(12.dp))
                                     .onGloballyPositioned { coords -> dropZoneRect = coords.boundsInRoot() }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    .padding(horizontal = 16.dp, vertical = 6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (uiState.showingAnswer) {
@@ -368,12 +370,65 @@ private fun ExerciseContent(
                                         "_____", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                                     )
-                                }
+        }
+
+        if (showTranslation && translatedText != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { showTranslation = false },
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .clickable(enabled = false) {},
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.RemoveRedEye, null, tint = InfoBlue, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Traducción", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
+                            IconButton(onClick = { showTranslation = false }) {
+                                Icon(Icons.Default.Close, "Cerrar", tint = Color.Gray)
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            translatedText ?: "",
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        val originalSentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem?.answer ?: "") ?: ""
+                        Text(
+                            originalSentence,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
 
                             Spacer(Modifier.width(6.dp))
                             if (afterText.isNotEmpty()) {
-                                TranslateableText(text = afterText, fontSize = 24, modifier = Modifier)
+                                TranslateableText(text = afterText, fontSize = 24, modifier = Modifier.padding(top = 4.dp))
                             }
                         }
 
@@ -383,17 +438,6 @@ private fun ExerciseContent(
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Reproduciendo audio...", style = MaterialTheme.typography.bodySmall, color = Primary)
-                            }
-                        }
-
-                        AnimatedVisibility(visible = showTranslation && translatedText != null) {
-                            Spacer(Modifier.height(12.dp))
-                            Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = InfoBackground)) {
-                                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.RemoveRedEye, null, tint = InfoBlue, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(translatedText ?: "", style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp), fontWeight = FontWeight.Medium)
-                                }
                             }
                         }
                     }
