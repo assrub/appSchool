@@ -71,10 +71,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +85,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -464,7 +468,10 @@ private fun ExerciseTabContent(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(color = dropBg, shape = RoundedCornerShape(12.dp))
                                 .border(if (isOverDropZone && draggingWord != null) 3.dp else 2.dp, dropBorder, RoundedCornerShape(12.dp))
-                                .onGloballyPositioned { coords -> onDropZoneRectChange(coords.boundsInRoot()) }
+                                .onPlaced { coords ->
+                                    val pos = coords.positionInRoot()
+                                    onDropZoneRectChange(Rect(pos, coords.size.toSize()))
+                                }
                                 .padding(horizontal = 16.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -547,7 +554,8 @@ private fun ExerciseTabContent(
                 ) {
                     options.forEach { option ->
                         var dragDelta by remember { mutableStateOf(Offset.Zero) }
-                        var localOrigin by remember { mutableStateOf(Rect.Zero) }
+                        var localOrigin by remember { mutableStateOf(Offset.Zero) }
+                        var localSize by remember { mutableStateOf(Size.Zero) }
 
                         Card(
                             modifier = Modifier
@@ -555,9 +563,10 @@ private fun ExerciseTabContent(
                                 .widthIn(max = 150.dp)
                                 .offset { IntOffset(dragDelta.x.roundToInt(), dragDelta.y.roundToInt()) }
                                 .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
-                                .onGloballyPositioned { coords ->
+                                .onPlaced { coords ->
                                     if (draggingWord == null) {
-                                        localOrigin = coords.boundsInRoot()
+                                        localOrigin = coords.positionInRoot()
+                                        localSize = coords.size.toSize()
                                     }
                                 }
                                 .pointerInput(option) {
@@ -571,10 +580,10 @@ private fun ExerciseTabContent(
                                             change.consume()
                                             dragDelta += dragAmount
                                             val wordRect = Rect(
-                                                left = localOrigin.left + dragDelta.x,
-                                                top = localOrigin.top + dragDelta.y,
-                                                right = localOrigin.right + dragDelta.x,
-                                                bottom = localOrigin.bottom + dragDelta.y
+                                                left = localOrigin.x + dragDelta.x,
+                                                top = localOrigin.y + dragDelta.y,
+                                                right = localOrigin.x + dragDelta.x + localSize.width,
+                                                bottom = localOrigin.y + dragDelta.y + localSize.height
                                             )
                                             onIsOverDropZoneChange(wordRect.overlaps(dropZoneRect))
                                         },
