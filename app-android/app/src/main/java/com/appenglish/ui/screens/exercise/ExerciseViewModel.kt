@@ -405,7 +405,7 @@ class UnitExerciseViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, if (correct) state.soundCorrectUrl else state.soundIncorrectUrl, correct) }
         if (correct) {
             val newScore = state.score + 1; val newCompleted = state.completedItems + 1
-            _uiState.value = state.copy(isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
+            _uiState.value = state.copy(userInput = userAnswer, isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
             saveProgress()
             if (item.itemType == "fill-blank") {
                 val fullSentence = item.sentence.replace(Regex("_{2,}"), item.answer)

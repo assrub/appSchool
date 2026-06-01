@@ -577,7 +577,7 @@ private fun ExerciseTabContent(
                                             onIsOverDropZoneChange(wordRect.overlaps(dropZoneRect))
                                         },
                                         onDragEnd = {
-                                            if (isOverDropZone && draggingWord != null) {
+                                            if (draggingWord != null) {
                                                 onSelectOption(draggingWord!!)
                                             }
                                             onDraggingWordChange(null)
