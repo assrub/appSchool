@@ -13,8 +13,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,16 +22,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -61,7 +57,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -69,17 +64,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -100,7 +90,6 @@ import com.appenglish.ui.theme.WarningOrange
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -182,66 +171,80 @@ private fun CompletionContent(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Text("🎉", fontSize = 64.sp)
-            Spacer(Modifier.height(16.dp))
-            Text("¡Unidad completada!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(24.dp))
+            Text("🎉", fontSize = 80.sp)
             Spacer(Modifier.height(8.dp))
-            Text("Puntuación: ${uiState.score} / ${uiState.totalItems}", style = MaterialTheme.typography.titleMedium)
+            Text("¡Unidad completada!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Primary)
+            Spacer(Modifier.height(8.dp))
+            Text("Puntuación: ${uiState.score} / ${uiState.totalItems}", style = MaterialTheme.typography.titleLarge)
             val percent = if (uiState.totalItems > 0) (uiState.score.toFloat() / uiState.totalItems) * 100 else 0f
-            Text("${percent.toInt()}%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = if (percent >= 70) CorrectGreen else ErrorRed)
+            Text(
+                "${percent.toInt()}%",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+                color = if (percent >= 70) CorrectGreen else ErrorRed
+            )
         }
 
         if (uiState.wrongItems.isNotEmpty()) {
             item {
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(8.dp))
                 Card(
-                    shape = MaterialTheme.shapes.large,
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = WarningBackground),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(Modifier.padding(16.dp).fillMaxWidth()) {
-                        Text("Errores para revisar (${uiState.wrongItems.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarningOrange)
-                        Spacer(Modifier.height(8.dp))
+                    Column(Modifier.padding(20.dp).fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⚠️", fontSize = 24.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Errores para revisar (${uiState.wrongItems.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarningOrange)
+                        }
+                        Spacer(Modifier.height(12.dp))
                         uiState.wrongItems.forEach { wrong ->
                             Card(
-                                shape = MaterialTheme.shapes.medium,
+                                shape = RoundedCornerShape(12.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                             ) {
-                                Column(Modifier.padding(10.dp)) {
+                                Column(Modifier.padding(12.dp)) {
                                     Text(wrong.sentence, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Respondiste: ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.height(4.dp))
+                                    Row {
+                                        Text("Vos: ", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                         Text(wrong.givenAnswer, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = ErrorRed)
                                     }
                                 }
                             }
                         }
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(12.dp))
                         Button(
                             onClick = onRetryClick,
                             colors = ButtonDefaults.buttonColors(containerColor = WarningOrange),
-                            shape = MaterialTheme.shapes.medium,
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
-                        ) { Text("Rehacer solo los errores", color = Color.White) }
+                        ) {
+                            Text("Rehacer errores", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                        }
                     }
                 }
             }
         }
 
         item {
-            Spacer(Modifier.height(16.dp))
             Button(
                 onClick = onBackClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth()
+                colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
-                Text("Volver", color = Color.White)
+                Text("Volver", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
             }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -260,395 +263,340 @@ private fun ExerciseContent(
     var translatedText by remember { mutableStateOf<String?>(null) }
     var isTranslating by remember { mutableStateOf(false) }
 
-    var isDragging by remember { mutableStateOf(false) }
-    var draggedOption by remember { mutableStateOf<String?>(null) }
-    var dragOffsetX by remember { mutableFloatStateOf(0f) }
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
-    var dropZonePosition by remember { mutableStateOf(0f) }
-    var isOverDropZone by remember { mutableStateOf(false) }
-
     val inputMode = currentItem?.inputMode ?: "tap"
 
-    Box(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = if (inputMode == "tap" && uiState.isCorrect == null) 120.dp else 0.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item { Spacer(Modifier.height(8.dp)) }
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item { Spacer(Modifier.height(4.dp)) }
 
-            if (uiState.unitTheory != null) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(containerColor = CorrectBackground),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        onClick = onTheoryClick
+        if (uiState.unitTheory != null) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CorrectBackground),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                    onClick = onTheoryClick
+                ) {
+                    Row(
+                        Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text("📖", fontSize = 28.sp)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Ver explicación", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = CorrectGreen)
+                            Text("Revisá la teoría antes de ejercitar", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                        Text("→", fontSize = 24.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("${uiState.completedItems} / ${uiState.totalItems}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, fontWeight = FontWeight.Medium)
+                        Text(viewModel.getCurrentBlockTitle(), style = MaterialTheme.typography.bodySmall, color = Primary, fontWeight = FontWeight.SemiBold)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { if (uiState.totalItems > 0) uiState.completedItems.toFloat() / uiState.totalItems else 0f },
+                        modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)),
+                        color = Primary,
+                        trackColor = Primary.copy(alpha = 0.2f)
+                    )
+                }
+            }
+        }
+
+        if (currentItem != null) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            val ttsText = if (uiState.showingAnswer) currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer) else currentItem.sentence
+                            TtsButton(text = ttsText)
+                            IconButton(
+                                onClick = {
+                                    if (!isTranslating && translatedText == null) {
+                                        isTranslating = true; showTranslation = true
+                                        scope.launch {
+                                            translatedText = translateWord(currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer))
+                                            isTranslating = false
+                                        }
+                                    } else showTranslation = !showTranslation
+                                },
+                                colors = IconButtonDefaults.iconButtonColors(contentColor = InfoBlue)
+                            ) {
+                                Icon(Icons.Default.RemoveRedEye, "Traducir", modifier = Modifier.size(26.dp))
+                            }
+                        }
+
+                        val partsBefore = currentItem.sentence.split(Regex("_{2,}"), limit = 2)
+                        val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
+                        val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
+
                         Row(
-                            Modifier.padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                            horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("📖", fontSize = 24.sp)
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("Ver explicación", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                Text("Revisá la teoría antes de ejercitar", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                            }
-                            Text("→", fontSize = 20.sp, color = Primary, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("${uiState.completedItems} / ${uiState.totalItems} items", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                LinearProgressIndicator(
-                    progress = { if (uiState.totalItems > 0) uiState.completedItems.toFloat() / uiState.totalItems else 0f },
-                    modifier = Modifier.fillMaxWidth().height(8.dp),
-                    color = Primary, trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(viewModel.getCurrentBlockTitle(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Primary)
-            }
-
-            if (currentItem != null) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                                val ttsText = if (uiState.showingAnswer) currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer) else currentItem.sentence
-                                TtsButton(text = ttsText)
-                                IconButton(
-                                    onClick = {
-                                        if (!isTranslating && translatedText == null) {
-                                            isTranslating = true; showTranslation = true
-                                            scope.launch {
-                                                translatedText = translateWord(currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer))
-                                                isTranslating = false
-                                            }
-                                        } else showTranslation = !showTranslation
-                                    },
-                                    modifier = Modifier.size(40.dp),
-                                    colors = IconButtonDefaults.iconButtonColors(contentColor = InfoBlue)
-                                ) {
-                                    Icon(Icons.Default.RemoveRedEye, "Ver traducción", modifier = Modifier.size(22.dp))
-                                }
+                            if (beforeText.isNotEmpty()) {
+                                TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
                             }
 
-                            Spacer(Modifier.height(12.dp))
+                            Spacer(Modifier.width(6.dp))
 
-                            val partsBefore = currentItem.sentence.split(Regex("_{2,}"), limit = 2)
-                            val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
-                            val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
+                            val bgColor = when {
+                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectBackground
+                                uiState.showingAnswer && uiState.isCorrect == false -> IncorrectBackground
+                                else -> Color.Transparent
+                            }
+                            val borderColor = when {
+                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectGreen
+                                uiState.showingAnswer && uiState.isCorrect == false -> ErrorRed
+                                else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                            }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                            Box(
+                                modifier = Modifier
+                                    .widthIn(min = 90.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(color = bgColor, shape = RoundedCornerShape(12.dp))
+                                    .border(2.dp, borderColor, RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                if (beforeText.isNotEmpty()) {
-                                    TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier)
-                                }
-
-                                Spacer(Modifier.width(8.dp))
-
-                                Box(
-                                    modifier = Modifier
-                                        .widthIn(min = 100.dp)
-                                        .onGloballyPositioned { coordinates ->
-                                            dropZonePosition = coordinates.positionInRoot().x
-                                        }
-                                        .background(
-                                            color = when {
-                                                isOverDropZone && isDragging -> Primary.copy(alpha = 0.2f)
-                                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectBackground
-                                                uiState.showingAnswer && uiState.isCorrect == false -> IncorrectBackground
-                                                else -> Color.Transparent
-                                            },
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                        .border(
-                                            width = if (isOverDropZone && isDragging) 3.dp else 2.dp,
-                                            color = when {
-                                                isOverDropZone && isDragging -> Primary
-                                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectGreen
-                                                uiState.showingAnswer && uiState.isCorrect == false -> ErrorRed
-                                                else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                            },
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (uiState.showingAnswer) {
-                                        Text(
-                                            currentItem.answer,
-                                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (uiState.isCorrect == true) CorrectGreen else if (uiState.isCorrect == false) ErrorRed else Primary
-                                        )
-                                    } else if (draggedOption != null && isDragging) {
-                                        Text(
-                                            draggedOption!!,
-                                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-                                            fontWeight = FontWeight.Bold,
-                                            color = Primary
-                                        )
-                                    } else {
-                                        Text(
-                                            "_______",
-                                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                        )
-                                    }
-                                }
-
-                                Spacer(Modifier.width(8.dp))
-
-                                if (afterText.isNotEmpty()) {
-                                    TranslateableText(text = afterText, fontSize = 24, modifier = Modifier)
-                                }
-                            }
-
-                            if (uiState.playingFullAudio) {
-                                Spacer(Modifier.height(8.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Primary)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Reproduciendo...", style = MaterialTheme.typography.bodySmall, color = Primary)
-                                }
-                            }
-
-                            AnimatedVisibility(visible = showTranslation && translatedText != null) {
-                                Spacer(Modifier.height(8.dp))
-                                Card(
-                                    shape = MaterialTheme.shapes.medium,
-                                    colors = CardDefaults.cardColors(containerColor = InfoBackground)
-                                ) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        Text("Traducción:", style = MaterialTheme.typography.labelSmall, color = InfoBlue)
-                                        Spacer(Modifier.height(2.dp))
-                                        Text(translatedText ?: "", style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp), fontWeight = FontWeight.SemiBold)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (inputMode == "type" && uiState.isCorrect == null) {
-                    item {
-                        OutlinedTextField(
-                            value = uiState.userInput,
-                            onValueChange = { viewModel.onInputChanged(it) },
-                            label = { Text("Escribí tu respuesta") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    viewModel.checkTextAnswer()
-                                }
-                            )
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = { viewModel.checkTextAnswer() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                            shape = MaterialTheme.shapes.large,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Corregir", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (inputMode == "tap" && uiState.isCorrect == null && currentItem != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        color = Color.White,
-                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                    )
-                    .padding(horizontal = 16.dp, vertical = 20.dp)
-                    .shadow(8.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            ) {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(options) { option ->
-                        val isBeingDragged = isDragging && draggedOption == option
-                        val scale by animateFloatAsState(
-                            targetValue = if (isBeingDragged) 1.1f else 1f,
-                            animationSpec = spring(stiffness = Spring.StiffnessLow),
-                            label = "scale"
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .scale(scale)
-                                .shadow(if (isBeingDragged) 8.dp else 4.dp, CircleShape)
-                                .background(
-                                    color = if (isBeingDragged) Primary else Primary.copy(alpha = 0.9f),
-                                    shape = CircleShape
-                                )
-                                .padding(horizontal = 20.dp, vertical = 14.dp)
-                                .pointerInput(option) {
-                                    detectDragGestures(
-                                        onDragStart = {
-                                            isDragging = true
-                                            draggedOption = option
-                                            dragOffsetX = 0f
-                                            dragOffsetY = 0f
-                                        },
-                                        onDragEnd = {
-                                            if (isOverDropZone && draggedOption != null) {
-                                                viewModel.selectOption(draggedOption!!)
-                                            }
-                                            isDragging = false
-                                            draggedOption = null
-                                            isOverDropZone = false
-                                            dragOffsetX = 0f
-                                            dragOffsetY = 0f
-                                        },
-                                        onDragCancel = {
-                                            isDragging = false
-                                            draggedOption = null
-                                            isOverDropZone = false
-                                            dragOffsetX = 0f
-                                            dragOffsetY = 0f
-                                        },
-                                        onDrag = { change, dragAmount ->
-                                            change.consume()
-                                            dragOffsetX += dragAmount.x
-                                            dragOffsetY += dragAmount.y
-                                            val centerX = dropZonePosition + 50
-                                            val draggedX = change.position.x + dragOffsetX
-                                            isOverDropZone = kotlin.math.abs(draggedX - centerX) < 120
+                                if (uiState.showingAnswer) {
+                                    Text(
+                                        currentItem.answer,
+                                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                        fontWeight = FontWeight.Bold,
+                                        color = when {
+                                            uiState.isCorrect == true -> CorrectGreen
+                                            uiState.isCorrect == false -> ErrorRed
+                                            else -> Primary
                                         }
                                     )
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                option,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                } else {
+                                    Text(
+                                        "_____",
+                                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.width(6.dp))
+
+                            if (afterText.isNotEmpty()) {
+                                TranslateableText(text = afterText, fontSize = 24, modifier = Modifier)
+                            }
+                        }
+
+                        if (uiState.playingFullAudio) {
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Reproduciendo audio...", style = MaterialTheme.typography.bodySmall, color = Primary)
+                            }
+                        }
+
+                        AnimatedVisibility(visible = showTranslation && translatedText != null) {
+                            Spacer(Modifier.height(12.dp))
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = InfoBackground)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.RemoveRedEye, null, tint = InfoBlue, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(translatedText ?: "", style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp), fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (inputMode == "type" && uiState.isCorrect == null) {
+                item {
+                    OutlinedTextField(
+                        value = uiState.userInput,
+                        onValueChange = { viewModel.onInputChanged(it) },
+                        label = { Text("Escribí tu respuesta") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { viewModel.checkTextAnswer() })
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = { viewModel.checkTextAnswer() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(52.dp)
+                    ) {
+                        Text("Corregir", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+            }
+
+            if (inputMode == "tap" && uiState.isCorrect == null && options.isNotEmpty()) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        options.forEach { option ->
+                            val isSelected = uiState.userInput == option
+                            val scale by animateFloatAsState(
+                                targetValue = if (isSelected) 1.03f else 1f,
+                                animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                                label = "scale"
                             )
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable { viewModel.selectOption(option) },
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = if (isSelected) 8.dp else 4.dp
+                                ),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected) Primary else Color.White
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(18.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        option,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) Color.White else Primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (inputMode == "tap" && uiState.isCorrect != null) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        options.forEach { option ->
+                            val isCorrectOpt = option.trim().lowercase() == currentItem.answer.trim().lowercase()
+                            val wasSelected = uiState.userInput == option
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = when {
+                                        isCorrectOpt -> CorrectBackground
+                                        wasSelected -> IncorrectBackground
+                                        else -> Color.White
+                                    }
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(18.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (isCorrectOpt) {
+                                        Icon(Icons.Default.Check, null, tint = CorrectGreen, modifier = Modifier.size(24.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                    } else if (wasSelected) {
+                                        Icon(Icons.Default.Close, null, tint = ErrorRed, modifier = Modifier.size(24.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                    }
+                                    Text(
+                                        option,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when {
+                                            isCorrectOpt -> CorrectGreen
+                                            wasSelected -> ErrorRed
+                                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        if (inputMode == "tap" && (uiState.isCorrect == true || uiState.isCorrect == false)) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        color = Color.White,
-                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                    )
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                items(options) { option ->
-                    val isCorrectOpt = option.trim().lowercase() == currentItem?.answer?.trim()?.lowercase()
-                    val wasSelected = uiState.userInput == option
+        item { Spacer(Modifier.height(16.dp)) }
+    }
 
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = when {
-                                    isCorrectOpt -> CorrectBackground
-                                    wasSelected && !isCorrectOpt -> IncorrectBackground
-                                    else -> MaterialTheme.colorScheme.surfaceVariant
-                                },
-                                shape = CircleShape
-                            )
-                            .border(
-                                width = 2.dp,
-                                color = when {
-                                    isCorrectOpt -> CorrectGreen
-                                    wasSelected && !isCorrectOpt -> ErrorRed
-                                    else -> Color.Transparent
-                                },
-                                shape = CircleShape
-                            )
-                            .padding(horizontal = 20.dp, vertical = 14.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            option,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = when {
-                                isCorrectOpt -> CorrectGreen
-                                wasSelected && !isCorrectOpt -> ErrorRed
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                }
-            }
-        }
+    AnimatedVisibility(
+        visible = uiState.isCorrect == true && uiState.showingAnswer,
+        enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.6f),
+        exit = fadeOut(tween(200))
+    ) {
+        ResultPopup(
+            isCorrect = true,
+            sentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem.answer) ?: "",
+            hint = currentItem?.hint,
+            onContinue = {
+                if (uiState.retryMode) viewModel.retryNextAfterCorrect()
+                else viewModel.nextItem()
+            },
+            buttonText = if (uiState.readyForNext) "Siguiente →" else "Continuar"
+        )
+    }
 
-        AnimatedVisibility(
-            visible = uiState.isCorrect == true && uiState.showingAnswer,
-            enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.7f),
-            exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.7f)
-        ) {
-            ResultPopup(
-                isCorrect = true,
-                sentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem.answer) ?: "",
-                hint = currentItem?.hint,
-                onContinue = {
-                    if (uiState.retryMode) viewModel.retryNextAfterCorrect()
-                    else viewModel.nextItem()
-                },
-                buttonText = if (uiState.readyForNext) "Siguiente →" else "Continuar"
-            )
-        }
-
-        AnimatedVisibility(
-            visible = uiState.showAcceptButton,
-            enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.7f),
-            exit = fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.7f)
-        ) {
-            ResultPopup(
-                isCorrect = false,
-                userAnswer = uiState.userInput,
-                correctAnswer = if (uiState.retryMode) {
-                    uiState.wrongItems.getOrNull(uiState.retryIndex)?.correctAnswer ?: currentItem?.answer ?: ""
-                } else currentItem?.answer ?: "",
-                onAccept = { viewModel.onAcceptClick() }
-            )
-        }
+    AnimatedVisibility(
+        visible = uiState.showAcceptButton,
+        enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.6f),
+        exit = fadeOut(tween(200))
+    ) {
+        ResultPopup(
+            isCorrect = false,
+            userAnswer = uiState.userInput,
+            correctAnswer = if (uiState.retryMode) {
+                uiState.wrongItems.getOrNull(uiState.retryIndex)?.correctAnswer ?: currentItem?.answer ?: ""
+            } else currentItem?.answer ?: "",
+            onAccept = { viewModel.onAcceptClick() }
+        )
     }
 }
 
@@ -672,97 +620,101 @@ private fun ResultPopup(
                 .fillMaxWidth(0.9f)
                 .wrapContentHeight(),
             shape = RoundedCornerShape(32.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
-                modifier = Modifier.padding(28.dp),
+                modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val emoji = if (isCorrect) "🎉" else "❌"
                 val title = if (isCorrect) "¡Muy bien!" else "Incorrecto"
                 val titleColor = if (isCorrect) CorrectGreen else ErrorRed
 
-                Text(emoji, fontSize = 72.sp)
-                Spacer(Modifier.height(16.dp))
+                Text(emoji, fontSize = 80.sp)
+                Spacer(Modifier.height(12.dp))
                 Text(
                     title,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
                     color = titleColor
                 )
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(24.dp))
 
                 if (isCorrect) {
                     Card(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = CorrectBackground)
                     ) {
                         Text(
                             sentence,
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier.padding(24.dp),
                             color = CorrectGreen
                         )
                     }
                     if (hint != null) {
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(14.dp))
                         Card(
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(containerColor = WarningBackground)
                         ) {
                             Row(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("💡", fontSize = 20.sp)
-                                Spacer(Modifier.width(8.dp))
-                                Text(hint, style = MaterialTheme.typography.bodyMedium, color = WarningOrange, fontWeight = FontWeight.Medium)
+                                Text("💡", fontSize = 24.sp)
+                                Spacer(Modifier.width(10.dp))
+                                Text(hint, style = MaterialTheme.typography.bodyLarge, color = WarningOrange, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
                 } else {
                     Card(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = IncorrectBackground)
                     ) {
                         Column(
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier.padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Close, "Error", tint = ErrorRed, modifier = Modifier.size(24.dp))
+                                Icon(Icons.Default.Close, null, tint = ErrorRed, modifier = Modifier.size(28.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Respondiste:", style = MaterialTheme.typography.bodyLarge, color = ErrorRed)
+                                Text("Respondiste:", style = MaterialTheme.typography.titleMedium, color = ErrorRed)
                             }
+                            Spacer(Modifier.height(8.dp))
                             Text(
                                 userAnswer.ifBlank { "(vacío)" },
-                                style = MaterialTheme.typography.headlineSmall,
+                                style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = ErrorRed
                             )
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
+
+                    Spacer(Modifier.height(14.dp))
+
                     Card(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = CorrectBackground)
                     ) {
                         Column(
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier.padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Check, "Correcto", tint = CorrectGreen, modifier = Modifier.size(24.dp))
+                                Icon(Icons.Default.Check, null, tint = CorrectGreen, modifier = Modifier.size(28.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Respuesta correcta:", style = MaterialTheme.typography.bodyLarge, color = CorrectGreen)
+                                Text("Correcto:", style = MaterialTheme.typography.titleMedium, color = CorrectGreen)
                             }
+                            Spacer(Modifier.height(8.dp))
                             Text(
                                 correctAnswer,
-                                style = MaterialTheme.typography.headlineSmall,
+                                style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = CorrectGreen
                             )
@@ -770,7 +722,7 @@ private fun ResultPopup(
                     }
                 }
 
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(32.dp))
 
                 Button(
                     onClick = { if (isCorrect) onContinue() else onAccept() },
@@ -780,11 +732,11 @@ private fun ResultPopup(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
+                        .height(60.dp)
                 ) {
                     Text(
                         buttonText,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
