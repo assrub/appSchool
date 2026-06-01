@@ -14,7 +14,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -415,7 +415,7 @@ private fun ExerciseContent(
                                 .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
                                 .onGloballyPositioned { coords -> cardRootBounds = coords.boundsInRoot() }
                                 .pointerInput(option) {
-                                    detectDragGesturesAfterLongPress(
+                                    detectDragGestures(
                                         onDragStart = { _ ->
                                             draggingWord = option
                                             dragDelta = Offset.Zero
@@ -424,11 +424,19 @@ private fun ExerciseContent(
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             dragDelta += dragAmount
-                                            val fingerRootPos = Offset(
-                                                cardRootBounds.center.x + dragDelta.x,
-                                                cardRootBounds.center.y + dragDelta.y
+                                            val wordRect = Rect(
+                                                cardRootBounds.left + dragDelta.x,
+                                                cardRootBounds.top + dragDelta.y,
+                                                cardRootBounds.right + dragDelta.x,
+                                                cardRootBounds.bottom + dragDelta.y
                                             )
-                                            isOverDropZone = dropZoneRect.contains(fingerRootPos)
+                                            val expandedDrop = Rect(
+                                                dropZoneRect.left - 20f,
+                                                dropZoneRect.top - 20f,
+                                                dropZoneRect.right + 20f,
+                                                dropZoneRect.bottom + 20f
+                                            )
+                                            isOverDropZone = wordRect.overlaps(expandedDrop)
                                         },
                                         onDragEnd = {
                                             if (isOverDropZone && draggingWord != null) {
