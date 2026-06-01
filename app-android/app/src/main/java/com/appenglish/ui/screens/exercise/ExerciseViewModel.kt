@@ -64,7 +64,9 @@ data class UnitExerciseUiState(
     val fullSentenceToPlay: String = "",
     val wrongItems: List<WrongAnswer> = emptyList(),
     val retryMode: Boolean = false,
-    val retryIndex: Int = 0
+    val retryIndex: Int = 0,
+    val selectedTab: Int = 0,
+    val currentBlockTheory: BlockTheory? = null
 )
 
 data class Feedback(
@@ -153,6 +155,7 @@ class UnitExerciseViewModel @Inject constructor(
                         completedItems = completedItems, score = savedScore,
                         currentBlockIndex = blockIdx, currentItemIndex = itemIdx
                     )
+                    updateCurrentBlockTheory()
                 },
                 onFailure = { e -> _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error") }
             )
@@ -164,6 +167,16 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun selectOption(option: String) {
         checkAnswer(option)
+    }
+
+    fun selectTab(index: Int) {
+        _uiState.value = _uiState.value.copy(selectedTab = index)
+    }
+
+    private fun updateCurrentBlockTheory() {
+        val state = _uiState.value
+        val theory = if (state.retryMode) null else state.blocks.getOrNull(state.currentBlockIndex)?.theory
+        _uiState.value = state.copy(currentBlockTheory = theory)
     }
 
     fun onInputChanged(input: String) {
@@ -246,6 +259,7 @@ class UnitExerciseViewModel @Inject constructor(
             _uiState.value = state.copy(isFinished = true)
             saveProgress(completed = true)
         }
+        updateCurrentBlockTheory()
     }
 
     private fun isAnswerCorrect(item: ExerciseItem, userOption: String): Boolean {
@@ -261,7 +275,6 @@ class UnitExerciseViewModel @Inject constructor(
         val state = _uiState.value
         val currentBlock = state.blocks.getOrNull(state.currentBlockIndex) ?: return
 
-        // If there are more items in this block, advance within block
         if (state.currentItemIndex + 1 < currentBlock.items.size) {
             _uiState.value = state.copy(
                 currentItemIndex = state.currentItemIndex + 1,
@@ -271,7 +284,6 @@ class UnitExerciseViewModel @Inject constructor(
                 showAcceptButton = false
             )
         }
-        // If this was the last item of the block, try next block
         else if (state.currentBlockIndex + 1 < state.blocks.size) {
             _uiState.value = state.copy(
                 currentBlockIndex = state.currentBlockIndex + 1,
@@ -282,17 +294,17 @@ class UnitExerciseViewModel @Inject constructor(
                 showAcceptButton = false
             )
         }
-        // Last item of last block — unit finished
         else {
             _uiState.value = state.copy(isFinished = true)
             saveProgress(completed = true)
         }
+        updateCurrentBlockTheory()
     }
 
     fun startRetryWrongItems() {
         val wrongs = _uiState.value.wrongItems
-        if (wrongs.isEmpty()) { _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false); return }
-        _uiState.value = _uiState.value.copy(retryMode = true, retryIndex = 0, isFinished = false)
+        if (wrongs.isEmpty()) { _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false, currentBlockTheory = null); return }
+        _uiState.value = _uiState.value.copy(retryMode = true, retryIndex = 0, isFinished = false, currentBlockTheory = null)
     }
 
     fun retryWrongAnswer(selectedOption: String) {
@@ -329,7 +341,8 @@ class UnitExerciseViewModel @Inject constructor(
             _uiState.value = state.copy(
                 retryIndex = nextIdx,
                 userInput = "", isCorrect = null, showingAnswer = false,
-                playingFullAudio = false, readyForNext = false, showAcceptButton = false
+                playingFullAudio = false, readyForNext = false, showAcceptButton = false,
+                currentBlockTheory = null
             )
         } else {
             _uiState.value = state.copy(isFinished = true, retryMode = false)

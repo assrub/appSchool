@@ -3,9 +3,6 @@ package com.appenglish.ui.screens.exercise
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +35,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.RemoveRedEye
@@ -55,6 +52,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -69,7 +68,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -87,18 +85,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.appenglish.domain.model.BlockTheory
 import com.appenglish.ui.components.TtsButton
 import com.appenglish.ui.components.TranslateableText
 import com.appenglish.ui.components.translateWord
 import com.appenglish.ui.theme.CorrectBackground
 import com.appenglish.ui.theme.CorrectGreen
 import com.appenglish.ui.theme.ErrorRed
-import com.appenglish.ui.theme.IncorrectBackground
 import com.appenglish.ui.theme.InfoBlue
-import com.appenglish.ui.theme.InfoBackground
 import com.appenglish.ui.theme.Primary
 import com.appenglish.ui.theme.WarningBackground
 import com.appenglish.ui.theme.WarningOrange
@@ -219,7 +214,7 @@ private fun CompletionContent(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ExerciseContent(
     uiState: UnitExerciseUiState,
@@ -236,7 +231,6 @@ private fun ExerciseContent(
 
     val inputMode = currentItem?.inputMode ?: "tap"
     val scrollState = rememberScrollState()
-    val density = LocalDensity.current
 
     var draggingWord by remember { mutableStateOf<String?>(null) }
     var isOverDropZone by remember { mutableStateOf(false) }
@@ -251,304 +245,77 @@ private fun ExerciseContent(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .verticalScroll(scrollState, enabled = draggingWord == null),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Spacer(Modifier.height(4.dp))
+    val hasTheory = uiState.currentBlockTheory != null || uiState.unitTheory != null
+    val selectedTab = if (hasTheory) uiState.selectedTab else 0
 
-            if (uiState.unitTheory != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CorrectBackground),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-                    onClick = onTheoryClick
-                ) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("📖", fontSize = 28.sp)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Ver explicación", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = CorrectGreen)
-                            Text("Revisá la teoría antes de ejercitar", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                        }
-                        Text("→", fontSize = 24.sp, color = CorrectGreen, fontWeight = FontWeight.Bold)
-                    }
-                }
+    Column(modifier = modifier.fillMaxSize()) {
+        if (hasTheory) {
+            TabRow(selectedTabIndex = selectedTab) {
+                Tab(
+                    selected = selectedTab == 0,
+                    onClick = { viewModel.selectTab(0) },
+                    text = { Text("EJERCICIOS", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
+                )
+                Tab(
+                    selected = selectedTab == 1,
+                    onClick = { viewModel.selectTab(1) },
+                    text = { Text("TEORÍA", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
+                )
             }
-
-            Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
-                Column(Modifier.padding(12.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("${uiState.completedItems} / ${uiState.totalItems}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, fontWeight = FontWeight.Medium)
-                        Text(viewModel.getCurrentBlockTitle(), style = MaterialTheme.typography.bodySmall, color = Primary, fontWeight = FontWeight.SemiBold)
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    LinearProgressIndicator(
-                        progress = { if (uiState.totalItems > 0) uiState.completedItems.toFloat() / uiState.totalItems else 0f },
-                        modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)),
-                        color = Primary, trackColor = Primary.copy(alpha = 0.2f)
-                    )
-                }
-            }
-
-            if (currentItem != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            val ttsText = if (uiState.showingAnswer) currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer) else currentItem.sentence
-                            TtsButton(text = ttsText)
-                            IconButton(
-                                onClick = {
-                                    if (!isTranslating && translatedText == null) {
-                                        isTranslating = true; showTranslation = true
-                                        scope.launch {
-                                            translatedText = translateWord(currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer))
-                                            isTranslating = false
-                                        }
-                                    } else showTranslation = !showTranslation
-                                },
-                                colors = IconButtonDefaults.iconButtonColors(contentColor = InfoBlue)
-                            ) { Icon(Icons.Default.RemoveRedEye, "Traducir", modifier = Modifier.size(26.dp)) }
-                        }
-
-                        val partsBefore = currentItem.sentence.split(Regex("_{2,}"), limit = 2)
-                        val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
-                        val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
-
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            if (beforeText.isNotEmpty()) {
-                                TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier.padding(top = 4.dp))
-                            }
-
-                            Spacer(Modifier.width(6.dp))
-
-                            val dropBg = when {
-                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectBackground
-                                uiState.showingAnswer && uiState.isCorrect == false -> IncorrectBackground
-                                isOverDropZone && draggingWord != null -> Primary.copy(alpha = 0.2f)
-                                else -> Color.Transparent
-                            }
-                            val dropBorder = when {
-                                uiState.showingAnswer && uiState.isCorrect == true -> CorrectGreen
-                                uiState.showingAnswer && uiState.isCorrect == false -> ErrorRed
-                                isOverDropZone && draggingWord != null -> Primary
-                                else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .widthIn(min = 100.dp, max = 160.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(color = dropBg, shape = RoundedCornerShape(12.dp))
-                                    .border(if (isOverDropZone && draggingWord != null) 3.dp else 2.dp, dropBorder, RoundedCornerShape(12.dp))
-                                    .onGloballyPositioned { coords -> dropZoneRect = coords.boundsInRoot() }
-                                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (uiState.showingAnswer) {
-                                    Text(
-                                        currentItem.answer, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (uiState.isCorrect == true) CorrectGreen else if (uiState.isCorrect == false) ErrorRed else Primary
-                                    )
-                                } else {
-                                    Text(
-                                        "_____", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                                    )
         }
 
-        if (showTranslation && translatedText != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { showTranslation = false },
-                contentAlignment = Alignment.Center
-            ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .clickable(enabled = false) {},
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.RemoveRedEye, null, tint = InfoBlue, modifier = Modifier.size(24.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Traducción", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        when {
+            selectedTab == 0 || !hasTheory -> {
+                ExerciseTabContent(
+                    uiState = uiState,
+                    currentItem = currentItem,
+                    options = options,
+                    scope = scope,
+                    inputMode = inputMode,
+                    scrollState = scrollState,
+                    showTranslation = showTranslation,
+                    translatedText = translatedText,
+                    isTranslating = isTranslating,
+                    draggingWord = draggingWord,
+                    isOverDropZone = isOverDropZone,
+                    dropZoneRect = dropZoneRect,
+                    onTranslationToggle = {
+                        if (!isTranslating && translatedText == null) {
+                            isTranslating = true
+                            showTranslation = true
+                            scope.launch {
+                                translatedText = translateWord(currentItem?.sentence?.replace(Regex("_{2,}"), currentItem?.answer ?: "") ?: "")
+                                isTranslating = false
                             }
-                            IconButton(onClick = { showTranslation = false }) {
-                                Icon(Icons.Default.Close, "Cerrar", tint = Color.Gray)
-                            }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            translatedText ?: "",
-                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        val originalSentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem?.answer ?: "") ?: ""
-                        Text(
-                            originalSentence,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                        } else showTranslation = !showTranslation
+                    },
+                    onDraggingWordChange = { draggingWord = it },
+                    onIsOverDropZoneChange = { isOverDropZone = it },
+                    onDropZoneRectChange = { dropZoneRect = it },
+                    getCurrentBlockTitle = { viewModel.getCurrentBlockTitle() },
+                    onSelectOption = { viewModel.selectOption(it); viewModel.checkTextAnswer() },
+                    onInputChanged = { viewModel.onInputChanged(it) },
+                    onCheckTextAnswer = { viewModel.checkTextAnswer() }
+                )
+            }
+            selectedTab == 1 && hasTheory -> {
+                uiState.currentBlockTheory?.let { blockTheory ->
+                    ExerciseTheoryTabContent(theory = blockTheory)
+                } ?: uiState.unitTheory?.let { unitTheory ->
+                    ExerciseTheoryTabContent(theory = BlockTheory(
+                        text = unitTheory.text,
+                        sections = unitTheory.sections,
+                        headers = unitTheory.headers,
+                        rows = unitTheory.rows,
+                        tips = unitTheory.tips,
+                        blocks = unitTheory.blocks
+                    ))
                 }
             }
         }
     }
 
-                            Spacer(Modifier.width(6.dp))
-                            if (afterText.isNotEmpty()) {
-                                TranslateableText(text = afterText, fontSize = 24, modifier = Modifier.padding(top = 4.dp))
-                            }
-                        }
-
-                        if (uiState.playingFullAudio) {
-                            Spacer(Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Reproduciendo audio...", style = MaterialTheme.typography.bodySmall, color = Primary)
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (inputMode == "type" && uiState.isCorrect == null) {
-                OutlinedTextField(
-                    value = uiState.userInput, onValueChange = { viewModel.onInputChanged(it) },
-                    label = { Text("Escribí tu respuesta") }, modifier = Modifier.fillMaxWidth(),
-                    singleLine = true, shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { viewModel.checkTextAnswer() })
-                )
-                Spacer(Modifier.height(8.dp))
-                Button(onClick = { viewModel.checkTextAnswer() }, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    Text("Corregir", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            }
-
-            if (inputMode == "tap" && uiState.isCorrect == null && options.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text("Arrastrá la palabra al hueco", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
-                ) {
-                    options.forEach { option ->
-                        var dragDelta by remember { mutableStateOf(Offset.Zero) }
-                        var localOrigin by remember { mutableStateOf(Rect.Zero) }
-
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .widthIn(max = 150.dp)
-                                .offset { IntOffset(dragDelta.x.roundToInt(), dragDelta.y.roundToInt()) }
-                                .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
-                                .onGloballyPositioned { coords ->
-                                    if (draggingWord == null) {
-                                        localOrigin = coords.boundsInRoot()
-                                    }
-                                }
-                                .pointerInput(option) {
-                                    detectDragGestures(
-                                        onDragStart = { _ ->
-                                            draggingWord = option
-                                            dragDelta = Offset.Zero
-                                            isOverDropZone = false
-                                        },
-                                        onDrag = { change, dragAmount ->
-                                            change.consume()
-                                            dragDelta += dragAmount
-                                            val wordRect = Rect(
-                                                left = localOrigin.left + dragDelta.x,
-                                                top = localOrigin.top + dragDelta.y,
-                                                right = localOrigin.right + dragDelta.x,
-                                                bottom = localOrigin.bottom + dragDelta.y
-                                            )
-                                            isOverDropZone = wordRect.overlaps(dropZoneRect)
-                                        },
-                                        onDragEnd = {
-                                            if (isOverDropZone && draggingWord != null) {
-                                                viewModel.selectOption(draggingWord!!)
-                                                viewModel.checkTextAnswer()
-                                            }
-                                            draggingWord = null
-                                            isOverDropZone = false
-                                            dragDelta = Offset.Zero
-                                        },
-                                        onDragCancel = {
-                                            draggingWord = null
-                                            isOverDropZone = false
-                                            dragDelta = Offset.Zero
-                                        }
-                                    )
-                                },
-                            shape = RoundedCornerShape(16.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                            colors = CardDefaults.cardColors(containerColor = Primary)
-                        ) {
-                            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
-                                Text(option, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (inputMode == "tap" && uiState.isCorrect != null) {
-                options.forEach { option ->
-                    val isCorrectOpt = option.trim().lowercase() == currentItem?.answer?.trim()?.lowercase()
-                    val wasSelected = uiState.userInput == option
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        colors = CardDefaults.cardColors(containerColor = when { isCorrectOpt -> CorrectBackground; wasSelected -> IncorrectBackground; else -> Color.White })
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            if (isCorrectOpt) { Icon(Icons.Default.Check, null, tint = CorrectGreen, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
-                            else if (wasSelected) { Icon(Icons.Default.Close, null, tint = ErrorRed, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
-                            Text(option, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = when { isCorrectOpt -> CorrectGreen; wasSelected -> ErrorRed; else -> MaterialTheme.colorScheme.onSurfaceVariant })
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(80.dp))
-        }
-
+    Box(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(
             visible = uiState.isCorrect == true && uiState.showingAnswer,
             enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.6f),
@@ -581,6 +348,348 @@ private fun ExerciseContent(
                 onAccept = { viewModel.onAcceptClick() }
             )
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ExerciseTabContent(
+    uiState: UnitExerciseUiState,
+    currentItem: com.appenglish.domain.model.ExerciseItem?,
+    options: List<String>,
+    scope: kotlinx.coroutines.CoroutineScope,
+    inputMode: String,
+    scrollState: androidx.compose.foundation.ScrollState,
+    showTranslation: Boolean,
+    translatedText: String?,
+    isTranslating: Boolean,
+    draggingWord: String?,
+    isOverDropZone: Boolean,
+    dropZoneRect: Rect,
+    getCurrentBlockTitle: () -> String,
+    onTranslationToggle: () -> Unit,
+    onDraggingWordChange: (String?) -> Unit,
+    onIsOverDropZoneChange: (Boolean) -> Unit,
+    onDropZoneRectChange: (Rect) -> Unit,
+    onSelectOption: (String) -> Unit,
+    onInputChanged: (String) -> Unit,
+    onCheckTextAnswer: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(scrollState, enabled = draggingWord == null),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Spacer(Modifier.height(4.dp))
+
+        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+            Column(Modifier.padding(12.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("${uiState.completedItems} / ${uiState.totalItems}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, fontWeight = FontWeight.Medium)
+                    Text(getCurrentBlockTitle(), style = MaterialTheme.typography.bodySmall, color = Primary, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { if (uiState.totalItems > 0) uiState.completedItems.toFloat() / uiState.totalItems else 0f },
+                    modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)),
+                    color = Primary, trackColor = Primary.copy(alpha = 0.2f)
+                )
+            }
+        }
+
+        if (currentItem != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        val ttsText = if (uiState.showingAnswer) currentItem.sentence.replace(Regex("_{2,}"), currentItem.answer) else currentItem.sentence
+                        TtsButton(text = ttsText)
+                        IconButton(onClick = onTranslationToggle, colors = IconButtonDefaults.iconButtonColors(contentColor = InfoBlue)) {
+                            Icon(Icons.Default.RemoveRedEye, "Traducir", modifier = Modifier.size(26.dp))
+                        }
+                    }
+
+                    val partsBefore = currentItem.sentence.split(Regex("_{2,}"), limit = 2)
+                    val beforeText = partsBefore.getOrElse(0) { "" }.trimEnd()
+                    val afterText = partsBefore.getOrElse(1) { "" }.trimStart()
+
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        if (beforeText.isNotEmpty()) {
+                            TranslateableText(text = beforeText, fontSize = 24, modifier = Modifier.padding(top = 4.dp))
+                        }
+
+                        Spacer(Modifier.width(6.dp))
+
+                        val dropBg = when {
+                            uiState.showingAnswer && uiState.isCorrect == true -> CorrectBackground
+                            uiState.showingAnswer && uiState.isCorrect == false -> com.appenglish.ui.theme.IncorrectBackground
+                            isOverDropZone && draggingWord != null -> Primary.copy(alpha = 0.2f)
+                            else -> Color.Transparent
+                        }
+                        val dropBorder = when {
+                            uiState.showingAnswer && uiState.isCorrect == true -> CorrectGreen
+                            uiState.showingAnswer && uiState.isCorrect == false -> ErrorRed
+                            isOverDropZone && draggingWord != null -> Primary
+                            else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .widthIn(min = 100.dp, max = 160.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(color = dropBg, shape = RoundedCornerShape(12.dp))
+                                .border(if (isOverDropZone && draggingWord != null) 3.dp else 2.dp, dropBorder, RoundedCornerShape(12.dp))
+                                .onGloballyPositioned { coords -> onDropZoneRectChange(coords.boundsInRoot()) }
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (uiState.showingAnswer) {
+                                Text(
+                                    currentItem.answer, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (uiState.isCorrect == true) CorrectGreen else if (uiState.isCorrect == false) ErrorRed else Primary
+                                )
+                            } else {
+                                Text(
+                                    "_____", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.width(6.dp))
+                        if (afterText.isNotEmpty()) {
+                            TranslateableText(text = afterText, fontSize = 24, modifier = Modifier.padding(top = 4.dp))
+                        }
+                    }
+
+                    if (uiState.playingFullAudio) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Reproduciendo audio...", style = MaterialTheme.typography.bodySmall, color = Primary)
+                        }
+                    }
+                }
+            }
+
+            if (showTranslation && translatedText != null) {
+                Box(modifier = Modifier.fillMaxWidth().clickable { }, contentAlignment = Alignment.Center) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.RemoveRedEye, null, tint = InfoBlue, modifier = Modifier.size(24.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Traducción", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text(translatedText ?: "", style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp), fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                            Spacer(Modifier.height(8.dp))
+                            val originalSentence = currentItem?.sentence?.replace(Regex("_{2,}"), currentItem?.answer ?: "") ?: ""
+                            Text(originalSentence, style = MaterialTheme.typography.bodyMedium, color = Color.Gray, textAlign = TextAlign.Center)
+                        }
+                    }
+                }
+            }
+
+            if (inputMode == "type" && uiState.isCorrect == null) {
+                OutlinedTextField(
+                    value = uiState.userInput, onValueChange = onInputChanged,
+                    label = { Text("Escribí tu respuesta") }, modifier = Modifier.fillMaxWidth(),
+                    singleLine = true, shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { onCheckTextAnswer() })
+                )
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = onCheckTextAnswer, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                    Text("Corregir", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            if (inputMode == "tap" && uiState.isCorrect == null && options.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text("Arrastrá la palabra al hueco", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+                ) {
+                    options.forEach { option ->
+                        var dragDelta by remember { mutableStateOf(Offset.Zero) }
+                        var localOrigin by remember { mutableStateOf(Rect.Zero) }
+
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .widthIn(max = 150.dp)
+                                .offset { IntOffset(dragDelta.x.roundToInt(), dragDelta.y.roundToInt()) }
+                                .shadow(if (dragDelta != Offset.Zero) 14.dp else 6.dp, RoundedCornerShape(16.dp))
+                                .onGloballyPositioned { coords ->
+                                    if (draggingWord == null) {
+                                        localOrigin = coords.boundsInRoot()
+                                    }
+                                }
+                                .pointerInput(option) {
+                                    detectDragGestures(
+                                        onDragStart = { _ ->
+                                            onDraggingWordChange(option)
+                                            dragDelta = Offset.Zero
+                                            onIsOverDropZoneChange(false)
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            dragDelta += dragAmount
+                                            val wordRect = Rect(
+                                                left = localOrigin.left + dragDelta.x,
+                                                top = localOrigin.top + dragDelta.y,
+                                                right = localOrigin.right + dragDelta.x,
+                                                bottom = localOrigin.bottom + dragDelta.y
+                                            )
+                                            onIsOverDropZoneChange(wordRect.overlaps(dropZoneRect))
+                                        },
+                                        onDragEnd = {
+                                            if (isOverDropZone && draggingWord != null) {
+                                                onSelectOption(draggingWord!!)
+                                            }
+                                            onDraggingWordChange(null)
+                                            onIsOverDropZoneChange(false)
+                                            dragDelta = Offset.Zero
+                                        },
+                                        onDragCancel = {
+                                            onDraggingWordChange(null)
+                                            onIsOverDropZoneChange(false)
+                                            dragDelta = Offset.Zero
+                                        }
+                                    )
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                            colors = CardDefaults.cardColors(containerColor = Primary)
+                        ) {
+                            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
+                                Text(option, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (inputMode == "tap" && uiState.isCorrect != null) {
+                options.forEach { option ->
+                    val isCorrectOpt = option.trim().lowercase() == currentItem?.answer?.trim()?.lowercase()
+                    val wasSelected = uiState.userInput == option
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        colors = CardDefaults.cardColors(containerColor = when { isCorrectOpt -> CorrectBackground; wasSelected -> com.appenglish.ui.theme.IncorrectBackground; else -> Color.White })
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                            if (isCorrectOpt) { Icon(Icons.Default.Check, null, tint = CorrectGreen, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
+                            else if (wasSelected) { Icon(Icons.Default.Close, null, tint = ErrorRed, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
+                            Text(option, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = when { isCorrectOpt -> CorrectGreen; wasSelected -> ErrorRed; else -> MaterialTheme.colorScheme.onSurfaceVariant })
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(80.dp))
+        }
+    }
+}
+
+@Composable
+private fun ExerciseTheoryTabContent(theory: BlockTheory) {
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(16.dp)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, tint = Primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Teoría del bloque",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+
+                if (theory.blocks.isNotEmpty()) {
+                    theory.blocks.forEach { block ->
+                        if (!block.title.isNullOrBlank()) {
+                            Text(
+                                block.title,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Primary
+                            )
+                            Spacer(Modifier.height(4.dp))
+                        }
+                        if (!block.html.isNullOrBlank()) {
+                            Text(
+                                block.html.replace(Regex("<[^>]*>"), ""),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
+                } else if (theory.text.isNotBlank()) {
+                    Text(theory.text, style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Text("No hay teoría para este bloque", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                }
+            }
+        }
+
+        if (theory.tips.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("💡 Tips", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarningOrange)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    theory.tips.forEach { tip ->
+                        Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(tip.emoji, style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.width(8.dp))
+                            Text(tip.text, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
@@ -627,7 +736,7 @@ private fun ResultPopup(
                         }
                     }
                 } else {
-                    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = IncorrectBackground)) {
+                    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = com.appenglish.ui.theme.IncorrectBackground)) {
                         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Close, null, tint = ErrorRed, modifier = Modifier.size(28.dp))

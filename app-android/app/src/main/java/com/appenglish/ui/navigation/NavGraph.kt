@@ -141,7 +141,7 @@ fun AppNavGraph() {
                     onBackClick = { navController.popBackStack() },
                     onBlockClick = { topicId, unitId -> navController.navigate(Routes.exercise(topicId, unitId)) },
                     onTopicTheoryClick = { topicId -> navController.navigate(Routes.theory(topicId)) },
-                    onUnitTheoryClick = { _ -> }
+                    onUnitTheoryClick = { topicId, unitId -> navController.navigate(Routes.unitTheory(topicId, unitId)) }
                 )
             }
 

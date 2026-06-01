@@ -68,7 +68,7 @@ fun BlocksScreen(
     onBackClick: () -> Unit,
     onBlockClick: (String, String) -> Unit,
     onTopicTheoryClick: (String) -> Unit,
-    onUnitTheoryClick: (String) -> Unit,
+    onUnitTheoryClick: (String, String) -> Unit,
     viewModel: BlocksViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
