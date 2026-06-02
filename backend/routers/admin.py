@@ -1948,6 +1948,11 @@ async def unmark_redo(user_id: int, topic_id: str, unit_id: str, db: AsyncSessio
 
 # ── System ─────────────────────────────────────────────────
 
+from pydantic import BaseModel
+
+class QueryRequest(BaseModel):
+    query: str
+
 @router.get("/system/health")
 async def system_health(admin: dict = Depends(get_current_admin)):
     return {
@@ -1960,47 +1965,54 @@ async def system_health(admin: dict = Depends(get_current_admin)):
 
 @router.get("/system/logs")
 async def system_logs(container: str = "api", lines: int = 100, admin: dict = Depends(get_current_admin)):
-    import subprocess
+    log_path = os.path.join(os.path.dirname(__file__), "..", "logs", "api.log")
     try:
-        result = subprocess.run(
-            ["docker", "compose", "logs", container, f"--tail={lines}", "--no-log-prefix"],
-            capture_output=True, text=True, timeout=10,
-            cwd=os.path.join(os.path.dirname(__file__), "..")
-        )
-        logs = result.stdout.split("\n") if result.stdout else []
-        return {"logs": logs, "container": container, "lines": len(logs)}
+        if os.path.exists(log_path):
+            with open(log_path, "r") as f:
+                all_lines = f.readlines()
+            tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            return {"logs": [l.rstrip() for l in tail], "container": container, "lines": len(tail)}
+        else:
+            return {"logs": [f"Log file not found at {log_path}"], "container": container, "lines": 0}
     except Exception as e:
         return {"logs": [f"Error: {str(e)}"], "container": container, "lines": 0}
 
 
 @router.get("/system/db-tables")
 async def system_db_tables(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    result = await db.execute(
-        select(func.relname, func.n_live_tup)
-        .select_from(func.pg_stat_user_tables())
-        .order_by(func.relname)
-    )
-    tables = []
-    for row in result:
-        tables.append({"name": row[0], "rows": row[1]})
-    return {"tables": tables}
+    from sqlalchemy import inspect as sa_inspect
+    try:
+        def get_tables(sync_conn):
+            inspector = sa_inspect(sync_conn)
+            return inspector.get_table_names()
+        tables_list = await db.run_sync(get_tables)
+        result = []
+        for tname in tables_list:
+            count_result = await db.execute(text(f"SELECT COUNT(*) FROM {tname}"))
+            row_count = count_result.scalar() or 0
+            result.append({"name": tname, "rows": row_count})
+        return {"tables": sorted(result, key=lambda t: t["name"])}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/system/db-query")
-async def system_db_query(query: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+async def system_db_query(req: QueryRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     import time
+    query = req.query
     query_upper = query.strip().upper()
     if not query_upper.startswith("SELECT"):
         raise HTTPException(status_code=400, detail="Only SELECT queries are allowed")
-    if "INTO" in query_upper or "INSERT" in query_upper or "UPDATE" in query_upper or "DELETE" in query_upper or "DROP" in query_upper:
-        raise HTTPException(status_code=400, detail="Only read-only queries allowed")
+    disallowed = ["INTO", "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE"]
+    for kw in disallowed:
+        if kw in query_upper:
+            raise HTTPException(status_code=400, detail=f"Keyword '{kw}' not allowed. Only read-only queries.")
     start = time.time()
     try:
         result = await db.execute(text(query))
         rows = result.fetchmany(200)
         columns = list(result.keys()) if result else []
         data = [list(row) for row in rows]
-        # Convert non-serializable types
         for row in data:
             for i, val in enumerate(row):
                 if isinstance(val, (datetime.datetime, datetime.date)):
@@ -2013,11 +2025,17 @@ async def system_db_query(query: str, db: AsyncSession = Depends(get_db), admin:
 
 @router.get("/system/db-table/{table_name}")
 async def system_db_table(table_name: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    import re
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+        raise HTTPException(status_code=400, detail="Invalid table name")
     try:
-        result = await db.execute(text(f"SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = :table ORDER BY ordinal_position"), {"table": table_name})
-        columns = [{"name": r[0], "type": r[1], "nullable": r[2]} for r in result.fetchall()]
+        from sqlalchemy import inspect as sa_inspect
+        def get_columns(sync_conn):
+            inspector = sa_inspect(sync_conn)
+            return inspector.get_columns(table_name)
+        cols = await db.run_sync(get_columns)
+        columns = [{"name": c["name"], "type": str(c["type"]), "nullable": "YES" if c.get("nullable") else "NO"} for c in cols]
         preview = await db.execute(text(f"SELECT * FROM {table_name} LIMIT 20"))
-        pk = preview.keys()
         preview_rows = [list(r) for r in preview.fetchall()]
         for row in preview_rows:
             for i, val in enumerate(row):

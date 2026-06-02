@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
-import os, sys
+import os, sys, logging
+from logging.handlers import RotatingFileHandler
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,20 @@ from routers import auth, admin, ws
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+LOG_DIR = os.path.join(os.path.dirname(__file__), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Configure file logging
+log_handler = RotatingFileHandler(
+    os.path.join(LOG_DIR, "api.log"),
+    maxBytes=5 * 1024 * 1024,
+    backupCount=3,
+)
+log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.addHandler(log_handler)
 
 # Read version from version.properties in same directory (backend/)
 _VERSION_CODE = 1
