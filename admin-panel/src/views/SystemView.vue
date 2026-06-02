@@ -319,7 +319,6 @@ onMounted(() => {
   logInterval = setInterval(fetchLogs, 5000)
 })
 
-import { onUnmounted } from 'vue'
 onUnmounted(() => {
   if (logInterval) clearInterval(logInterval)
 })
