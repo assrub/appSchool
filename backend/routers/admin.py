@@ -1837,74 +1837,110 @@ async def get_dashboard_metrics(db: AsyncSession = Depends(get_db), admin: dict 
 
 @router.get("/progress/{user_id}/analytics")
 async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    errors = (await db.execute(select(AnswerHistory).where(AnswerHistory.user_id == user_id, AnswerHistory.is_correct == False))).scalars().all()
-    all_answers = (await db.execute(select(AnswerHistory).where(AnswerHistory.user_id == user_id))).scalars().all()
+    errors = (await db.execute(
+        select(AnswerHistory)
+        .where(AnswerHistory.user_id == user_id, AnswerHistory.is_correct == False)
+        .order_by(AnswerHistory.answered_at.desc())
+    )).scalars().all()
+    all_answers = (await db.execute(
+        select(AnswerHistory)
+        .where(AnswerHistory.user_id == user_id)
+        .order_by(AnswerHistory.answered_at.asc())
+    )).scalars().all()
 
-    # Weak units
-    unit_errors = {}
-    for e in errors:
-        key = e.unit_id
-        if key not in unit_errors: unit_errors[key] = {"errors": 0, "total": 0, "topicId": e.topic_id}
-        unit_errors[key]["errors"] += 1
-
+    # ── Weak units ──
+    unit_data = {}
     for a in all_answers:
-        if a.unit_id in unit_errors: unit_errors[a.unit_id]["total"] += 1
-    for k in list(unit_errors):
-        if unit_errors[k]["total"] == 0: unit_errors[k]["total"] = 1
+        key = a.unit_id
+        if key not in unit_data:
+            unit_data[key] = {"topicId": a.topic_id, "correct": 0, "wrong": 0, "total": 0}
+        if a.is_correct:
+            unit_data[key]["correct"] += 1
+        else:
+            unit_data[key]["wrong"] += 1
+        unit_data[key]["total"] += 1
+    weak_units = sorted(
+        [{"unitId": k, "topicId": v["topicId"], "correct": v["correct"], "wrong": v["wrong"],
+          "totalAttempts": v["total"], "errorRate": round(v["wrong"]/v["total"]*100, 1) if v["total"] > 0 else 0}
+         for k, v in unit_data.items()],
+        key=lambda x: -x["errorRate"]
+    )
 
-    weak_units = [{"unitId": k, "topicId": v["topicId"], "errorRate": round(v["errors"]/v["total"]*100,1), "totalAttempts": v["total"], "totalErrors": v["errors"]} for k,v in sorted(unit_errors.items(), key=lambda x: -x[1]["errors"])]
-
-    # Common mistakes
+    # ── Common mistakes (with repeat count) ──
     mistake_map = {}
     for e in errors:
         key = f"{e.given_answer}→{e.correct_answer}"
-        if key not in mistake_map: mistake_map[key] = {"givenAnswer": e.given_answer, "correctAnswer": e.correct_answer, "count": 0, "topicId": e.topic_id}
+        if key not in mistake_map:
+            mistake_map[key] = {
+                "givenAnswer": e.given_answer,
+                "correctAnswer": e.correct_answer,
+                "count": 0,
+                "topicId": e.topic_id,
+                "unitId": e.unit_id
+            }
         mistake_map[key]["count"] += 1
     common_mistakes = sorted(mistake_map.values(), key=lambda x: -x["count"])[:10]
 
-    # Strong units (least errors)
-    strong_units = sorted([u for u in weak_units], key=lambda x: x["errorRate"])[:5]
-
-    # Overall
+    # ── Overall ──
     total = len(all_answers)
     correct_count = sum(1 for a in all_answers if a.is_correct)
     accuracy = round(correct_count/total*100, 1) if total > 0 else 0
 
-    # Per-exercise stats (most failed specific sentences)
+    # ── Per-exercise hardest exercises (with retry tracking) ──
     sentence_map = {}
-    for e in errors:
-        key = e.topic_id + "::" + e.unit_id + "::" + e.given_answer + "→" + e.correct_answer
-        sentence_key = e.topic_id + "::" + e.unit_id + "::" + e.correct_answer
-        if sentence_key not in sentence_map:
-            sentence_map[sentence_key] = {
-                "topicId": e.topic_id,
-                "unitId": e.unit_id,
-                "correctAnswer": e.correct_answer,
-                "totalAttempts": 0,
-                "failedAttempts": 0,
-                "commonWrongAnswers": []
-            }
-        sentence_map[sentence_key]["failedAttempts"] += 1
-    for a in all_answers:
-        sentence_key = a.topic_id + "::" + a.unit_id + "::" + a.correct_answer
-        if sentence_key in sentence_map:
-            sentence_map[sentence_key]["totalAttempts"] += 1
-
-    # Track common wrong answers per exercise
     wrong_map = {}
     for e in errors:
-        key = e.topic_id + "::" + e.unit_id + "::" + e.correct_answer
-        wrong_key = key + "::" + e.given_answer
+        key = (e.topic_id, e.unit_id, e.correct_answer)
+        wrong_key = key + (e.given_answer,)
+        if key not in sentence_map:
+            sentence_map[key] = {"topicId": e.topic_id, "unitId": e.unit_id,
+                                 "correctAnswer": e.correct_answer, "totalAttempts": 0, "failedAttempts": 0,
+                                 "commonWrongAnswers": [], "commonWrongCounts": []}
+        sentence_map[key]["failedAttempts"] += 1
         if wrong_key not in wrong_map:
             wrong_map[wrong_key] = {"answer": e.given_answer, "count": 0}
         wrong_map[wrong_key]["count"] += 1
+    for a in all_answers:
+        key = (a.topic_id, a.unit_id, a.correct_answer)
+        if key in sentence_map:
+            sentence_map[key]["totalAttempts"] += 1
     for sk, sdata in sentence_map.items():
-        exercise_wrongs = {k: v for k, v in wrong_map.items() if k.startswith(sk + "::")}
+        exercise_wrongs = {k: v for k, v in wrong_map.items() if k[:3] == sk}
         sorted_wrongs = sorted(exercise_wrongs.values(), key=lambda x: -x["count"])[:3]
         sdata["commonWrongAnswers"] = [w["answer"] for w in sorted_wrongs]
         sdata["commonWrongCounts"] = [w["count"] for w in sorted_wrongs]
-
     hardest_exercises = sorted(sentence_map.values(), key=lambda x: -x["failedAttempts"])[:10]
+
+    # ── Retry improvement tracking ──
+    # Group answers by (topicId, unitId, correctAnswer) to see progress over time
+    retry_improvement = []
+    for (tid, uid, correct_answer), sdata in sorted(sentence_map.items(), key=lambda x: -x[1]["failedAttempts"]):
+        if sdata["totalAttempts"] < 2:
+            continue
+        # Get the user's answers for this exercise in chronological order
+        exercise_answers = [a for a in all_answers
+                           if a.topic_id == tid and a.unit_id == uid and a.correct_answer == correct_answer]
+        # Count consecutive wrong at start
+        first_wrong_streak = 0
+        for a in exercise_answers:
+            if not a.is_correct:
+                first_wrong_streak += 1
+            else:
+                break
+        # Did they eventually get it right?
+        eventually_correct = any(a.is_correct for a in exercise_answers)
+        retry_improvement.append({
+            "topicId": tid,
+            "unitId": uid,
+            "correctAnswer": correct_answer,
+            "totalAttempts": sdata["totalAttempts"],
+            "failedAttempts": sdata["failedAttempts"],
+            "eventuallyCorrect": eventually_correct,
+            "consecutiveWrongAtStart": first_wrong_streak,
+        })
+
+    # ── Strong units ──
+    strong_units = sorted(weak_units, key=lambda x: x["errorRate"])[:5]
 
     return {
         "weakUnits": weak_units[:5],
@@ -1914,6 +1950,7 @@ async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin:
         "totalAnswered": total,
         "totalCorrect": correct_count,
         "hardestExercises": hardest_exercises,
+        "retryImprovement": retry_improvement[:10],
     }
 
 

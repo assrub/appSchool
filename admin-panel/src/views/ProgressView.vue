@@ -222,72 +222,130 @@
             <v-card v-if="analytics" rounded="lg" elevation="2">
               <v-card-title class="d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-chart-bar</v-icon>
-                Análisis
+                Análisis de rendimiento
               </v-card-title>
 
               <v-card-text>
+                <!-- Overall stats row -->
                 <v-row>
-                  <v-col cols="6">
-                    <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 text-center">
-                      <div class="text-h4 font-weight-bold text-primary">{{ analytics.overallAccuracy || 0 }}%</div>
-                      <div class="text-caption">Precisión global</div>
-                      <div class="text-caption text-grey mt-1">
-                        {{ analytics.totalCorrect || 0 }} correctas de {{ analytics.totalAnswered || 0 }}
+                  <v-col cols="4">
+                    <v-sheet rounded="lg" color="grey-lighten-4" class="pa-3 text-center">
+                      <div class="text-h3 font-weight-bold" :class="analytics.overallAccuracy >= 70 ? 'text-success' : 'text-warning'">
+                        {{ analytics.overallAccuracy || 0 }}%
                       </div>
+                      <div class="text-caption font-weight-medium">Precisión global</div>
+                      <div class="text-caption text-grey">{{ analytics.totalCorrect || 0 }} / {{ analytics.totalAnswered || 0 }} respuestas</div>
                     </v-sheet>
                   </v-col>
-                  <v-col cols="6">
-                    <v-sheet rounded="lg" color="grey-lighten-4" class="pa-4 text-center">
-                      <div class="text-h4 font-weight-bold text-warning">{{ analytics.weakUnits?.length || 0 }}</div>
-                      <div class="text-caption">Unidades problemáticas</div>
-                      <div class="text-caption text-grey mt-1">Requieren práctica adicional</div>
+                  <v-col cols="4">
+                    <v-sheet rounded="lg" color="grey-lighten-4" class="pa-3 text-center">
+                      <div class="text-h3 font-weight-bold text-warning">{{ analytics.weakUnits?.length || 0 }}</div>
+                      <div class="text-caption font-weight-medium">Unidades débiles</div>
+                      <div class="text-caption text-grey">Requieren práctica</div>
+                    </v-sheet>
+                  </v-col>
+                  <v-col cols="4">
+                    <v-sheet rounded="lg" color="grey-lighten-4" class="pa-3 text-center">
+                      <div class="text-h3 font-weight-bold text-success">{{ analytics.strongUnits?.length || 0 }}</div>
+                      <div class="text-caption font-weight-medium">Unidades fuertes</div>
+                      <div class="text-caption text-grey">Bien dominadas</div>
                     </v-sheet>
                   </v-col>
                 </v-row>
 
+                <!-- Weak Units Section -->
                 <div v-if="analytics.weakUnits?.length" class="mt-4">
-                  <h4 class="text-subtitle-1 font-weight-medium mb-2">Unidades que necesitan refuerzo:</h4>
+                  <h4 class="text-subtitle-1 font-weight-medium mb-2">
+                    <v-icon color="warning" class="mr-1">mdi-alert-circle</v-icon>
+                    Unidades que necesitan refuerzo
+                  </h4>
                   <div v-for="w in analytics.weakUnits" :key="w.unitId" class="d-flex align-center py-2 px-3 mb-2 rounded" style="background:#FFF3E0">
-                    <v-icon color="warning" size="20" class="mr-2">mdi-alert-circle</v-icon>
                     <div class="flex-grow-1">
                       <div class="text-body-2 font-weight-medium">{{ w.unitId }}</div>
-                      <div class="text-caption text-grey">{{ w.errorRate }}% errores ({{ w.totalErrors }} fallos)</div>
+                      <div class="text-caption text-grey">
+                        <span class="text-success">✅ {{ w.correct }}</span>
+                        <span class="text-error ml-2">❌ {{ w.wrong }}</span>
+                        <span class="ml-2">({{ w.errorRate }}% error)</span>
+                      </div>
                     </div>
                     <v-btn size="small" variant="tonal" color="orange" @click="confirmRedoUnitById(w.unitId, w.topicId)">
-                      <v-icon start size="16">mdi-restart</v-icon>
-                      Rehacer
+                      <v-icon start size="16">mdi-restart</v-icon> Rehacer
                     </v-btn>
                   </div>
                 </div>
 
+                <!-- Common Mistakes Section -->
                 <div v-if="analytics.commonMistakes?.length" class="mt-4">
-                  <h4 class="text-subtitle-1 font-weight-medium mb-2">Errores comunes:</h4>
-                  <div v-for="m in analytics.commonMistakes.slice(0, 5)" :key="m.givenAnswer" class="py-1">
-                    <v-chip size="small" color="error" variant="tonal" class="mr-2">
-                      "{{ m.givenAnswer }}"
-                    </v-chip>
-                    <span class="text-caption">debería ser</span>
-                    <v-chip size="small" color="success" variant="tonal" class="ml-2">
-                      "{{ m.correctAnswer }}"
-                    </v-chip>
-                    <span class="text-caption text-grey ml-2">({{ m.count }} veces)</span>
+                  <h4 class="text-subtitle-1 font-weight-medium mb-2">
+                    <v-icon color="error" class="mr-1">mdi-alert-rhombus</v-icon>
+                    Errores más repetidos
+                  </h4>
+                  <div v-for="m in analytics.commonMistakes" :key="m.givenAnswer" class="d-flex align-center py-2 px-3 mb-1 rounded" style="background:#FFEBEE">
+                    <div class="flex-grow-1 d-flex align-center">
+                      <v-chip size="small" color="error" variant="tonal" class="mr-2">
+                        "{{ m.givenAnswer }}"
+                      </v-chip>
+                      <span class="text-body-2 mx-1">→</span>
+                      <v-chip size="small" color="success" variant="tonal" class="mr-2">
+                        "{{ m.correctAnswer }}"
+                      </v-chip>
+                      <span class="text-caption text-grey">{{ m.count }} vez{{ m.count !== 1 ? 'es' : '' }}</span>
+                    </div>
+                    <v-progress-linear
+                      :model-value="(m.count / analytics.commonMistakes[0].count) * 100"
+                      color="error"
+                      height="4"
+                      rounded
+                      class="ml-2"
+                      style="max-width: 80px"
+                    />
                   </div>
                 </div>
 
+                <!-- Hardest Exercises Section -->
                 <div v-if="analytics.hardestExercises?.length" class="mt-4">
-                  <h4 class="text-subtitle-1 font-weight-medium mb-2">Ejercicios más difíciles:</h4>
-                  <div v-for="(ex, i) in analytics.hardestExercises.slice(0, 8)" :key="i" class="d-flex align-center py-2 px-3 mb-2 rounded" style="background:#FFF3E0">
+                  <h4 class="text-subtitle-1 font-weight-medium mb-2">
+                    <v-icon color="deep-orange" class="mr-1">mdi-fire</v-icon>
+                    Ejercicios más difíciles
+                  </h4>
+                  <div v-for="(ex, i) in analytics.hardestExercises" :key="i" class="d-flex align-center py-2 px-3 mb-2 rounded" style="background:#FFF3E0">
                     <div class="flex-grow-1">
                       <div class="text-body-2 font-weight-medium">{{ ex.correctAnswer }}</div>
-                      <div class="text-caption text-grey">
-                        {{ ex.failedAttempts }}/{{ ex.totalAttempts }} fallos
-                        <span v-if="ex.commonWrongAnswers?.length"> — Respuestas comunes: </span>
-                        <v-chip v-for="(wa, wi) in ex.commonWrongAnswers" :key="wi" size="x-small" color="error" variant="tonal" class="mr-1">
-                          "{{ wa }}"
-                        </v-chip>
+                      <div class="text-caption">
+                        <span class="text-error">❌ {{ ex.failedAttempts }}/{{ ex.totalAttempts }} incorrectos</span>
+                        <span v-if="ex.commonWrongAnswers?.length" class="ml-2 text-grey">
+                          — Respuestas comunes:
+                          <v-chip v-for="(wa, wi) in ex.commonWrongAnswers" :key="wi" size="x-small" color="error" variant="tonal" class="mr-1">
+                            "{{ wa }}" ({{ ex.commonWrongCounts?.[wi] || '?' }})
+                          </v-chip>
+                        </span>
                       </div>
-                      <div class="text-caption text-grey">Unidad: {{ ex.unitId }}</div>
                     </div>
+                    <v-chip :color="ex.failedAttempts > ex.totalAttempts / 2 ? 'error' : 'warning'" size="x-small" variant="tonal">
+                      {{ ex.failedAttempts > ex.totalAttempts / 2 ? 'Crítico' : 'Difícil' }}
+                    </v-chip>
+                  </div>
+                </div>
+
+                <!-- Retry Improvement Section -->
+                <div v-if="analytics.retryImprovement?.length" class="mt-4">
+                  <h4 class="text-subtitle-1 font-weight-medium mb-2">
+                    <v-icon color="info" class="mr-1">mdi-trending-up</v-icon>
+                    Evolución por ejercicio
+                  </h4>
+                  <div v-for="(r, i) in analytics.retryImprovement" :key="i" class="d-flex align-center py-2 px-3 mb-1 rounded" :style="{ background: r.eventuallyCorrect ? '#E8F5E9' : '#FFEBEE' }">
+                    <div class="flex-grow-1">
+                      <div class="text-body-2 font-weight-medium">{{ r.correctAnswer }}</div>
+                      <div class="text-caption">
+                        {{ r.totalAttempts }} intento{{ r.totalAttempts !== 1 ? 's' : '' }}
+                        <span class="ml-2 text-error">❌ {{ r.consecutiveWrongAtStart }} fallo{{ r.consecutiveWrongAtStart !== 1 ? 's' : '' }} al inicio</span>
+                        <span v-if="r.eventuallyCorrect" class="ml-2 text-success">✅ Lo logró después</span>
+                        <span v-else class="ml-2 text-error">❌ Sigue fallando</span>
+                      </div>
+                    </div>
+                    <v-icon :color="r.eventuallyCorrect ? 'success' : 'error'">
+                      {{ r.eventuallyCorrect ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                    </v-icon>
                   </div>
                 </div>
               </v-card-text>
