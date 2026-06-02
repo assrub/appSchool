@@ -598,7 +598,7 @@ class UnitExerciseViewModel @Inject constructor(
     }
 
     private fun saveProgressLocal() {
-        viewModelScope.launch {
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.NonCancellable + kotlinx.coroutines.Dispatchers.IO) {
             val state = _uiState.value
             progressRepository.saveProgress(
                 topicId = topicId, unitId = unitId,

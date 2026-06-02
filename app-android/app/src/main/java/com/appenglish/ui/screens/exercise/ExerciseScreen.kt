@@ -6,8 +6,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -84,6 +85,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.layout.PaddingValues
 import com.appenglish.domain.model.BlockTheory
 import com.appenglish.ui.components.TheoryHtmlView
 import com.appenglish.ui.components.TtsButton
@@ -425,37 +427,46 @@ private fun ExerciseContent(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        AnimatedVisibility(
-            visible = uiState.isCorrect == true && uiState.showingAnswer,
-            enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.6f),
-            exit = fadeOut(tween(200))
+        // Current feedback - positioned at the bottom
+        Box(
+            modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            FeedbackBar(
-                isCorrect = true,
-                sentence = popupSentence,
-                hint = popupHint,
-                onContinue = {
-                    scope.launch {
-                        delay(250)
-                        if (uiState.retryMode) viewModel.retryNextAfterCorrect()
-                        else viewModel.nextItem()
-                    }
-                },
-                buttonText = if (uiState.readyForNext) "Siguiente →" else "Continuar"
-            )
+            AnimatedVisibility(
+                visible = uiState.isCorrect == true && uiState.showingAnswer,
+                enter = slideInVertically(animationSpec = tween(300)) { it } + fadeIn(tween(200)),
+                exit = slideOutVertically(animationSpec = tween(200)) { it } + fadeOut(tween(100))
+            ) {
+                FeedbackBar(
+                    isCorrect = true,
+                    sentence = popupSentence,
+                    hint = popupHint,
+                    onContinue = {
+                        scope.launch {
+                            delay(250)
+                            if (uiState.retryMode) viewModel.retryNextAfterCorrect()
+                            else viewModel.nextItem()
+                        }
+                    },
+                    buttonText = if (uiState.readyForNext) "Siguiente →" else "Continuar"
+                )
+            }
         }
 
-        AnimatedVisibility(
-            visible = uiState.showAcceptButton,
-            enter = fadeIn(tween(300)) + scaleIn(tween(400), initialScale = 0.6f),
-            exit = fadeOut(tween(200))
+        Box(
+            modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            FeedbackBar(
-                isCorrect = false,
-                userAnswer = uiState.userInput,
-                correctAnswer = if (uiState.retryMode) uiState.wrongItems.getOrNull(uiState.retryIndex)?.correctAnswer ?: currentItem?.answer ?: "" else currentItem?.answer ?: "",
-                onAccept = { viewModel.onAcceptClick() }
-            )
+            AnimatedVisibility(
+                visible = uiState.showAcceptButton,
+                enter = slideInVertically(animationSpec = tween(300)) { it } + fadeIn(tween(200)),
+                exit = slideOutVertically(animationSpec = tween(200)) { it } + fadeOut(tween(100))
+            ) {
+                FeedbackBar(
+                    isCorrect = false,
+                    userAnswer = uiState.userInput,
+                    correctAnswer = if (uiState.retryMode) uiState.wrongItems.getOrNull(uiState.retryIndex)?.correctAnswer ?: currentItem?.answer ?: "" else currentItem?.answer ?: "",
+                    onAccept = { viewModel.onAcceptClick() }
+                )
+            }
         }
     }
 }
@@ -471,64 +482,72 @@ private fun FeedbackBar(
     onAccept: () -> Unit = {},
     buttonText: String = "Continuar"
 ) {
+    val bgColor = if (isCorrect) Color(0xFF2E7D32) else Color(0xFFC62828)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCorrect) CorrectGreen else ErrorRed
-        )
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    if (isCorrect) "🎉" else "❌",
-                    fontSize = 32.sp
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    if (isCorrect) "¡Muy bien!" else "Incorrecto",
-                    style = MaterialTheme.typography.titleMedium,
+                    if (isCorrect) "✓" else "✗",
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
             }
-            if (isCorrect && sentence.isNotBlank()) {
-                Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
-                    sentence,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    color = Color.White.copy(alpha = 0.9f)
+                    if (isCorrect) "¡Correcto!" else "Incorrecto",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
+                if (isCorrect && sentence.isNotBlank()) {
+                    Text(
+                        sentence,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.85f),
+                        maxLines = 1
+                    )
+                }
+                if (!isCorrect) {
+                    Text(
+                        "Respuesta: ${userAnswer.ifBlank { "(vacío)" }}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.85f),
+                        maxLines = 1
+                    )
+                }
             }
-            if (!isCorrect) {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "Respondiste: ${userAnswer.ifBlank { "(vacío)" }}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-            }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.width(12.dp))
             Button(
                 onClick = { if (isCorrect) onContinue() else onAccept() },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
-                    contentColor = if (isCorrect) CorrectGreen else ErrorRed
+                    contentColor = bgColor
                 ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(20.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
             ) {
                 Text(
-                    if (isCorrect) buttonText else "Continuar",
-                    fontWeight = FontWeight.Bold
+                    if (isCorrect) buttonText else "Aceptar",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
         }
@@ -573,10 +592,9 @@ private fun ExerciseTabContent(
 
         Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
             Column(Modifier.padding(12.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("${blockCompleted} / ${blockTotal}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, fontWeight = FontWeight.Medium)
-                    Text(getCurrentBlockTitle(), style = MaterialTheme.typography.bodySmall, color = Primary, fontWeight = FontWeight.SemiBold)
-                }
+                Text(getCurrentBlockTitle(), style = MaterialTheme.typography.bodySmall, color = Primary, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+                Text("${blockCompleted} / ${blockTotal}", style = MaterialTheme.typography.titleLarge, color = Primary, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                 Spacer(Modifier.height(6.dp))
                 LinearProgressIndicator(
                     progress = { if (blockTotal > 0) blockCompleted.toFloat() / blockTotal else 0f },
