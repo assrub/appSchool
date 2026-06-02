@@ -1982,8 +1982,8 @@ async def system_logs(container: str = "api", lines: int = 100, admin: dict = De
 async def system_db_tables(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     from sqlalchemy import inspect as sa_inspect
     try:
-        def get_tables(sync_conn):
-            inspector = sa_inspect(sync_conn)
+        def get_tables(sync_session):
+            inspector = sa_inspect(sync_session.get_bind())
             return inspector.get_table_names()
         tables_list = await db.run_sync(get_tables)
         result = []
@@ -2030,8 +2030,8 @@ async def system_db_table(table_name: str, db: AsyncSession = Depends(get_db), a
         raise HTTPException(status_code=400, detail="Invalid table name")
     try:
         from sqlalchemy import inspect as sa_inspect
-        def get_columns(sync_conn):
-            inspector = sa_inspect(sync_conn)
+        def get_columns(sync_session):
+            inspector = sa_inspect(sync_session.get_bind())
             return inspector.get_columns(table_name)
         cols = await db.run_sync(get_columns)
         columns = [{"name": c["name"], "type": str(c["type"]), "nullable": "YES" if c.get("nullable") else "NO"} for c in cols]
