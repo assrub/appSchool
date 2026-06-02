@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from database import get_db
 from dependencies import get_current_admin
-from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, BlockTheory, BlockTheorySection, Progress, AnswerHistory, StudySession, DictionaryEntry, AppUser
+from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, BlockTheory, BlockTheorySection, Progress, BlockProgress, AnswerHistory, StudySession, DictionaryEntry, AppUser
 from schemas.admin import (
     SubjectCreate, SubjectUpdate, SubjectResponse as AdminSubjectResponse,
     TopicCreate, TopicUpdate, TopicResponse as AdminTopicResponse,
