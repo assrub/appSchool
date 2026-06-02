@@ -390,7 +390,8 @@ private fun ExerciseTabContent(
     onInputChanged: (String) -> Unit,
     onCheckTextAnswer: () -> Unit
 ) {
-    var dropZoneRect by remember { mutableStateOf(Rect.Zero) }
+    val dropZoneRectState = remember { mutableStateOf(Rect.Zero) }
+    var dropZoneRect by dropZoneRectState
 
     Column(
         modifier = Modifier
@@ -578,11 +579,19 @@ private fun ExerciseTabContent(
                                                 right = localOrigin.right + dragDelta.x,
                                                 bottom = localOrigin.bottom + dragDelta.y
                                             )
-                                            onIsOverDropZoneChange(wordRect.overlaps(dropZoneRect))
+                                            onIsOverDropZoneChange(wordRect.overlaps(dropZoneRectState.value))
                                         },
                                         onDragEnd = {
-                                            if (isOverDropZone) {
-                                                onSelectOption(option)
+                                            if (dropZoneRectState.value != Rect.Zero) {
+                                                val wordRect = Rect(
+                                                    left = localOrigin.left + dragDelta.x,
+                                                    top = localOrigin.top + dragDelta.y,
+                                                    right = localOrigin.right + dragDelta.x,
+                                                    bottom = localOrigin.bottom + dragDelta.y
+                                                )
+                                                if (wordRect.overlaps(dropZoneRectState.value)) {
+                                                    onSelectOption(option)
+                                                }
                                             }
                                             onDraggingWordChange(null)
                                             onIsOverDropZoneChange(false)
