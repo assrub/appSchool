@@ -602,15 +602,24 @@ class UnitExerciseViewModel @Inject constructor(
                 completedItems = state.completedItems,
                 score = state.score, totalItems = state.totalItems, completed = false
             )
+            var itemsBeforeBlock = 0
             for ((blockIdx, block) in state.blocks.withIndex()) {
+                val completedInBlock = if (blockIdx < state.currentBlockIndex) {
+                    block.items.size
+                } else if (blockIdx == state.currentBlockIndex) {
+                    (state.completedItems - itemsBeforeBlock).coerceIn(0, block.items.size)
+                } else {
+                    0
+                }
                 val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
-                val blockScore = (block.items.size - wrongInBlock).coerceAtLeast(0)
-                val blockCompleted = blockScore == block.items.size
+                val blockScore = (completedInBlock - wrongInBlock).coerceAtLeast(0)
+                val blockCompleted = blockIdx < state.currentBlockIndex || (blockIdx == state.currentBlockIndex && completedInBlock == block.items.size)
                 progressRepository.saveBlockProgress(
                     topicId = topicId, unitId = unitId,
                     blockIndex = blockIdx, score = blockScore,
                     totalItems = block.items.size, completed = blockCompleted
                 )
+                itemsBeforeBlock += block.items.size
             }
         }
     }
@@ -620,10 +629,18 @@ class UnitExerciseViewModel @Inject constructor(
             val state = _uiState.value
             val items = if (completed) state.totalItems else state.completedItems
             val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
+            var itemsBeforeBlock = 0
             for ((blockIdx, block) in state.blocks.withIndex()) {
+                val completedInBlock = if (blockIdx < state.currentBlockIndex) {
+                    block.items.size
+                } else if (blockIdx == state.currentBlockIndex) {
+                    (state.completedItems - itemsBeforeBlock).coerceIn(0, block.items.size)
+                } else {
+                    0
+                }
                 val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
-                val blockScore = (block.items.size - wrongInBlock).coerceAtLeast(0)
-                val blockCompleted = blockScore == block.items.size
+                val blockScore = (completedInBlock - wrongInBlock).coerceAtLeast(0)
+                val blockCompleted = blockIdx < state.currentBlockIndex || (blockIdx == state.currentBlockIndex && completedInBlock == block.items.size)
                 blockEntries.add(
                     com.appenglish.data.remote.dto.BlockProgressEntryDto(
                         topicId = topicId,
