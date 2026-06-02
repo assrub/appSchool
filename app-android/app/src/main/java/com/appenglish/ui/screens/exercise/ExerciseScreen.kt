@@ -245,27 +245,24 @@ private fun ExerciseContent(
         }
     }
 
-    val hasTheory = uiState.currentBlockTheory != null || uiState.unitTheory != null
-    val selectedTab = if (hasTheory) uiState.selectedTab else 0
+    val selectedTab = uiState.selectedTab
 
     Column(modifier = modifier.fillMaxSize()) {
-        if (hasTheory) {
-            TabRow(selectedTabIndex = selectedTab) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { viewModel.selectTab(0) },
-                    text = { Text("EJERCICIOS", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
-                )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { viewModel.selectTab(1) },
-                    text = { Text("TEORÍA", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
-                )
-            }
+        TabRow(selectedTabIndex = selectedTab) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { viewModel.selectTab(0) },
+                text = { Text("EJERCICIOS", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { viewModel.selectTab(1) },
+                text = { Text("TEORÍA", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
+            )
         }
 
-        when {
-            selectedTab == 0 || !hasTheory -> {
+        when (selectedTab) {
+            0 -> {
                 val itemType = viewModel.getItemType()
                 if (itemType == "multiple-choice") {
                     MultipleChoiceCard(item = currentItem!!, isCorrect = uiState.isCorrect, showingAnswer = uiState.showingAnswer, onSelect = { idx -> viewModel.selectMcOption(idx) })
@@ -313,10 +310,12 @@ private fun ExerciseContent(
                 )
                 }
             }
-            selectedTab == 1 && hasTheory -> {
-                uiState.currentBlockTheory?.let { blockTheory ->
+            1 -> {
+                val blockTheory = uiState.currentBlockTheory
+                val unitTheory = uiState.unitTheory
+                if (blockTheory != null) {
                     ExerciseTheoryTabContent(theory = blockTheory)
-                } ?: uiState.unitTheory?.let { unitTheory ->
+                } else if (unitTheory != null) {
                     ExerciseTheoryTabContent(theory = BlockTheory(
                         text = unitTheory.text,
                         sections = unitTheory.sections,
@@ -325,6 +324,10 @@ private fun ExerciseContent(
                         tips = unitTheory.tips,
                         blocks = unitTheory.blocks
                     ))
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No hay teoría disponible", style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+                    }
                 }
             }
         }
