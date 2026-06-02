@@ -54,11 +54,19 @@ El script lee `version.properties` (archivo unico para version), incrementa `ver
 
 **Estructura de version.properties:**
 ```
-versionCode=29
-versionName=3.2.0
+versionCode=74
+versionName=3.2.45
 ```
 
 Tanto `build.gradle.kts` como `backend/main.py` leen de este archivo. **No hay que modificar version manualmente en ningun lado.**
+
+> [!IMPORTANT]
+> Si compilaste manualmente (sin el script), **antes de pushear** debés copiar:
+> ```bash
+> cp app-android/app/build/outputs/apk/release/app-release.apk backend/uploads/app-release.apk
+> cp version.properties backend/version.properties
+> ```
+> Si no hacés esto, el VPS no servirá el nuevo APK ni la versión actualizada, y la app **no se actualizará**.
 
 ---
 
@@ -187,6 +195,9 @@ Panel admin en: http://2.25.142.139:9000
 | PUT | `/admin/topics/{id}/lock-all` | Bloquear todas las unidades |
 | PUT | `/admin/topics/{id}/unlock-all` | Desbloquear todas las unidades |
 | POST | `/admin/topics/{id}/reset-all` | Resetear progreso del tema |
+| DELETE | `/admin/units/{id}?hard=true` | Eliminar unidad (hard delete con bloques e items) |
+| DELETE | `/admin/blocks/{id}?hard=true` | Eliminar bloque (hard delete con items) |
+| DELETE | `/admin/items/{id}?hard=true` | Eliminar item (hard delete) |
 
 ---
 
@@ -194,12 +205,19 @@ Panel admin en: http://2.25.142.139:9000
 
 ### Compilar
 
+**Recomendado:** usar el script automatico (auto-incrementa version, compila, copia APK y version.properties):
+```bash
+./tools/bump-and-build.sh --push
+```
+
+**Manual** (no incrementa version, hay que copiar archivos manualmente):
 ```bash
 cd app-android
 JAVA_HOME="$(pwd)/../tools/jdk" ANDROID_SDK_ROOT="$(pwd)/../tools/android-sdk" ./gradlew assembleRelease
+# IMPORTANTE: copiar APK y version.properties antes de pushear
+cp app/build/outputs/apk/release/app-release.apk ../backend/uploads/app-release.apk
+cp ../version.properties ../backend/version.properties
 ```
-
-O usar el script automatico: `./tools/bump-and-build.sh --push`
 
 ### Arquitectura (MVVM + Repository Pattern)
 
@@ -235,6 +253,21 @@ app-android/app/src/main/java/com/appenglish/
 │   └── components/            # TtsButton, TranslateableText, TranslateableText (SoundHelper)
 └── util/                      # ApiConfig, UpdateManager, Extensions
 ```
+
+### Tipos de Ejercicios (6 tipos)
+
+| Tipo | Descripcion |
+|------|------------|
+| `fill-blank` | Completar el hueco arrastrando la palabra correcta |
+| `multiple-choice` | Seleccionar la respuesta correcta entre opciones |
+| `true-false` | Determinar si la afirmacion es verdadera o falsa |
+| `reorder` | Ordenar palabras para formar la oracion correcta |
+| `matching` | Unir pares de elementos (columna izquierda ↔ derecha) |
+| `listening` | Escuchar audio y escribir lo que se escucha |
+
+### Progreso por Bloque
+
+Cada bloque tiene su propia barra de progreso independiente. Al cambiar de bloque, la barra se reinicia para reflejar el progreso de ese bloque especifico.
 
 ### Navegacion
 
