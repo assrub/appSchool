@@ -187,7 +187,12 @@ private fun BlocksListContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                Text("${block.items.size} ejercicios", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    if (progress != null) "${progress.score}/${progress.totalItems} ejercicios"
+                                    else "${block.items.size} ejercicios",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                             if (isComplete) {
                                 Icon(Icons.Default.CheckCircle, "Completado", tint = CorrectGreen, modifier = Modifier.size(28.dp))

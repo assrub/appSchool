@@ -495,6 +495,7 @@ class UnitExerciseViewModel @Inject constructor(
         if (correct) {
             val newScore = state.score + 1; val newCompleted = state.completedItems + 1
             _uiState.value = state.copy(userInput = userAnswer, isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
+            saveProgressLocal()
             if (item.itemType == "fill-blank") {
                 val fullSentence = item.sentence.replace(Regex("_{2,}"), item.answer)
                 viewModelScope.launch { delay(600); _uiState.value = _uiState.value.copy(playingFullAudio = true, fullSentenceToPlay = fullSentence) }
@@ -559,28 +560,36 @@ class UnitExerciseViewModel @Inject constructor(
 
     private val allAnswerOptions = listOf("I am","I'm not","he is","he isn't","she is","she isn't","it is","it isn't","you are","you aren't","we are","we aren't","they are","they aren't","am not","isn't","aren't","Am","Is","Are")
 
-    private fun saveProgress(completed: Boolean = false) {
+    private fun saveProgressLocal() {
         viewModelScope.launch {
             val state = _uiState.value
-            val items = if (completed) state.totalItems else state.completedItems
             progressRepository.saveProgress(
                 topicId = topicId, unitId = unitId,
-                completedItems = items,
-                score = state.score, totalItems = state.totalItems, completed = completed
+                completedItems = state.completedItems,
+                score = state.score, totalItems = state.totalItems, completed = false
             )
-
-            val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
             for ((blockIdx, block) in state.blocks.withIndex()) {
                 val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
                 val blockScore = (block.items.size - wrongInBlock).coerceAtLeast(0)
                 val blockCompleted = blockScore == block.items.size
                 progressRepository.saveBlockProgress(
                     topicId = topicId, unitId = unitId,
-                    blockIndex = blockIdx,
-                    score = blockScore,
-                    totalItems = block.items.size,
-                    completed = blockCompleted
+                    blockIndex = blockIdx, score = blockScore,
+                    totalItems = block.items.size, completed = blockCompleted
                 )
+            }
+        }
+    }
+
+    private fun saveProgress(completed: Boolean = false) {
+        viewModelScope.launch {
+            val state = _uiState.value
+            val items = if (completed) state.totalItems else state.completedItems
+            val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
+            for ((blockIdx, block) in state.blocks.withIndex()) {
+                val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
+                val blockScore = (block.items.size - wrongInBlock).coerceAtLeast(0)
+                val blockCompleted = blockScore == block.items.size
                 blockEntries.add(
                     com.appenglish.data.remote.dto.BlockProgressEntryDto(
                         topicId = topicId,

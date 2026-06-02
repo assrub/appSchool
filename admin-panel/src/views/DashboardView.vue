@@ -195,15 +195,17 @@ async function fetchData() {
   error.value = ''
   try {
     const [subjRes, usersRes, metricsRes] = await Promise.all([
-      api.get('/admin/subjects'),
-      api.get('/admin/users'),
-      api.get('/admin/progress/dashboard-metrics')
+      api.get('/admin/subjects').catch(() => ({ data: [] })),
+      api.get('/admin/users').catch(() => ({ data: [] })),
+      api.get('/admin/progress/dashboard-metrics').catch(() => ({ data: { totalUsers: 0, totalProgress: 0, completedUnits: 0, activeToday: 0, avgCompletion: 0 } }))
     ])
     subjects.value = subjRes.data || []
     users.value = usersRes.data || []
     metrics.value = metricsRes.data || { totalUsers: 0, totalProgress: 0, completedUnits: 0, activeToday: 0, avgCompletion: 0 }
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Error al cargar'
+    if (subjects.value.length === 0) {
+      error.value = e.response?.data?.detail || 'Error al cargar'
+    }
   } finally {
     loading.value = false
   }

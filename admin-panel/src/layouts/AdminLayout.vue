@@ -54,10 +54,23 @@
           rounded="lg"
           class="mb-1"
         />
+      </v-list>
+
+      <v-divider v-if="!rail" />
+
+      <v-list nav density="compact">
+        <v-list-subheader v-if="!rail" class="text-caption text-grey-lighten-2">Herramientas</v-list-subheader>
         <v-list-item
           prepend-icon="mdi-wrench"
           title="Sistema"
           to="/system"
+          rounded="lg"
+          class="mb-1"
+        />
+        <v-list-item
+          prepend-icon="mdi-script-text-outline"
+          title="Scripts"
+          to="/script"
           rounded="lg"
           class="mb-1"
         />
