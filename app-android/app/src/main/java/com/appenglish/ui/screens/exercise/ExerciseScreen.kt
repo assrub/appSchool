@@ -567,14 +567,23 @@ private fun ExerciseTabContent(
                                         onDragStart = { _ ->
                                             onDraggingWordChange(option)
                                             dragDelta = Offset.Zero
-                                            onIsOverDropZoneChange(true)
+                                            onIsOverDropZoneChange(false)
                                         },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
                                             dragDelta += dragAmount
+                                            val wordRect = Rect(
+                                                left = localOrigin.left + dragDelta.x,
+                                                top = localOrigin.top + dragDelta.y,
+                                                right = localOrigin.right + dragDelta.x,
+                                                bottom = localOrigin.bottom + dragDelta.y
+                                            )
+                                            onIsOverDropZoneChange(wordRect.overlaps(dropZoneRect))
                                         },
                                         onDragEnd = {
-                                            onSelectOption(option)
+                                            if (isOverDropZone) {
+                                                onSelectOption(option)
+                                            }
                                             onDraggingWordChange(null)
                                             onIsOverDropZoneChange(false)
                                             dragDelta = Offset.Zero
