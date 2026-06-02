@@ -76,6 +76,20 @@ class BlocksViewModel @Inject constructor(
         }
     }
 
+    fun redoBlock(blockIndex: Int) {
+        viewModelScope.launch {
+            val s = _uiState.value
+            if (s.blocks.isNotEmpty()) {
+                progressRepository.saveBlockProgress(
+                    topicId = s.topicId, unitId = s.unitId,
+                    blockIndex = blockIndex, score = 0,
+                    totalItems = s.blocks[blockIndex].items.size, completed = false
+                )
+                refreshProgress()
+            }
+        }
+    }
+
     fun loadBlocks() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)

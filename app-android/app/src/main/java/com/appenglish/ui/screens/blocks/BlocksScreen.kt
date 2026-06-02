@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,12 +41,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -134,13 +139,68 @@ fun BlocksScreen(
                     }
                 }
                 selectedTab == 0 || !hasUnitTheory -> {
+                    var clickBlockIdx by remember { mutableStateOf<Int?>(null) }
+
                     BlocksListContent(
                         blocks = uiState.blocks,
                         blockProgress = uiState.blockProgress,
                         topicId = uiState.topicId,
                         unitId = uiState.unitId,
-                        onBlockClick = onBlockClick
+                        onBlockClick = { blockIdx ->
+                            clickBlockIdx = blockIdx
+                        }
                     )
+
+                    clickBlockIdx?.let { blockIdx ->
+                        val bp = uiState.blockProgress[blockIdx]
+                        val isComplete = bp?.completed == true
+                        val wrongCount = if (isComplete && bp != null) (bp.totalItems - bp.score).coerceAtLeast(0) else 0
+
+                        if (isComplete && wrongCount > 0) {
+                            AlertDialog(
+                                onDismissRequest = { clickBlockIdx = null },
+                                title = { Text("Bloque con errores") },
+                                text = { Text("¿Querés rehacer solo los $wrongCount errores o todo el bloque?") },
+                                confirmButton = {
+                                    TextButton(onClick = { clickBlockIdx = null; onBlockClick(uiState.topicId, uiState.unitId) }) {
+                                        Text("Solo errores", color = WarningOrange)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = {
+                                        viewModel.redoBlock(blockIdx)
+                                        clickBlockIdx = null
+                                        onBlockClick(uiState.topicId, uiState.unitId)
+                                    }) {
+                                        Text("Rehacer todo", color = Primary)
+                                    }
+                                }
+                            )
+                        } else if (isComplete) {
+                            AlertDialog(
+                                onDismissRequest = { clickBlockIdx = null },
+                                title = { Text("Bloque completado") },
+                                text = { Text("¿Querés rehacer todo el bloque?") },
+                                confirmButton = {
+                                    TextButton(onClick = { clickBlockIdx = null; onBlockClick(uiState.topicId, uiState.unitId) }) {
+                                        Text("Repetir", color = Primary)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = {
+                                        viewModel.redoBlock(blockIdx)
+                                        clickBlockIdx = null
+                                        onBlockClick(uiState.topicId, uiState.unitId)
+                                    }) {
+                                        Text("Rehacer desde 0", color = WarningOrange)
+                                    }
+                                }
+                            )
+                        } else {
+                            onBlockClick(uiState.topicId, uiState.unitId)
+                            clickBlockIdx = null
+                        }
+                    }
                 }
                 selectedTab == 1 && hasUnitTheory -> {
                     TheoryTabContent(theory = uiState.unitTheory!!)
@@ -156,7 +216,7 @@ private fun BlocksListContent(
     blockProgress: Map<Int, BlockProgressData>,
     topicId: String,
     unitId: String,
-    onBlockClick: (String, String) -> Unit
+    onBlockClick: (Int) -> Unit
 ) {
     if (blocks.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -191,7 +251,7 @@ private fun BlocksListContent(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onBlockClick(topicId, unitId) },
+                        .clickable { onBlockClick(idx) },
                     shape = MaterialTheme.shapes.large,
                     elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
                     colors = CardDefaults.cardColors(
@@ -209,40 +269,53 @@ private fun BlocksListContent(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            if (isComplete) {
-                                Icon(Icons.Default.CheckCircle, "Completado", tint = CorrectGreen, modifier = Modifier.size(28.dp))
-                            } else {
-                                Icon(Icons.Default.PlayArrow, "Ir", tint = Primary)
-                            }
                         }
 
                         if (progress != null) {
-                            Spacer(Modifier.height(10.dp))
+                            Spacer(Modifier.height(8.dp))
                             LinearProgressIndicator(
                                 progress = { animatedProgress },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = barColor,
+                                    .height(10.dp)
+                                    .clip(RoundedCornerShape(5.dp)),
+                                color = if (isComplete && (progress.totalItems - progress.score) > 0) WarningOrange else barColor,
                                 trackColor = barColor.copy(alpha = 0.15f)
                             )
                             Spacer(Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "${(animatedProgress * 100).toInt()}%",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = barColor,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "${progress.score}/${progress.totalItems}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                if (isComplete) {
+                                    val wrongCount = (progress.totalItems - progress.score).coerceAtLeast(0)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("✅ ", style = MaterialTheme.typography.labelSmall)
+                                        Text("${progress.score}", style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("❌ ", style = MaterialTheme.typography.labelSmall)
+                                        Text("${wrongCount}", style = MaterialTheme.typography.labelSmall, color = ErrorRed, fontWeight = FontWeight.Bold)
+                                    }
+                                    Text(
+                                        "${(progress.score.toFloat() / progress.totalItems * 100).toInt()}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = CorrectGreen,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        "${(animatedProgress * 100).toInt()}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = barColor,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "${progress.score}/${progress.totalItems}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
