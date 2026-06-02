@@ -1944,42 +1944,87 @@ async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), 
     # Get all units from content tables (even without progress)
     all_units = await db.execute(
         select(ExerciseUnit)
-        .options(selectinload(ExerciseUnit.blocks))
+        .options(
+            selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.items)
+        )
         .select_from(ExerciseUnit)
         .join(Topic)
         .where(Topic.is_active == True)
     )
     content_units = all_units.scalars().all()
 
-    # Group content units by topic
-    topic_units_map = {}
+    # Get block progress for this user
+    block_rows = (await db.execute(
+        select(BlockProgress).where(BlockProgress.user_id == user_id)
+    )).scalars().all()
+    block_map = {}
+    for bp in block_rows:
+        key = (bp.topic_id, bp.unit_id, bp.block_index)
+        block_map[key] = bp
+
+    # Answer stats per unit (correct/wrong counts)
+    all_answers = (await db.execute(
+        select(AnswerHistory).where(AnswerHistory.user_id == user_id)
+    )).scalars().all()
+    unit_stats = {}
+    for a in all_answers:
+        key = (a.topic_id, a.unit_id)
+        if key not in unit_stats:
+            unit_stats[key] = {"correct": 0, "wrong": 0, "total": 0}
+        if a.is_correct:
+            unit_stats[key]["correct"] += 1
+        else:
+            unit_stats[key]["wrong"] += 1
+        unit_stats[key]["total"] += 1
+
+    # Group content units by topic with full info
+    from collections import OrderedDict
+    topic_data = OrderedDict()
     for cu in content_units:
         tid = cu.topic_id
-        if tid not in topic_units_map:
-            topic_units_map[tid] = []
+        if tid not in topic_data:
+            # Get topic name
+            t_result = await db.execute(select(Topic).where(Topic.id == tid))
+            t = t_result.scalar_one_or_none()
+            topic_data[tid] = {
+                "topicId": tid,
+                "topicName": t.name if t else tid,
+                "units": []
+            }
         total_in_blocks = sum(len(b.items) for b in (cu.blocks or []))
-        topic_units_map[tid].append({
-            "unitId": cu.id,
-            "title": cu.title,
-            "totalItems": total_in_blocks,
-        })
+        p = progress_map.get(tid, {}).get(cu.id)
 
-    # Build progress_data = all content units + progress merge
-    progress_data = []
-    for topic_id, units in topic_units_map.items():
-        for u in units:
-            p = progress_map.get(topic_id, {}).get(u["unitId"])
-            progress_data.append({
-                "topicId": topic_id,
-                "unitId": u["unitId"],
-                "title": u["title"],
-                "completed": p.completed if p else False,
-                "score": p.score if p else 0,
-                "totalItems": u["totalItems"],
-                "completedItems": p.completed_items if p else 0,
-                "testScore": p.test_score if p else None,
-                "completedAt": p.completed_at.isoformat() if p and p.completed_at else None
+        # Block progress for this unit
+        unit_blocks = []
+        for bi, b in enumerate(cu.blocks or []):
+            bp_key = (tid, cu.id, bi)
+            bp = block_map.get(bp_key)
+            items_count = len(b.items)
+            unit_blocks.append({
+                "blockIndex": bi,
+                "title": b.title,
+                "score": bp.score if bp else 0,
+                "totalItems": items_count,
+                "completed": bp.completed if bp else False,
+                "wrongCount": (items_count - bp.score) if bp and bp.completed else 0
             })
+
+        stats = unit_stats.get((tid, cu.id), {"correct": 0, "wrong": 0, "total": 0})
+        topic_data[tid]["units"].append({
+            "unitId": cu.id,
+            "topicId": tid,
+            "title": cu.title,
+            "completed": p.completed if p else False,
+            "score": p.score if p else 0,
+            "totalItems": total_in_blocks,
+            "completedItems": p.completed_items if p else 0,
+            "testScore": p.test_score if p else None,
+            "completedAt": p.completed_at.isoformat() if p and p.completed_at else None,
+            "correctCount": stats["correct"],
+            "wrongCount": stats["wrong"],
+            "totalAttempts": stats["total"],
+            "blocks": unit_blocks
+        })
 
     errors_data = [{
         "id": e.id,
@@ -2000,7 +2045,11 @@ async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), 
         "durationSeconds": s.duration_seconds
     } for s in sessions]
 
-    return {"progress": progress_data, "errors": errors_data, "sessions": sessions_data}
+    return {
+        "topics": list(topic_data.values()),
+        "errors": errors_data,
+        "sessions": sessions_data
+    }
 
 
 # ── Redo ───────────────────────────────────────────────────

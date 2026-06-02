@@ -144,70 +144,53 @@
           <template v-else>
             <v-card rounded="lg" elevation="2" class="mb-4">
               <v-card-title class="d-flex align-center">
-                <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
+                <v-icon class="mr-2" color="primary">mdi-format-list-bulleted</v-icon>
                 Detalle por unidad
               </v-card-title>
 
-              <v-table v-if="progressData.progress?.length">
-                <thead>
-                  <tr>
-                    <th>Tema</th>
-                    <th>Unidad</th>
-                    <th>Progreso</th>
-                    <th>Puntaje</th>
-                    <th>Test</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="p in progressData.progress" :key="p.topicId + p.unitId">
-                    <td class="font-weight-medium">{{ p.topicId }}</td>
-                    <td>{{ p.unitId }}</td>
-                    <td style="min-width: 120px">
-                      <v-progress-linear
-                        :model-value="p.totalItems ? (p.completedItems / p.totalItems) * 100 : 0"
-                        :color="p.completed ? 'success' : 'primary'"
-                        height="8"
-                        class="rounded"
-                      />
-                      <div class="text-caption text-grey mt-1">{{ p.completedItems }}/{{ p.totalItems }} items</div>
-                    </td>
-                    <td>
-                      <v-chip
-                        :color="p.score >= (p.totalItems * 0.7) ? 'success' : 'warning'"
-                        size="small"
-                        variant="tonal"
-                      >
-                        {{ p.score }}/{{ p.totalItems }}
-                      </v-chip>
-                    </td>
-                    <td>
-                      <v-chip
-                        v-if="p.testScore != null"
-                        :color="p.testScore >= 14 ? 'success' : 'warning'"
-                        size="small"
-                        variant="tonal"
-                      >
-                        {{ p.testScore }}/20
-                      </v-chip>
-                      <span v-else class="text-grey">-</span>
-                    </td>
-                    <td>
-                      <v-btn
-                        icon="mdi-restart"
-                        variant="text"
-                        size="small"
-                        color="orange"
-                        @click="confirmRedoUnit(p)"
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-              <v-card-text v-else class="text-center text-grey py-6">
+              <v-card-text v-if="!progressData.topics?.length" class="text-center text-grey py-6">
                 <v-icon size="48" class="mb-2">mdi-clipboard-text-off</v-icon>
                 <p>Sin datos de progreso registrados</p>
               </v-card-text>
+
+              <div v-else>
+                <div v-for="topic in progressData.topics" :key="topic.topicId" class="pa-4" style="border-bottom: 1px solid #e0e0e0;">
+                  <h3 class="text-subtitle-1 font-weight-bold mb-2 text-primary">
+                    <v-icon class="mr-1">mdi-book-open-page-variant</v-icon>
+                    {{ topic.topicName }}
+                  </h3>
+
+                  <div v-for="u in topic.units" :key="u.unitId" class="ml-2 mb-3 pa-3 rounded" :style="{ background: u.completed ? '#E8F5E9' : '#FAFAFA' }">
+                    <div class="d-flex align-center mb-1">
+                      <div class="flex-grow-1">
+                        <div class="text-body-2 font-weight-medium">{{ u.title || u.unitId }}</div>
+                        <div class="text-caption text-grey">
+                          {{ u.completedItems }}/{{ u.totalItems }} ejercicios
+                          <template v-if="u.completed"> ✅ Completado</template>
+                          <template v-if="u.totalAttempts > 0">
+                            ✅ {{ u.correctCount }} ❌ {{ u.wrongCount }}
+                          </template>
+                        </div>
+                      </div>
+                      <v-chip v-if="u.testScore != null" :color="u.testScore >= 14 ? 'success' : 'warning'" size="x-small" variant="tonal" class="mr-1">
+                        Test {{ u.testScore }}/20
+                      </v-chip>
+                      <v-btn icon="mdi-restart" variant="text" size="x-small" color="orange" @click="confirmRedoUnit(u)" />
+                    </div>
+
+                    <div v-for="b in u.blocks" :key="b.blockIndex" class="d-flex align-center ml-4 py-1">
+                      <v-icon size="14" :color="b.completed ? 'success' : 'grey'" class="mr-1">mdi-circle-small</v-icon>
+                      <span class="text-caption flex-grow-1">{{ b.title || 'Bloque ' + (b.blockIndex + 1) }}</span>
+                      <span v-if="b.completed" class="text-caption">
+                        <span class="text-success">✅ {{ b.score }}</span>
+                        <span v-if="b.wrongCount > 0" class="text-error ml-1">❌ {{ b.wrongCount }}</span>
+                        <span v-else class="text-success ml-1">✨ perfecto</span>
+                      </span>
+                      <span v-else class="text-caption text-grey">{{ b.score }}/{{ b.totalItems }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </v-card>
 
             <v-card v-if="progressData.errors?.length" rounded="lg" elevation="2" class="mb-4">
@@ -437,7 +420,7 @@ async function selectUser(user) {
     const { data } = await api.get(`/admin/progress/${user.userId}/detail`)
     progressData.value = data
   } catch {
-    progressData.value = { progress: [], errors: [], sessions: [] }
+    progressData.value = data || { topics: [], errors: [], sessions: [] }
   } finally {
     loadingDetail.value = false
   }
