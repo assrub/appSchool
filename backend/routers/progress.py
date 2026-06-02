@@ -50,93 +50,93 @@ async def sync_progress(
     request: ProgressSyncRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    synced_count = 0
-    now = datetime.now(timezone.utc)
-    user_id = int(request.deviceId)
+    import traceback
+    try:
+        synced_count = 0
+        now = datetime.now(timezone.utc)
+        user_id = int(request.deviceId)
 
-    for entry in request.progress:
-        result = await db.execute(
-            select(Progress).where(
-                Progress.user_id == user_id,
-                Progress.topic_id == entry.topicId,
-                Progress.unit_id == entry.unitId,
+        for entry in request.progress:
+            result = await db.execute(
+                select(Progress).where(
+                    Progress.user_id == user_id,
+                    Progress.topic_id == entry.topicId,
+                    Progress.unit_id == entry.unitId,
+                )
             )
-        )
-        existing = result.scalar_one_or_none()
+            existing = result.scalar_one_or_none()
 
-        if existing:
-            existing.completed = entry.completed
-            existing.score = entry.score
-            existing.total_items = entry.totalItems
-            existing.completed_items = entry.completedItems
-            existing.test_score = entry.testScore
-            if entry.completedAt:
-                existing.completed_at = entry.completedAt
-        else:
-            new_progress = Progress(
-                user_id=user_id,
-                topic_id=entry.topicId,
-                unit_id=entry.unitId,
-                completed=entry.completed,
-                score=entry.score,
-                total_items=entry.totalItems,
-                completed_items=entry.completedItems,
-                test_score=entry.testScore,
-                started_at=now,
-                completed_at=entry.completedAt,
+            if existing:
+                existing.completed = entry.completed
+                existing.score = entry.score
+                existing.total_items = entry.totalItems
+                existing.completed_items = entry.completedItems
+                existing.test_score = entry.testScore
+                if entry.completedAt:
+                    existing.completed_at = entry.completedAt
+            else:
+                new_progress = Progress(
+                    user_id=user_id,
+                    topic_id=entry.topicId,
+                    unit_id=entry.unitId,
+                    completed=entry.completed,
+                    score=entry.score,
+                    total_items=entry.totalItems,
+                    completed_items=entry.completedItems,
+                    test_score=entry.testScore,
+                    started_at=now,
+                    completed_at=entry.completedAt,
+                )
+                db.add(new_progress)
+
+            synced_count += 1
+
+        for bp_entry in request.blockProgress:
+            result = await db.execute(
+                select(BlockProgress).where(
+                    BlockProgress.user_id == user_id,
+                    BlockProgress.topic_id == bp_entry.topicId,
+                    BlockProgress.unit_id == bp_entry.unitId,
+                    BlockProgress.block_index == bp_entry.blockIndex,
+                )
             )
-            db.add(new_progress)
+            existing_bp = result.scalar_one_or_none()
 
-        synced_count += 1
+            if existing_bp:
+                if bp_entry.score > existing_bp.score:
+                    existing_bp.score = bp_entry.score
+                existing_bp.completed = bp_entry.completed
+                existing_bp.total_items = bp_entry.totalItems
+                if bp_entry.completedAt:
+                    existing_bp.completed_at = bp_entry.completedAt
+            else:
+                new_bp = BlockProgress(
+                    user_id=user_id,
+                    topic_id=bp_entry.topicId,
+                    unit_id=bp_entry.unitId,
+                    block_index=bp_entry.blockIndex,
+                    completed=bp_entry.completed,
+                    score=bp_entry.score,
+                    total_items=bp_entry.totalItems,
+                    completed_at=bp_entry.completedAt,
+                )
+                db.add(new_bp)
 
-    for bp_entry in request.blockProgress:
-        result = await db.execute(
-            select(BlockProgress).where(
-                BlockProgress.user_id == user_id,
-                BlockProgress.topic_id == bp_entry.topicId,
-                BlockProgress.unit_id == bp_entry.unitId,
-                BlockProgress.block_index == bp_entry.blockIndex,
-            )
-        )
-        existing_bp = result.scalar_one_or_none()
+            synced_count += 1
 
-        if existing_bp:
-            if bp_entry.score > existing_bp.score:
-                existing_bp.score = bp_entry.score
-            existing_bp.completed = bp_entry.completed
-            existing_bp.total_items = bp_entry.totalItems
-            if bp_entry.completedAt:
-                existing_bp.completed_at = bp_entry.completedAt
-        else:
-            new_bp = BlockProgress(
-                user_id=user_id,
-                topic_id=bp_entry.topicId,
-                unit_id=bp_entry.unitId,
-                block_index=bp_entry.blockIndex,
-                completed=bp_entry.completed,
-                score=bp_entry.score,
-                total_items=bp_entry.totalItems,
-                completed_at=bp_entry.completedAt,
-            )
-            db.add(new_bp)
-
-        synced_count += 1
-
-    await db.commit()
-
-    from routers.websocket_manager import ws_manager
-    await ws_manager.broadcast({
-        "type": "progress_synced",
-        "userId": user_id,
-        "syncedCount": synced_count,
-        "timestamp": now.isoformat()
-    })
-
-    return ProgressSyncResponse(
-        status="ok",
-        syncedAt=now,
-        syncedCount=synced_count,
-    )
+        await db.commit()
+        from routers.websocket_manager import ws_manager
+        await ws_manager.broadcast({
+            "type": "progress_synced",
+            "userId": user_id,
+            "syncedCount": synced_count,
+            "timestamp": now.isoformat()
+        })
+        return ProgressSyncResponse(status="ok", syncedAt=now, syncedCount=synced_count)
+    except Exception as e:
+        import logging
+        logging.error(f"Sync error: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{device_id}", response_model=ProgressResponse)
