@@ -41,13 +41,6 @@
           class="mb-1"
         />
         <v-list-item
-          prepend-icon="mdi-script-text"
-          title="Scripts"
-          to="/script"
-          rounded="lg"
-          class="mb-1"
-        />
-        <v-list-item
           prepend-icon="mdi-account-group"
           title="Usuarios"
           to="/users"

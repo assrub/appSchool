@@ -159,7 +159,7 @@ const loading = ref(true)
 const error = ref('')
 const metrics = ref({ totalUsers: 0, totalProgress: 0, completedUnits: 0, activeToday: 0, avgCompletion: 0 })
 
-const totalTopics = computed(() => subjects.value.reduce((acc, s) => acc + (s.topicsCount || 0), 0))
+const totalTopics = computed(() => subjects.value.reduce((acc, s) => acc + (s.topicsCount || s.topics_count || 0), 0))
 const totalUsers = computed(() => users.value.length)
 const activeUnits = computed(() => subjects.value.reduce((acc, s) => {
   return acc + (s.topicsCount || 0) * 3

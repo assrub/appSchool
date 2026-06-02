@@ -494,8 +494,9 @@ class UnitExerciseViewModel @Inject constructor(
             isCorrect = correct
         ))
 
+        val newCompleted = state.completedItems + 1
         if (correct) {
-            val newScore = state.score + 1; val newCompleted = state.completedItems + 1
+            val newScore = state.score + 1
             _uiState.value = state.copy(userInput = userAnswer, isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
             saveProgressLocal()
             triggerDebouncedSync()
@@ -505,7 +506,9 @@ class UnitExerciseViewModel @Inject constructor(
             }
         } else {
             val wrong = WrongAnswer(blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex, sentence = item.sentence, givenAnswer = userAnswer, correctAnswer = item.answer)
-            _uiState.value = state.copy(isCorrect = false, feedback = Feedback("❌ Incorrecto", false), showAcceptButton = true, wrongItems = state.wrongItems + wrong)
+            _uiState.value = state.copy(isCorrect = false, feedback = Feedback("❌ Incorrecto", false), showAcceptButton = true, wrongItems = state.wrongItems + wrong, completedItems = newCompleted)
+            saveProgressLocal()
+            triggerDebouncedSync()
         }
     }
 
