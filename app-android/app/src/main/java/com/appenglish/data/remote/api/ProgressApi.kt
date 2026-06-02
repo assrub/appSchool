@@ -1,5 +1,6 @@
 package com.appenglish.data.remote.api
 
+import com.appenglish.data.remote.dto.AnswerBatchRequest
 import com.appenglish.data.remote.dto.ProgressSyncRequest
 import com.appenglish.data.remote.dto.ProgressSyncResponse
 import com.appenglish.data.remote.dto.ProgressResponse
@@ -14,4 +15,7 @@ interface ProgressApi {
 
     @GET("progress/{deviceId}")
     suspend fun getProgress(@Path("deviceId") deviceId: String): ProgressResponse
+
+    @POST("progress/answer")
+    suspend fun recordAnswers(@Body request: AnswerBatchRequest): Map<String, Any>
 }

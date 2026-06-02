@@ -3,6 +3,10 @@
     <div class="d-flex align-center mb-6">
       <h1 class="text-h4">Progreso de Estudiantes</h1>
       <v-spacer />
+      <v-chip :color="wsConnected ? 'success' : 'grey'" variant="tonal" size="small" class="mr-3">
+        <v-icon start size="14">{{ wsConnected ? 'mdi-wifi' : 'mdi-wifi-off' }}</v-icon>
+        {{ wsConnected ? 'En vivo' : 'Desconectado' }}
+      </v-chip>
       <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="fetchUsers" :loading="loadingUsers">
         Actualizar
       </v-btn>
@@ -340,8 +344,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject, watch } from 'vue'
 import api from '../api/client'
+import { useWebSocket } from '../composables/useWebSocket'
+
+const snackbar = inject('snackbar')
+
+const wsUrl = `ws://${window.location.hostname}:8000/ws/progress`
+const { connected: wsConnected, lastMessage: wsMessage } = useWebSocket(wsUrl)
+
+watch(wsMessage, (msg) => {
+  if (!msg) return
+  if (msg.type === 'progress_synced' || msg.type === 'answers_recorded') {
+    fetchUsers()
+    if (selectedUser.value) selectUser(selectedUser.value)
+  }
+})
 
 const snackbar = inject('snackbar')
 

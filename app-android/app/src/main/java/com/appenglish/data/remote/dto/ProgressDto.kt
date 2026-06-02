@@ -69,3 +69,16 @@ data class BlockProgressDto(
     val totalItems: Int,
     val completedAt: String? = null
 )
+
+data class AnswerEntryDto(
+    val topicId: String,
+    val unitId: String,
+    val givenAnswer: String,
+    val correctAnswer: String,
+    val isCorrect: Boolean
+)
+
+data class AnswerBatchRequest(
+    val deviceId: String,
+    val answers: List<AnswerEntryDto>
+)

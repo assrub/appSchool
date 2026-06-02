@@ -1766,6 +1766,38 @@ async def assign_subject_users(subject_id: str, data: dict, db: AsyncSession = D
 
 # ── Analytics ──────────────────────────────────────────────
 
+@router.get("/progress/dashboard-metrics")
+async def get_dashboard_metrics(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from datetime import datetime, timedelta, timezone
+
+    total_users = (await db.execute(select(func.count(AppUser.id)))).scalar() or 0
+    total_progress = (await db.execute(select(func.count(Progress.id)))).scalar() or 0
+    completed_units = (await db.execute(select(func.count(Progress.id)).where(Progress.completed == True))).scalar() or 0
+
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    active_today = (await db.execute(
+        select(func.count(func.distinct(Progress.user_id)))
+        .where(Progress.completed_at >= today)
+    )).scalar() or 0
+
+    avg_completion = 0
+    if total_progress > 0:
+        result = (await db.execute(
+            select(func.avg(
+                func.cast(Progress.completed_items, func.Float) / func.cast(Progress.total_items, func.Float) * 100
+            )).where(Progress.total_items > 0)
+        )).scalar()
+        avg_completion = round(result or 0, 1)
+
+    return {
+        "totalUsers": total_users,
+        "totalProgress": total_progress,
+        "completedUnits": completed_units,
+        "activeToday": active_today,
+        "avgCompletion": avg_completion
+    }
+
+
 @router.get("/progress/{user_id}/analytics")
 async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     errors = (await db.execute(select(AnswerHistory).where(AnswerHistory.user_id == user_id, AnswerHistory.is_correct == False))).scalars().all()
@@ -1802,6 +1834,53 @@ async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin:
     accuracy = round(correct/total*100, 1) if total > 0 else 0
 
     return {"weakUnits": weak_units[:5], "strongUnits": strong_units[:5], "commonMistakes": common_mistakes, "overallAccuracy": accuracy, "totalAnswered": total, "totalCorrect": correct}
+
+
+@router.get("/progress/{user_id}/detail")
+async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    progress_rows = (await db.execute(select(Progress).where(Progress.user_id == user_id))).scalars().all()
+    errors = (await db.execute(
+        select(AnswerHistory)
+        .where(AnswerHistory.user_id == user_id, AnswerHistory.is_correct == False)
+        .order_by(AnswerHistory.answered_at.desc())
+        .limit(15)
+    )).scalars().all()
+    sessions = (await db.execute(
+        select(StudySession)
+        .where(StudySession.user_id == user_id)
+        .order_by(StudySession.started_at.desc())
+        .limit(10)
+    )).scalars().all()
+
+    progress_data = [{
+        "topicId": p.topic_id,
+        "unitId": p.unit_id,
+        "completed": p.completed,
+        "score": p.score,
+        "totalItems": p.total_items,
+        "completedItems": p.completed_items,
+        "testScore": p.test_score,
+        "completedAt": p.completed_at.isoformat() if p.completed_at else None
+    } for p in progress_rows]
+
+    errors_data = [{
+        "topicId": e.topic_id,
+        "unitId": e.unit_id,
+        "givenAnswer": e.given_answer,
+        "correctAnswer": e.correct_answer,
+        "answeredAt": e.answered_at.isoformat() if e.answered_at else None
+    } for e in errors]
+
+    sessions_data = [{
+        "topicId": s.topic_id,
+        "startedAt": s.started_at.isoformat() if s.started_at else None,
+        "endedAt": s.ended_at.isoformat() if s.ended_at else None,
+        "exercisesAttempted": s.exercises_attempted,
+        "exercisesCorrect": s.exercises_correct,
+        "durationSeconds": s.duration_seconds
+    } for s in sessions]
+
+    return {"progress": progress_data, "errors": errors_data, "sessions": sessions_data}
 
 
 # ── Redo ───────────────────────────────────────────────────

@@ -5,6 +5,8 @@ import com.appenglish.data.local.entity.BlockProgressEntity
 import com.appenglish.data.local.entity.ProgressEntity
 import com.appenglish.data.remote.api.AuthInterceptor
 import com.appenglish.data.remote.api.ProgressApi
+import com.appenglish.data.remote.dto.AnswerBatchRequest
+import com.appenglish.data.remote.dto.AnswerEntryDto
 import com.appenglish.data.remote.dto.BlockProgressEntryDto
 import com.appenglish.data.remote.dto.ProgressEntryDto
 import com.appenglish.data.remote.dto.ProgressSyncRequest
@@ -153,5 +155,9 @@ class ProgressRepository @Inject constructor(
 
     suspend fun getAllBlockProgress(topicId: String, unitId: String): List<BlockProgressEntity> {
         return dao.getAllBlockProgress(userId, topicId, unitId)
+    }
+
+    suspend fun recordAnswers(answers: List<AnswerEntryDto>): Result<Unit> = runCatching {
+        api.recordAnswers(AnswerBatchRequest(userId, answers))
     }
 }

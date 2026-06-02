@@ -3,12 +3,13 @@ import json
 import os
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from config import CONTENT_DIR
 from database import get_db
-from models import Progress, BlockProgress
+from models import Progress, BlockProgress, AnswerHistory
 from schemas.progress import (
     ProgressSyncRequest,
     ProgressSyncResponse,
@@ -122,6 +123,14 @@ async def sync_progress(
 
     await db.commit()
 
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_synced",
+        "userId": request.deviceId,
+        "syncedCount": synced_count,
+        "timestamp": now.isoformat()
+    })
+
     return ProgressSyncResponse(
         status="ok",
         syncedAt=now,
@@ -199,3 +208,48 @@ async def get_progress(
     ]
 
     return ProgressResponse(deviceId=device_id, subjects=subjects, blockProgress=block_progress)
+
+
+class AnswerEntry(BaseModel):
+    topicId: str
+    unitId: str
+    givenAnswer: str
+    correctAnswer: str
+    isCorrect: bool
+
+
+class AnswerBatchRequest(BaseModel):
+    deviceId: str
+    answers: list[AnswerEntry]
+
+
+@router.post("/answer")
+async def record_answers(
+    request: AnswerBatchRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    count = 0
+    for a in request.answers:
+        entry = AnswerHistory(
+            user_id=request.deviceId,
+            topic_id=a.topicId,
+            unit_id=a.unitId,
+            given_answer=a.givenAnswer,
+            correct_answer=a.correctAnswer,
+            is_correct=a.isCorrect,
+            answered_at=now,
+        )
+        db.add(entry)
+        count += 1
+    await db.commit()
+
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "answers_recorded",
+        "userId": request.deviceId,
+        "count": count,
+        "timestamp": now.isoformat()
+    })
+
+    return {"status": "ok", "recorded": count}

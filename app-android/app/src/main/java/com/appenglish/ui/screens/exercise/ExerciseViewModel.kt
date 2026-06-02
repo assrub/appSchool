@@ -5,6 +5,7 @@ import android.media.MediaPlayer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.appenglish.data.remote.dto.AnswerEntryDto
 import com.appenglish.data.repository.ContentRepository
 import com.appenglish.data.repository.ProgressRepository
 import com.appenglish.domain.model.UnitTheory
@@ -93,6 +94,8 @@ class UnitExerciseViewModel @Inject constructor(
 
     private val topicId: String = savedStateHandle.get<String>("topicId") ?: "verb-to-be"
     private val unitId: String = savedStateHandle.get<String>("unitId") ?: "affirmative"
+
+    private val pendingAnswers = mutableListOf<AnswerEntryDto>()
 
     private val _uiState = MutableStateFlow(UnitExerciseUiState())
     val uiState: StateFlow<UnitExerciseUiState> = _uiState.asStateFlow()
@@ -474,6 +477,15 @@ class UnitExerciseViewModel @Inject constructor(
         val state = _uiState.value
         val app = getApplication<Application>()
         viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, if (correct) state.soundCorrectUrl else state.soundIncorrectUrl, correct) }
+
+        pendingAnswers.add(AnswerEntryDto(
+            topicId = topicId,
+            unitId = unitId,
+            givenAnswer = userAnswer,
+            correctAnswer = item.answer,
+            isCorrect = correct
+        ))
+
         if (correct) {
             val newScore = state.score + 1; val newCompleted = state.completedItems + 1
             _uiState.value = state.copy(userInput = userAnswer, isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
@@ -590,6 +602,13 @@ class UnitExerciseViewModel @Inject constructor(
                     blockEntries = blockEntries
                 )
             } catch (_: Exception) {}
+
+            if (pendingAnswers.isNotEmpty()) {
+                try {
+                    progressRepository.recordAnswers(pendingAnswers.toList())
+                    pendingAnswers.clear()
+                } catch (_: Exception) {}
+            }
         }
     }
 

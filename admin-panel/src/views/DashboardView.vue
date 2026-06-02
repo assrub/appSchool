@@ -49,10 +49,48 @@
         <v-card rounded="lg" elevation="2">
           <v-card-item>
             <template #prepend>
-              <v-icon color="warning" size="40">mdi-lock-open</v-icon>
+              <v-icon color="info" size="40">mdi-account-check</v-icon>
             </template>
-            <v-card-title class="text-h5">{{ loading ? '...' : activeUnits }}</v-card-title>
-            <v-card-subtitle>Unidades activas</v-card-subtitle>
+            <v-card-title class="text-h5">{{ loading ? '...' : metrics.activeToday }}</v-card-title>
+            <v-card-subtitle>Activos hoy</v-card-subtitle>
+          </v-card-item>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <v-row v-if="!error">
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="2">
+          <v-card-item>
+            <template #prepend>
+              <v-icon color="success" size="36">mdi-check-circle</v-icon>
+            </template>
+            <v-card-title class="text-h5">{{ loading ? '...' : metrics.completedUnits }}</v-card-title>
+            <v-card-subtitle>Unidades completadas</v-card-subtitle>
+          </v-card-item>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="2">
+          <v-card-item>
+            <template #prepend>
+              <v-icon color="warning" size="36">mdi-chart-line</v-icon>
+            </template>
+            <v-card-title class="text-h5">{{ loading ? '...' : `${metrics.avgCompletion}%` }}</v-card-title>
+            <v-card-subtitle>Completitud promedio</v-card-subtitle>
+          </v-card-item>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" sm="4">
+        <v-card rounded="lg" elevation="2">
+          <v-card-item>
+            <template #prepend>
+              <v-icon color="primary" size="36">mdi-format-list-checks</v-icon>
+            </template>
+            <v-card-title class="text-h5">{{ loading ? '...' : metrics.totalProgress }}</v-card-title>
+            <v-card-subtitle>Registros de progreso</v-card-subtitle>
           </v-card-item>
         </v-card>
       </v-col>
@@ -119,6 +157,7 @@ const subjects = ref([])
 const users = ref([])
 const loading = ref(true)
 const error = ref('')
+const metrics = ref({ totalUsers: 0, totalProgress: 0, completedUnits: 0, activeToday: 0, avgCompletion: 0 })
 
 const totalTopics = computed(() => subjects.value.reduce((acc, s) => acc + (s.topicsCount || 0), 0))
 const totalUsers = computed(() => users.value.length)
@@ -155,12 +194,14 @@ async function fetchData() {
   loading.value = true
   error.value = ''
   try {
-    const [subjRes, usersRes] = await Promise.all([
+    const [subjRes, usersRes, metricsRes] = await Promise.all([
       api.get('/admin/subjects'),
-      api.get('/admin/users')
+      api.get('/admin/users'),
+      api.get('/admin/progress/dashboard-metrics')
     ])
     subjects.value = subjRes.data || []
     users.value = usersRes.data || []
+    metrics.value = metricsRes.data || { totalUsers: 0, totalProgress: 0, completedUnits: 0, activeToday: 0, avgCompletion: 0 }
   } catch (e) {
     error.value = e.response?.data?.detail || 'Error al cargar'
   } finally {
