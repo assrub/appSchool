@@ -24,7 +24,7 @@ class BlockProgressEntry(BaseModel):
 
 
 class ProgressSyncRequest(BaseModel):
-    deviceId: int
+    deviceId: str
     progress: list[ProgressEntry]
     blockProgress: list[BlockProgressEntry] = []
 
@@ -66,7 +66,7 @@ class ProgressSubjectResponse(BaseModel):
 
 
 class ProgressResponse(BaseModel):
-    deviceId: int
+    deviceId: str
     subjects: list[ProgressSubjectResponse]
     blockProgress: list[BlockProgressResponse] = []
     lastSyncedAt: datetime | None = None

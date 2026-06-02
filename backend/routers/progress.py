@@ -52,11 +52,12 @@ async def sync_progress(
 ):
     synced_count = 0
     now = datetime.now(timezone.utc)
+    user_id = int(request.deviceId)
 
     for entry in request.progress:
         result = await db.execute(
             select(Progress).where(
-                Progress.user_id == request.deviceId,
+                Progress.user_id == user_id,
                 Progress.topic_id == entry.topicId,
                 Progress.unit_id == entry.unitId,
             )
@@ -73,7 +74,7 @@ async def sync_progress(
                 existing.completed_at = entry.completedAt
         else:
             new_progress = Progress(
-                user_id=request.deviceId,
+                user_id=user_id,
                 topic_id=entry.topicId,
                 unit_id=entry.unitId,
                 completed=entry.completed,
@@ -91,7 +92,7 @@ async def sync_progress(
     for bp_entry in request.blockProgress:
         result = await db.execute(
             select(BlockProgress).where(
-                BlockProgress.user_id == request.deviceId,
+                BlockProgress.user_id == user_id,
                 BlockProgress.topic_id == bp_entry.topicId,
                 BlockProgress.unit_id == bp_entry.unitId,
                 BlockProgress.block_index == bp_entry.blockIndex,
@@ -108,7 +109,7 @@ async def sync_progress(
                 existing_bp.completed_at = bp_entry.completedAt
         else:
             new_bp = BlockProgress(
-                user_id=request.deviceId,
+                user_id=user_id,
                 topic_id=bp_entry.topicId,
                 unit_id=bp_entry.unitId,
                 block_index=bp_entry.blockIndex,
@@ -126,7 +127,7 @@ async def sync_progress(
     from routers.websocket_manager import ws_manager
     await ws_manager.broadcast({
         "type": "progress_synced",
-        "userId": request.deviceId,
+        "userId": user_id,
         "syncedCount": synced_count,
         "timestamp": now.isoformat()
     })
@@ -140,18 +141,19 @@ async def sync_progress(
 
 @router.get("/{device_id}", response_model=ProgressResponse)
 async def get_progress(
-    device_id: int,
+    device_id: str,
     db: AsyncSession = Depends(get_db),
 ):
+    uid = int(device_id)
     result = await db.execute(
-        select(Progress).where(Progress.user_id == device_id)
+        select(Progress).where(Progress.user_id == uid)
     )
     rows = result.scalars().all()
 
     block_rows = []
     try:
         bp_result = await db.execute(
-            select(BlockProgress).where(BlockProgress.user_id == device_id)
+            select(BlockProgress).where(BlockProgress.user_id == uid)
         )
         block_rows = bp_result.scalars().all()
     except Exception as e:
@@ -224,7 +226,7 @@ class AnswerEntry(BaseModel):
 
 
 class AnswerBatchRequest(BaseModel):
-    deviceId: int
+    deviceId: str
     answers: list[AnswerEntry]
 
 
@@ -234,10 +236,11 @@ async def record_answers(
     db: AsyncSession = Depends(get_db),
 ):
     now = datetime.now(timezone.utc)
+    user_id = int(request.deviceId)
     count = 0
     for a in request.answers:
         entry = AnswerHistory(
-            user_id=request.deviceId,
+            user_id=user_id,
             topic_id=a.topicId,
             unit_id=a.unitId,
             given_answer=a.givenAnswer,
@@ -252,7 +255,7 @@ async def record_answers(
     from routers.websocket_manager import ws_manager
     await ws_manager.broadcast({
         "type": "answers_recorded",
-        "userId": request.deviceId,
+        "userId": user_id,
         "count": count,
         "timestamp": now.isoformat()
     })
