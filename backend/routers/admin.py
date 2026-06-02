@@ -1921,11 +1921,11 @@ async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin:
 async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     progress_rows = (await db.execute(select(Progress).where(Progress.user_id == user_id))).scalars().all()
     errors = (await db.execute(
-        select(AnswerHistory)
-        .where(AnswerHistory.user_id == user_id, AnswerHistory.is_correct == False)
-        .order_by(AnswerHistory.answered_at.desc())
-        .limit(15)
-    )).scalars().all()
+    select(AnswerHistory)
+    .where(AnswerHistory.user_id == user_id, AnswerHistory.is_correct == False)
+    .order_by(AnswerHistory.answered_at.desc())
+    .limit(15)
+        )).scalars().all()
     sessions = (await db.execute(
         select(StudySession)
         .where(StudySession.user_id == user_id)
