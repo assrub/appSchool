@@ -66,7 +66,7 @@ class ProgressSubjectResponse(BaseModel):
 
 
 class ProgressResponse(BaseModel):
-    deviceId: str
+    deviceId: int
     subjects: list[ProgressSubjectResponse]
     blockProgress: list[BlockProgressResponse] = []
     lastSyncedAt: datetime | None = None
