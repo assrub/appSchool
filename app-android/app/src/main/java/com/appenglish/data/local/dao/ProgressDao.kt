@@ -26,13 +26,14 @@ interface ProgressDao {
     @Query("SELECT * FROM progress WHERE deviceId = :deviceId")
     fun observeAllProgress(deviceId: String): Flow<List<ProgressEntity>>
 
-    @Query("UPDATE progress SET completedItems = :completedItems, score = :score, completed = :completed, completedAt = :completedAt WHERE deviceId = :deviceId AND topicId = :topicId AND unitId = :unitId")
+    @Query("UPDATE progress SET completedItems = :completedItems, score = :score, totalItems = :totalItems, completed = :completed, completedAt = :completedAt WHERE deviceId = :deviceId AND topicId = :topicId AND unitId = :unitId")
     suspend fun updateProgress(
         deviceId: String,
         topicId: String,
         unitId: String,
         completedItems: Int,
         score: Int,
+        totalItems: Int,
         completed: Boolean,
         completedAt: Long?
     )

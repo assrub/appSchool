@@ -49,7 +49,9 @@ class ProgressRepository @Inject constructor(
                                 score = remoteScore,
                                 totalItems = unit.totalItems,
                                 completedItems = unit.completedItems,
-                                testScore = unit.testScore ?: existing?.testScore
+                                testScore = unit.testScore ?: existing?.testScore,
+                                startedAt = existing?.startedAt ?: System.currentTimeMillis(),
+                                completedAt = existing?.completedAt
                             )
                         )
                     }
@@ -67,7 +69,8 @@ class ProgressRepository @Inject constructor(
                         blockIndex = bp.blockIndex,
                         score = bp.score,
                         totalItems = bp.totalItems,
-                        completed = bp.completed
+                        completed = bp.completed,
+                        completedAt = existing?.completedAt
                     )
                 )
             }
@@ -90,6 +93,7 @@ class ProgressRepository @Inject constructor(
                 unitId = unitId,
                 completedItems = completedItems,
                 score = score,
+                totalItems = totalItems,
                 completed = completed,
                 completedAt = if (completed) System.currentTimeMillis() else null
             )

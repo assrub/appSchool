@@ -270,7 +270,7 @@
                       <div class="text-body-2 font-weight-medium">{{ w.unitId }}</div>
                       <div class="text-caption text-grey">{{ w.errorRate }}% errores ({{ w.totalErrors }} fallos)</div>
                     </div>
-                    <v-btn size="small" variant="tonal" color="orange" @click="confirmRedoUnitById(w.unitId)">
+                    <v-btn size="small" variant="tonal" color="orange" @click="confirmRedoUnitById(w.unitId, w.topicId)">
                       <v-icon start size="16">mdi-restart</v-icon>
                       Rehacer
                     </v-btn>
@@ -374,6 +374,7 @@ const resetting = ref(false)
 
 const redoDialog = ref(false)
 const unitToRedo = ref('')
+const unitToRedoTopic = ref('')
 const redoing = ref(false)
 
 const filteredUsers = computed(() => {
@@ -434,18 +435,20 @@ async function selectUser(user) {
 
 function confirmRedoUnit(p) {
   unitToRedo.value = p.unitId
+  unitToRedoTopic.value = p.topicId
   redoDialog.value = true
 }
 
-function confirmRedoUnitById(unitId) {
+function confirmRedoUnitById(unitId, topicId) {
   unitToRedo.value = unitId
+  unitToRedoTopic.value = topicId
   redoDialog.value = true
 }
 
 async function doRedoUnit() {
   redoing.value = true
   try {
-    await api.post(`/admin/progress/${selectedUser.value.userId}/${unitToRedo.value}/redo`)
+    await api.post(`/admin/progress/${selectedUser.value.userId}/${unitToRedoTopic.value}/${unitToRedo.value}/redo`)
     snackbar.success('Unidad marcada para rehacer')
     redoDialog.value = false
     await selectUser(selectedUser.value)
@@ -463,11 +466,7 @@ function confirmResetAll() {
 async function doResetAll() {
   resetting.value = true
   try {
-    for (const p of progressData.value.progress) {
-      try {
-        await api.delete(`/admin/progress/${selectedUser.value.userId}/${p.topicId}/${p.unitId}`)
-      } catch {}
-    }
+    await api.delete(`/admin/progress/${selectedUser.value.userId}/reset-all`)
     snackbar.success('Progreso reseteado')
     resetDialog.value = false
     await selectUser(selectedUser.value)

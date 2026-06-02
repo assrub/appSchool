@@ -312,6 +312,21 @@ async def reset_unit_progress(user_id: int, topic_id: str, unit_id: str, db: Asy
     return MessageResponse(message="Progress reset for user")
 
 
+@router.delete("/progress/{user_id}/reset-all", response_model=MessageResponse)
+async def reset_all_user_progress(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from sqlalchemy import delete as sqldelete
+    await db.execute(sqldelete(Progress).where(Progress.user_id == user_id))
+    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.user_id == user_id))
+    await db.execute(sqldelete(BlockProgress).where(BlockProgress.user_id == user_id))
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_reset",
+        "userId": user_id,
+    })
+    await db.commit()
+    return MessageResponse(message="All progress reset for user")
+
+
 @router.delete("/progress/{topic_id}/{unit_id}/reset-all-users", response_model=MessageResponse)
 async def reset_all_users_progress(topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     from sqlalchemy import delete as sqldelete
@@ -323,26 +338,23 @@ async def reset_all_users_progress(topic_id: str, unit_id: str, db: AsyncSession
 
 @router.get("/users/progress-summary")
 async def get_users_progress_summary(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    try:
-        users_result = await db.execute(select(AppUser).where(AppUser.is_active == True))
-        users = users_result.scalars().all()
-        result = []
-        for user in users:
-            progress_result = await db.execute(select(Progress).where(Progress.user_id == user.id))
-            progress_rows = progress_result.scalars().all()
-            total_units = len(progress_rows)
-            completed_units = sum(1 for p in progress_rows if p.completed)
-            result.append({
-                "userId": user.id,
-                "username": user.username,
-                "displayName": user.display_name,
-                "totalUnits": total_units,
-                "completedUnits": completed_units,
-                "percentComplete": round((completed_units / total_units * 100) if total_units > 0 else 0, 1),
-            })
-        return result
-    except Exception as e:
-        return [{"userId": 0, "username": "error", "displayName": str(e), "totalUnits": 0, "completedUnits": 0, "percentComplete": 0}]
+    users_result = await db.execute(select(AppUser).where(AppUser.is_active == True))
+    users = users_result.scalars().all()
+    result = []
+    for user in users:
+        progress_result = await db.execute(select(Progress).where(Progress.user_id == user.id))
+        progress_rows = progress_result.scalars().all()
+        total_units = len(progress_rows)
+        completed_units = sum(1 for p in progress_rows if p.completed)
+        result.append({
+            "userId": user.id,
+            "username": user.username,
+            "displayName": user.display_name,
+            "totalUnits": total_units,
+            "completedUnits": completed_units,
+            "percentComplete": round((completed_units / total_units * 100) if total_units > 0 else 0, 1),
+        })
+    return result
 
 
 @router.post("/topics/{topic_id}/reset-all", response_model=MessageResponse)
@@ -1888,10 +1900,12 @@ async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), 
     } for p in progress_rows]
 
     errors_data = [{
+        "id": e.id,
         "topicId": e.topic_id,
         "unitId": e.unit_id,
         "givenAnswer": e.given_answer,
         "correctAnswer": e.correct_answer,
+        "isCorrect": e.is_correct,
         "answeredAt": e.answered_at.isoformat() if e.answered_at else None
     } for e in errors]
 
@@ -1909,20 +1923,23 @@ async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), 
 
 # ── Redo ───────────────────────────────────────────────────
 
-@router.post("/progress/{user_id}/{unit_id}/redo")
-async def mark_redo(user_id: int, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    prog = (await db.execute(select(Progress).where(Progress.user_id == user_id, Progress.unit_id == unit_id))).scalar_one_or_none()
+@router.post("/progress/{user_id}/{topic_id}/{unit_id}/redo")
+async def mark_redo(user_id: int, topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    prog = (await db.execute(select(Progress).where(Progress.user_id == user_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))).scalar_one_or_none()
     if not prog:
         raise HTTPException(status_code=404, detail="Progress not found")
     if not prog.redo_data:
         prog.redo_data = {}
     prog.redo_data["marked"] = True
     await db.commit()
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({"type": "redo_marked", "userId": user_id, "unitId": unit_id})
     return {"status": "ok", "unitId": unit_id}
 
-@router.delete("/progress/{user_id}/{unit_id}/redo")
-async def unmark_redo(user_id: int, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    prog = (await db.execute(select(Progress).where(Progress.user_id == user_id, Progress.unit_id == unit_id))).scalar_one_or_none()
+
+@router.delete("/progress/{user_id}/{topic_id}/{unit_id}/redo")
+async def unmark_redo(user_id: int, topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    prog = (await db.execute(select(Progress).where(Progress.user_id == user_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))).scalar_one_or_none()
     if prog and prog.redo_data: prog.redo_data = {}
     await db.commit()
     return {"status": "ok"}

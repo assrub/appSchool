@@ -199,7 +199,23 @@ class FinalTestViewModel @Inject constructor(
                         testScore = if (p.topicId == topicId) score else p.testScore
                     )
                 }
-                progressRepository.syncProgress(entries = entries)
+                val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
+                for (p in allProgress) {
+                    val blockProgressList = progressRepository.getAllBlockProgress(topicId, p.unitId)
+                    for (bp in blockProgressList) {
+                        blockEntries.add(
+                            com.appenglish.data.remote.dto.BlockProgressEntryDto(
+                                topicId = bp.topicId,
+                                unitId = bp.unitId,
+                                blockIndex = bp.blockIndex,
+                                completed = bp.completed,
+                                score = bp.score,
+                                totalItems = bp.totalItems
+                            )
+                        )
+                    }
+                }
+                progressRepository.syncProgress(entries = entries, blockEntries = blockEntries)
             } catch (_: Exception) {}
         }
     }

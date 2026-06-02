@@ -582,12 +582,14 @@ class UnitExerciseViewModel @Inject constructor(
                         blockIndex = blockIdx,
                         completed = blockCompleted,
                         score = blockScore,
-                        totalItems = block.items.size
+                        totalItems = block.items.size,
+                        completedAt = if (blockCompleted) java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()) else null
                     )
                 )
             }
 
             try {
+                val existingProgress = progressRepository.getProgress(topicId, unitId)
                 progressRepository.syncProgress(
                     entries = listOf(
                         com.appenglish.data.remote.dto.ProgressEntryDto(
@@ -596,7 +598,9 @@ class UnitExerciseViewModel @Inject constructor(
                             completed = completed,
                             score = state.score,
                             totalItems = state.totalItems,
-                            completedItems = items
+                            completedItems = items,
+                            testScore = existingProgress?.testScore,
+                            completedAt = if (completed) java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()) else null
                         )
                     ),
                     blockEntries = blockEntries

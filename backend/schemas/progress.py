@@ -24,7 +24,7 @@ class BlockProgressEntry(BaseModel):
 
 
 class ProgressSyncRequest(BaseModel):
-    deviceId: str
+    deviceId: int
     progress: list[ProgressEntry]
     blockProgress: list[BlockProgressEntry] = []
 

@@ -219,7 +219,7 @@ class AnswerEntry(BaseModel):
 
 
 class AnswerBatchRequest(BaseModel):
-    deviceId: str
+    deviceId: int
     answers: list[AnswerEntry]
 
 
