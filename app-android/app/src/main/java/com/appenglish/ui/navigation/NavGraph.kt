@@ -59,7 +59,7 @@ fun AppNavGraph() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val hideBottomBar = currentRoute in listOf(Routes.LOGIN, null)
+    val hideBottomBar = currentRoute in listOf(Routes.LOGIN, Routes.EXERCISE, Routes.TEST, null)
 
     Scaffold(
         bottomBar = {
