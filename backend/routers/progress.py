@@ -62,9 +62,16 @@ async def sync_progress(
                     Progress.user_id == user_id,
                     Progress.topic_id == entry.topicId,
                     Progress.unit_id == entry.unitId,
-                )
+                ).order_by(Progress.id)
             )
-            existing = result.scalar_one_or_none()
+            all_rows = result.scalars().all()
+            existing = all_rows[0] if all_rows else None
+
+            # Delete duplicates if any
+            if len(all_rows) > 1:
+                from sqlalchemy import delete as sqldelete
+                duplicate_ids = [r.id for r in all_rows[1:]]
+                await db.execute(sqldelete(Progress).where(Progress.id.in_(duplicate_ids)))
 
             if existing:
                 existing.completed = entry.completed
@@ -72,11 +79,11 @@ async def sync_progress(
                 existing.total_items = entry.totalItems
                 existing.completed_items = entry.completedItems
                 existing.test_score = entry.testScore
-            if entry.completedAt:
-                if entry.completedAt.tzinfo is not None:
-                    existing.completed_at = entry.completedAt.replace(tzinfo=None)
-                else:
-                    existing.completed_at = entry.completedAt
+                if entry.completedAt:
+                    if entry.completedAt.tzinfo is not None:
+                        existing.completed_at = entry.completedAt.replace(tzinfo=None)
+                    else:
+                        existing.completed_at = entry.completedAt
             else:
                 new_progress = Progress(
                     user_id=user_id,
@@ -101,9 +108,15 @@ async def sync_progress(
                     BlockProgress.topic_id == bp_entry.topicId,
                     BlockProgress.unit_id == bp_entry.unitId,
                     BlockProgress.block_index == bp_entry.blockIndex,
-                )
+                ).order_by(BlockProgress.id)
             )
-            existing_bp = result.scalar_one_or_none()
+            all_bp = result.scalars().all()
+            existing_bp = all_bp[0] if all_bp else None
+
+            if len(all_bp) > 1:
+                from sqlalchemy import delete as sqldelete
+                dup_ids = [r.id for r in all_bp[1:]]
+                await db.execute(sqldelete(BlockProgress).where(BlockProgress.id.in_(dup_ids)))
 
             if existing_bp:
                 if bp_entry.score > existing_bp.score:
