@@ -53,7 +53,7 @@ async def sync_progress(
     import traceback
     try:
         synced_count = 0
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         user_id = int(request.deviceId)
 
         for entry in request.progress:
@@ -72,7 +72,10 @@ async def sync_progress(
                 existing.total_items = entry.totalItems
                 existing.completed_items = entry.completedItems
                 existing.test_score = entry.testScore
-                if entry.completedAt:
+            if entry.completedAt:
+                if entry.completedAt.tzinfo is not None:
+                    existing.completed_at = entry.completedAt.replace(tzinfo=None)
+                else:
                     existing.completed_at = entry.completedAt
             else:
                 new_progress = Progress(
@@ -107,7 +110,13 @@ async def sync_progress(
                     existing_bp.score = bp_entry.score
                 existing_bp.completed = bp_entry.completed
                 existing_bp.total_items = bp_entry.totalItems
-                if bp_entry.completedAt:
+            if bp_entry.completedAt:
+                if isinstance(bp_entry.completedAt, datetime):
+                    if bp_entry.completedAt.tzinfo is not None:
+                        existing_bp.completed_at = bp_entry.completedAt.replace(tzinfo=None)
+                    else:
+                        existing_bp.completed_at = bp_entry.completedAt
+                else:
                     existing_bp.completed_at = bp_entry.completedAt
             else:
                 new_bp = BlockProgress(
@@ -235,7 +244,7 @@ async def record_answers(
     request: AnswerBatchRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     user_id = int(request.deviceId)
     count = 0
     for a in request.answers:
