@@ -58,6 +58,16 @@ import com.appenglish.ui.theme.Primary
 import com.appenglish.ui.theme.SurfaceVariant
 import com.appenglish.ui.theme.WarningOrange
 
+private fun exerciseTypeLabel(type: String): String = when (type) {
+    "fill-blank" -> "Completar"
+    "multiple-choice" -> "Opción múltiple"
+    "true-false" -> "Verdadero/Falso"
+    "reorder" -> "Ordenar"
+    "matching" -> "Emparejar"
+    "listening" -> "Escuchar"
+    else -> type
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UnitsScreen(
@@ -219,7 +229,7 @@ private fun UnitsListContent(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                u.exerciseType,
+                                exerciseTypeLabel(u.exerciseType),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

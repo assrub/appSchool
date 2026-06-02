@@ -54,6 +54,13 @@
           rounded="lg"
           class="mb-1"
         />
+        <v-list-item
+          prepend-icon="mdi-wrench"
+          title="Sistema"
+          to="/system"
+          rounded="lg"
+          class="mb-1"
+        />
       </v-list>
 
       <template #append>

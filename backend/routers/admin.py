@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 import os
 import uuid
+import datetime
 import aiofiles
-from sqlalchemy import select, update, delete, func
+from sqlalchemy import select, update, delete, func, text
 from sqlalchemy.orm import selectinload
 
 from database import get_db
@@ -1943,6 +1944,88 @@ async def unmark_redo(user_id: int, topic_id: str, unit_id: str, db: AsyncSessio
     if prog and prog.redo_data: prog.redo_data = {}
     await db.commit()
     return {"status": "ok"}
+
+
+# ── System ─────────────────────────────────────────────────
+
+@router.get("/system/health")
+async def system_health(admin: dict = Depends(get_current_admin)):
+    return {
+        "api": "ok",
+        "version_name": "3.2.51",
+        "version_code": 80,
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+
+
+@router.get("/system/logs")
+async def system_logs(container: str = "api", lines: int = 100, admin: dict = Depends(get_current_admin)):
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "logs", container, f"--tail={lines}", "--no-log-prefix"],
+            capture_output=True, text=True, timeout=10,
+            cwd=os.path.join(os.path.dirname(__file__), "..")
+        )
+        logs = result.stdout.split("\n") if result.stdout else []
+        return {"logs": logs, "container": container, "lines": len(logs)}
+    except Exception as e:
+        return {"logs": [f"Error: {str(e)}"], "container": container, "lines": 0}
+
+
+@router.get("/system/db-tables")
+async def system_db_tables(db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    result = await db.execute(
+        select(func.relname, func.n_live_tup)
+        .select_from(func.pg_stat_user_tables())
+        .order_by(func.relname)
+    )
+    tables = []
+    for row in result:
+        tables.append({"name": row[0], "rows": row[1]})
+    return {"tables": tables}
+
+
+@router.post("/system/db-query")
+async def system_db_query(query: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    import time
+    query_upper = query.strip().upper()
+    if not query_upper.startswith("SELECT"):
+        raise HTTPException(status_code=400, detail="Only SELECT queries are allowed")
+    if "INTO" in query_upper or "INSERT" in query_upper or "UPDATE" in query_upper or "DELETE" in query_upper or "DROP" in query_upper:
+        raise HTTPException(status_code=400, detail="Only read-only queries allowed")
+    start = time.time()
+    try:
+        result = await db.execute(text(query))
+        rows = result.fetchmany(200)
+        columns = list(result.keys()) if result else []
+        data = [list(row) for row in rows]
+        # Convert non-serializable types
+        for row in data:
+            for i, val in enumerate(row):
+                if isinstance(val, (datetime.datetime, datetime.date)):
+                    row[i] = val.isoformat()
+        elapsed = round(time.time() - start, 3)
+        return {"columns": columns, "rows": data, "rowCount": len(data), "elapsed": elapsed}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/system/db-table/{table_name}")
+async def system_db_table(table_name: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    try:
+        result = await db.execute(text(f"SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = :table ORDER BY ordinal_position"), {"table": table_name})
+        columns = [{"name": r[0], "type": r[1], "nullable": r[2]} for r in result.fetchall()]
+        preview = await db.execute(text(f"SELECT * FROM {table_name} LIMIT 20"))
+        pk = preview.keys()
+        preview_rows = [list(r) for r in preview.fetchall()]
+        for row in preview_rows:
+            for i, val in enumerate(row):
+                if isinstance(val, (datetime.datetime, datetime.date)):
+                    row[i] = val.isoformat()
+        return {"tableName": table_name, "columns": columns, "preview": preview_rows}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ── Upload ────────────────────────────────────────────────────

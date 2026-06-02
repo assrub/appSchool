@@ -70,6 +70,11 @@ const routes = [
         name: 'users',
         component: () => import('../views/UsersView.vue'),
       },
+      {
+        path: 'system',
+        name: 'system',
+        component: () => import('../views/SystemView.vue'),
+      },
     ],
   },
   {

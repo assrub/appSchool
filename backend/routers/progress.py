@@ -140,7 +140,7 @@ async def sync_progress(
 
 @router.get("/{device_id}", response_model=ProgressResponse)
 async def get_progress(
-    device_id: str,
+    device_id: int,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(

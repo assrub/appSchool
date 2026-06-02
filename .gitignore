@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
-*.db
 .env
+.env.local
+.env
+.env.production
 
 # Android
 *.apk
