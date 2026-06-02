@@ -234,7 +234,6 @@ private fun ExerciseContent(
 
     var draggingWord by remember { mutableStateOf<String?>(null) }
     var isOverDropZone by remember { mutableStateOf(false) }
-    var dropZoneRect by remember { mutableStateOf(Rect.Zero) }
 
     var popupSentence by remember { mutableStateOf("") }
     var popupHint by remember { mutableStateOf<String?>(null) }
@@ -287,7 +286,6 @@ private fun ExerciseContent(
                     isTranslating = isTranslating,
                     draggingWord = draggingWord,
                     isOverDropZone = isOverDropZone,
-                    dropZoneRect = dropZoneRect,
                     blockCompleted = viewModel.getBlockCompletedItems(),
                     blockTotal = viewModel.getBlockTotalItems(),
                     onTranslationToggle = {
@@ -302,7 +300,6 @@ private fun ExerciseContent(
                     },
                     onDraggingWordChange = { draggingWord = it },
                     onIsOverDropZoneChange = { isOverDropZone = it },
-                    onDropZoneRectChange = { dropZoneRect = it },
                     getCurrentBlockTitle = { viewModel.getCurrentBlockTitle() },
                     onSelectOption = { viewModel.selectOption(it); viewModel.checkTextAnswer() },
                     onInputChanged = { viewModel.onInputChanged(it) },
@@ -383,18 +380,18 @@ private fun ExerciseTabContent(
     isTranslating: Boolean,
     draggingWord: String?,
     isOverDropZone: Boolean,
-    dropZoneRect: Rect,
     blockCompleted: Int,
     blockTotal: Int,
     getCurrentBlockTitle: () -> String,
     onTranslationToggle: () -> Unit,
     onDraggingWordChange: (String?) -> Unit,
     onIsOverDropZoneChange: (Boolean) -> Unit,
-    onDropZoneRectChange: (Rect) -> Unit,
     onSelectOption: (String) -> Unit,
     onInputChanged: (String) -> Unit,
     onCheckTextAnswer: () -> Unit
 ) {
+    var dropZoneRect by remember { mutableStateOf(Rect.Zero) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -469,7 +466,7 @@ private fun ExerciseTabContent(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(color = dropBg, shape = RoundedCornerShape(12.dp))
                                 .border(if (isOverDropZone && draggingWord != null) 3.dp else 2.dp, dropBorder, RoundedCornerShape(12.dp))
-                                .onGloballyPositioned { coords -> onDropZoneRectChange(coords.boundsInRoot()) }
+                                .onGloballyPositioned { coords -> dropZoneRect = coords.boundsInRoot() }
                                 .padding(horizontal = 16.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -602,8 +599,8 @@ private fun ExerciseTabContent(
                             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                             colors = CardDefaults.cardColors(containerColor = Primary)
                         ) {
-                            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
-                                Text(option, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp).fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(option, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
                             }
                         }
                     }
