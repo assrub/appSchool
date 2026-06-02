@@ -148,10 +148,15 @@ async def get_progress(
     )
     rows = result.scalars().all()
 
-    bp_result = await db.execute(
-        select(BlockProgress).where(BlockProgress.user_id == device_id)
-    )
-    block_rows = bp_result.scalars().all()
+    block_rows = []
+    try:
+        bp_result = await db.execute(
+            select(BlockProgress).where(BlockProgress.user_id == device_id)
+        )
+        block_rows = bp_result.scalars().all()
+    except Exception as e:
+        import logging
+        logging.error(f"BlockProgress query failed: {e}")
 
     topic_map = _get_topic_subject_map()
     subjects_map: dict[str, dict] = {}
