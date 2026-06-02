@@ -361,8 +361,6 @@ watch(wsMessage, (msg) => {
   }
 })
 
-const snackbar = inject('snackbar')
-
 const users = ref([])
 const selectedUser = ref(null)
 const loadingUsers = ref(true)
