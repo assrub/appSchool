@@ -1933,16 +1933,53 @@ async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), 
         .limit(10)
     )).scalars().all()
 
-    progress_data = [{
-        "topicId": p.topic_id,
-        "unitId": p.unit_id,
-        "completed": p.completed,
-        "score": p.score,
-        "totalItems": p.total_items,
-        "completedItems": p.completed_items,
-        "testScore": p.test_score,
-        "completedAt": p.completed_at.isoformat() if p.completed_at else None
-    } for p in progress_rows]
+    # Build progress map from existing records
+    progress_map = {}
+    for p in progress_rows:
+        if p.topic_id not in progress_map:
+            progress_map[p.topic_id] = {}
+        if p.unit_id not in progress_map[p.topic_id]:
+            progress_map[p.topic_id][p.unit_id] = p
+
+    # Get all units from content tables (even without progress)
+    all_units = await db.execute(
+        select(ExerciseUnit)
+        .options(selectinload(ExerciseUnit.blocks))
+        .select_from(ExerciseUnit)
+        .join(Topic)
+        .where(Topic.is_active == True)
+    )
+    content_units = all_units.scalars().all()
+
+    # Group content units by topic
+    topic_units_map = {}
+    for cu in content_units:
+        tid = cu.topic_id
+        if tid not in topic_units_map:
+            topic_units_map[tid] = []
+        total_in_blocks = sum(len(b.items) for b in (cu.blocks or []))
+        topic_units_map[tid].append({
+            "unitId": cu.id,
+            "title": cu.title,
+            "totalItems": total_in_blocks,
+        })
+
+    # Build progress_data = all content units + progress merge
+    progress_data = []
+    for topic_id, units in topic_units_map.items():
+        for u in units:
+            p = progress_map.get(topic_id, {}).get(u["unitId"])
+            progress_data.append({
+                "topicId": topic_id,
+                "unitId": u["unitId"],
+                "title": u["title"],
+                "completed": p.completed if p else False,
+                "score": p.score if p else 0,
+                "totalItems": u["totalItems"],
+                "completedItems": p.completed_items if p else 0,
+                "testScore": p.test_score if p else None,
+                "completedAt": p.completed_at.isoformat() if p and p.completed_at else None
+            })
 
     errors_data = [{
         "id": e.id,
