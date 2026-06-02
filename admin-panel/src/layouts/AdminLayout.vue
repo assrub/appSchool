@@ -67,13 +67,6 @@
           rounded="lg"
           class="mb-1"
         />
-        <v-list-item
-          prepend-icon="mdi-script-text-outline"
-          title="Scripts"
-          to="/script"
-          rounded="lg"
-          class="mb-1"
-        />
       </v-list>
 
       <template #append>

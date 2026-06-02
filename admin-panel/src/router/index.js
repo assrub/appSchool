@@ -75,6 +75,10 @@ const routes = [
         name: 'system',
         component: () => import('../views/SystemView.vue'),
       },
+      {
+        path: 'script',
+        redirect: '/system',
+      },
     ],
   },
   {

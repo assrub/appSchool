@@ -18,6 +18,9 @@
       <v-tab value="sql">
         <v-icon start>mdi-code-tags</v-icon> SQL Console
       </v-tab>
+      <v-tab value="scripts">
+        <v-icon start>mdi-script-text-outline</v-icon> Scripts
+      </v-tab>
       <v-tab value="health">
         <v-icon start>mdi-heart-pulse</v-icon> Health
       </v-tab>
@@ -142,47 +145,12 @@
 
       <!-- SQL CONSOLE TAB -->
       <v-window-item value="sql">
-        <v-card rounded="lg" elevation="2">
-          <v-card-title class="d-flex align-center">
-            <v-icon class="mr-2">mdi-code-tags</v-icon>
-            SQL Console
-            <v-spacer />
-            <v-chip v-if="sqlElapsed" size="small" variant="tonal" class="mr-2">{{ sqlElapsed }}s</v-chip>
-            <v-chip v-if="sqlRowCount !== null" size="small" variant="tonal">{{ sqlRowCount }} filas</v-chip>
-          </v-card-title>
-          <v-card-text>
-            <v-alert v-if="sqlError" type="error" variant="tonal" closable class="mb-3">{{ sqlError }}</v-alert>
-            <v-textarea
-              v-model="sqlQuery"
-              variant="outlined"
-              placeholder="SELECT * FROM progress LIMIT 10"
-              rows="4"
-              class="mb-3"
-              hide-details
-            />
-            <div class="d-flex justify-end mb-4">
-              <v-btn color="primary" @click="executeQuery" :loading="loadingQuery">
-                <v-icon start>mdi-play</v-icon> Ejecutar
-              </v-btn>
-            </div>
+        ...
+      </v-window-item>
 
-            <v-table density="compact" v-if="sqlColumns.length">
-              <thead>
-                <tr>
-                  <th v-for="c in sqlColumns" :key="c">{{ c }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(row, i) in sqlRows" :key="i">
-                  <td v-for="(val, j) in row" :key="j"><code>{{ val }}</code></td>
-                </tr>
-              </tbody>
-            </v-table>
-            <div v-else-if="!sqlError" class="text-grey text-center py-4">
-              Escribí una query SELECT y ejecutala
-            </div>
-          </v-card-text>
-        </v-card>
+      <!-- SCRIPTS TAB -->
+      <v-window-item value="scripts">
+        <ScriptsView />
       </v-window-item>
 
       <!-- HEALTH TAB -->
@@ -236,8 +204,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import api from '../api/client'
+import ScriptsView from './ScriptsView.vue'
 
 const tab = ref('logs')
 const wsConnected = ref(false)
