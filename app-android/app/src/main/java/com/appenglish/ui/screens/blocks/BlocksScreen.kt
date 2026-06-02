@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.ExerciseBlock
 import com.appenglish.domain.model.UnitTheory
+import com.appenglish.ui.components.TheoryHtmlView
 import com.appenglish.ui.theme.CorrectBackground
 import com.appenglish.ui.theme.CorrectGreen
 import com.appenglish.ui.theme.ErrorRed
@@ -273,10 +274,7 @@ private fun TheoryTabContent(
                             Spacer(Modifier.height(4.dp))
                         }
                         if (!block.html.isNullOrBlank()) {
-                            Text(
-                                block.html.replace(Regex("<[^>]*>"), ""),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            TheoryHtmlView(html = block.html)
                             Spacer(Modifier.height(8.dp))
                         }
                     }

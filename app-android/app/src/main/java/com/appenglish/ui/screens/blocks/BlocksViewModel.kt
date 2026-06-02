@@ -81,15 +81,16 @@ class BlocksViewModel @Inject constructor(
                                         }
                                         val topicTheory = UnitTheory(
                                             text = topic.theory.text,
-                                            sections = emptyList(),
+                                            sections = topic.theory.blocks?.map { TheorySection(it.title ?: "", it.html ?: "", emptyList()) } ?: emptyList(),
                                             headers = topic.theory.table?.headers ?: emptyList(),
                                             rows = topic.theory.table?.rows ?: emptyList(),
-                                            tips = topic.theory.tips.map { Tip(it.emoji, it.text) }
+                                            tips = topic.theory.tips.map { Tip(it.emoji, it.text) },
+                                            blocks = topic.theory.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
                                         )
                                         val unitTheory = unit.theory?.let { ut ->
                                             UnitTheory(
                                                 text = ut.text,
-                                                sections = emptyList(),
+                                                sections = ut.sections?.map { TheorySection(it.title, it.text, it.examples ?: emptyList()) } ?: emptyList(),
                                                 headers = ut.table?.headers ?: emptyList(),
                                                 rows = ut.table?.rows ?: emptyList(),
                                                 tips = ut.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),
@@ -108,7 +109,7 @@ class BlocksViewModel @Inject constructor(
                                                 val blockTheory = b.theory?.let { bt ->
                                                     BlockTheory(
                                                         text = bt.text,
-                                                        sections = emptyList(),
+                                                        sections = bt.sections?.map { TheorySection(it.title, it.text, it.examples ?: emptyList()) } ?: emptyList(),
                                                         headers = bt.table?.headers ?: emptyList(),
                                                         rows = bt.table?.rows ?: emptyList(),
                                                         tips = bt.tips?.map { Tip(it.emoji, it.text) } ?: emptyList(),

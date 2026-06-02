@@ -45,8 +45,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.appenglish.data.remote.dto.TheoryBlockDto
-import com.appenglish.data.remote.dto.TipDto
+import com.appenglish.domain.model.TheoryBlock
+import com.appenglish.domain.model.Tip
+import com.appenglish.domain.model.TheorySection
 import com.appenglish.ui.theme.Primary
 import com.appenglish.ui.theme.WarningOrange
 
@@ -84,7 +85,7 @@ fun TheoryScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (uiState.theoryBlocks.isEmpty() && uiState.theoryText.isBlank()) {
+                if (uiState.theoryBlocks.isEmpty() && uiState.theoryText.isBlank() && uiState.theorySections.isEmpty()) {
                     item {
                         EmptyTheoryState()
                     }
@@ -95,6 +96,12 @@ fun TheoryScreen(
                             title = block.title,
                             html = block.html
                         )
+                    }
+
+                    uiState.theorySections.forEach { section ->
+                        item {
+                            TheorySectionCard(section = section)
+                        }
                     }
 
                     if (uiState.theoryText.isNotBlank()) {
@@ -162,6 +169,36 @@ private fun TheoryBlockCard(index: Int, title: String?, html: String?) {
                     },
                     modifier = Modifier.fillMaxWidth().height(300.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TheorySectionCard(section: TheorySection) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (section.title.isNotBlank()) {
+                Text(section.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Primary)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Text(section.text.replace("\n", "\n\n"), style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp), color = Color(0xFF333333))
+            if (section.examples.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                section.examples.forEach { example ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                    ) {
+                        Text("→ $example", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(10.dp), color = Color(0xFF2E7D32))
+                    }
+                }
             }
         }
     }

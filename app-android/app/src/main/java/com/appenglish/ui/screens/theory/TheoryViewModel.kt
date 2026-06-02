@@ -3,9 +3,10 @@ package com.appenglish.ui.screens.theory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.appenglish.data.remote.dto.TheoryBlockDto
-import com.appenglish.data.remote.dto.TipDto
 import com.appenglish.data.repository.ContentRepository
+import com.appenglish.domain.model.TheoryBlock
+import com.appenglish.domain.model.Tip
+import com.appenglish.domain.model.TheorySection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,9 +17,10 @@ import javax.inject.Inject
 data class TheoryUiState(
     val isLoading: Boolean = true,
     val title: String = "",
-    val theoryBlocks: List<TheoryBlockDto> = emptyList(),
+    val theoryBlocks: List<TheoryBlock> = emptyList(),
     val theoryText: String = "",
-    val tips: List<TipDto> = emptyList(),
+    val theorySections: List<TheorySection> = emptyList(),
+    val tips: List<Tip> = emptyList(),
     val error: String? = null
 )
 
@@ -47,9 +49,10 @@ class TheoryViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 title = unit.title,
-                                theoryBlocks = unit.theory.blocks ?: emptyList(),
+                                theoryBlocks = unit.theory.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList(),
                                 theoryText = unit.theory.text,
-                                tips = unit.theory.tips ?: emptyList()
+                                theorySections = unit.theory.sections?.map { TheorySection(it.title, it.text, it.examples ?: emptyList()) } ?: emptyList(),
+                                tips = unit.theory.tips?.map { Tip(it.emoji, it.text) } ?: emptyList()
                             )
                         } else {
                             _uiState.value = _uiState.value.copy(
@@ -61,9 +64,10 @@ class TheoryViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             title = response.name,
-                            theoryBlocks = response.theory.blocks ?: emptyList(),
+                            theoryBlocks = response.theory.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList(),
                             theoryText = response.theory.text,
-                            tips = response.theory.tips
+                            theorySections = emptyList(),
+                            tips = response.theory.tips.map { Tip(it.emoji, it.text) }
                         )
                     }
                 },

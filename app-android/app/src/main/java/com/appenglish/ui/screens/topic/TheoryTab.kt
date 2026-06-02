@@ -1,9 +1,5 @@
 package com.appenglish.ui.screens.topic
 
-import android.graphics.Color as AndroidColor
-import android.view.ViewGroup
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -33,9 +29,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.appenglish.domain.model.UnitTheory
 import com.appenglish.domain.model.Tip
+import com.appenglish.ui.components.TheoryHtmlView
 import com.appenglish.ui.components.TtsButton
 import com.appenglish.ui.theme.Primary
 
@@ -77,32 +73,7 @@ fun UnitTheoryView(
                             shape = RoundedCornerShape(12.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
-                            AndroidView(
-                                factory = { ctx ->
-                                    WebView(ctx).apply {
-                                        settings.javaScriptEnabled = false
-                                        settings.loadWithOverviewMode = true
-                                        settings.useWideViewPort = true
-                                        setBackgroundColor(AndroidColor.TRANSPARENT)
-                                        webViewClient = WebViewClient()
-                                        isVerticalScrollBarEnabled = false
-                                        layoutParams = ViewGroup.LayoutParams(
-                                            ViewGroup.LayoutParams.MATCH_PARENT,
-                                            ViewGroup.LayoutParams.WRAP_CONTENT
-                                        )
-                                    }
-                                },
-                                update = { webView ->
-                                    webView.loadDataWithBaseURL(
-                                        null,
-                                        "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'><style>$THEORY_CSS</style></head><body>$htmlContent</body></html>",
-                                        "text/html",
-                                        "UTF-8",
-                                        null
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth().height(360.dp)
-                            )
+                            TheoryHtmlView(html = htmlContent, modifier = Modifier.fillMaxWidth())
                         }
                     }
 
@@ -169,25 +140,3 @@ private fun buildTheoryHtml(theory: UnitTheory): String {
     }
     return sb.toString()
 }
-
-private val THEORY_CSS = """
-    body { font-family: 'Roboto', sans-serif; font-size: 16px; color: #333; padding: 12px 8px; margin: 0; line-height: 1.6; }
-    h1 { font-size: 1.4em; margin: 14px 0 10px; color: #388E3C; border-bottom: 2px solid #C8E6C9; padding-bottom: 6px; }
-    h2 { font-size: 1.2em; margin: 12px 0 8px; color: #4CAF50; }
-    h3 { font-size: 1.05em; margin: 10px 0 6px; color: #4CAF50; }
-    p { margin: 6px 0 10px; }
-    strong { color: #2E7D32; }
-    table { border-collapse: collapse; width: 100%; margin: 10px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    th { background: #4CAF50; color: white; padding: 10px 12px; text-align: left; font-size: 14px; font-weight: bold; }
-    td { padding: 8px 12px; border-bottom: 1px solid #E8F5E9; font-size: 14px; }
-    tr:nth-child(even) td { background: #F1F8E9; }
-    tr:last-child td { border-bottom: none; }
-    blockquote { border-left: 4px solid #4CAF50; margin: 12px 0; padding: 8px 16px; color: #555; background: #F1F8E9; border-radius: 0 8px 8px 0; font-style: italic; }
-    img { max-width: 100%; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    ul, ol { padding-left: 24px; }
-    li { margin: 6px 0; }
-    a { color: #4CAF50; text-decoration: underline; }
-    mark { background: #FFF9C4; padding: 2px 6px; border-radius: 4px; color: #333; }
-    .youtube-video { margin: 10px 0; }
-    .youtube-video iframe { width: 100% !important; height: 180px !important; border-radius: 8px; }
-""".trimIndent()

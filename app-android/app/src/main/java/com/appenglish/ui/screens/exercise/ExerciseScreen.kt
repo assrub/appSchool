@@ -87,6 +87,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appenglish.domain.model.BlockTheory
+import com.appenglish.ui.components.TheoryHtmlView
 import com.appenglish.ui.components.TtsButton
 import com.appenglish.ui.components.TranslateableText
 import com.appenglish.ui.components.translateWord
@@ -679,10 +680,7 @@ private fun ExerciseTheoryTabContent(theory: BlockTheory) {
                             Spacer(Modifier.height(4.dp))
                         }
                         if (!block.html.isNullOrBlank()) {
-                            Text(
-                                block.html.replace(Regex("<[^>]*>"), ""),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            TheoryHtmlView(html = block.html)
                             Spacer(Modifier.height(8.dp))
                         }
                     }

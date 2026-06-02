@@ -37,7 +37,8 @@ data class Theory(
     val text: String,
     val headers: List<String>,
     val rows: List<List<String>>,
-    val tips: List<Tip>
+    val tips: List<Tip>,
+    val blocks: List<TheoryBlock> = emptyList()
 )
 
 data class Tip(

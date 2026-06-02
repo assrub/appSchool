@@ -126,7 +126,8 @@ class TopicViewModel @Inject constructor(
                         text = response.theory.text,
                         headers = response.theory.table?.headers ?: emptyList(),
                         rows = response.theory.table?.rows ?: emptyList(),
-                        tips = response.theory.tips.map { Tip(it.emoji, it.text) }
+                        tips = response.theory.tips.map { Tip(it.emoji, it.text) },
+                        blocks = response.theory.blocks?.map { TheoryBlock(it.title, it.html) } ?: emptyList()
                     )
 
                     _uiState.value = _uiState.value.copy(

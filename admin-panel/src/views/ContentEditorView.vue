@@ -146,6 +146,27 @@
                           </v-card>
                         </div>
 
+                        <v-divider class="my-4" />
+
+                        <div class="d-flex align-center mb-4">
+                          <v-icon class="mr-2">mdi-lightbulb-on</v-icon>
+                          <span class="text-subtitle-1 font-weight-bold">Tips y consejos</span>
+                        </div>
+
+                        <div v-for="(tip, i) in globalTips" :key="i" class="mb-2">
+                          <v-card variant="outlined" rounded="lg" color="#FFF8E1">
+                            <v-card-text class="d-flex align-center pa-3">
+                              <v-text-field v-model="tip.emoji" label="Emoji" variant="outlined" density="compact" class="mr-2" style="max-width: 80px" />
+                              <v-text-field v-model="tip.text" label="Texto del tip" variant="outlined" density="compact" class="mr-2" />
+                              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="removeTip(i)" />
+                            </v-card-text>
+                          </v-card>
+                        </div>
+
+                        <v-btn variant="tonal" prepend-icon="mdi-plus" size="small" @click="addTip" class="mb-4">
+                          Agregar tip
+                        </v-btn>
+
                         <div class="d-flex justify-end mt-4">
                           <v-btn color="primary" :loading="savingTheory" @click="saveTheory">
                             <v-icon start>mdi-content-save</v-icon>
@@ -218,6 +239,7 @@ const savingTheory = ref(false)
 
 const editForm = ref({})
 const theoryBlocks = ref([])
+const globalTips = ref([])
 
 const showAddDialog = ref(false)
 const addType = ref('subject')
@@ -339,8 +361,13 @@ async function loadTheory(node) {
     const endpoint = node.type === 'block' ? `/admin/blocks/${node.id}/theory` : `/admin/${node.type}s/${node.id}/theory`
     const { data } = await api.get(endpoint)
     theoryBlocks.value = data.blocks?.length ? data.blocks : [{ title: '', html: '' }]
+    globalTips.value = (data.tips || []).map(t => ({ emoji: t.emoji || '💡', text: t.text || '' }))
+    if (globalTips.value.length === 0) {
+      globalTips.value = []
+    }
   } catch {
     theoryBlocks.value = [{ title: '', html: '' }]
+    globalTips.value = []
   }
 }
 
@@ -365,7 +392,7 @@ async function saveTheory() {
     const type = selectedNode.value.type
     const id = selectedNode.value.id
     const endpoint = type === 'block' ? `/admin/blocks/${id}/theory` : `/admin/${type}s/${id}/theory`
-    await api.put(endpoint, { blocks: theoryBlocks.value })
+    await api.put(endpoint, { blocks: theoryBlocks.value, tips: globalTips.value })
     snackbar.success('Teoría guardada')
   } catch (e) {
     snackbar.error(e.response?.data?.detail || 'Error al guardar')
@@ -380,6 +407,14 @@ function addTheoryBlock() {
 
 function removeTheoryBlock(i) {
   theoryBlocks.value.splice(i, 1)
+}
+
+function addTip() {
+  globalTips.value.push({ emoji: '💡', text: '' })
+}
+
+function removeTip(i) {
+  globalTips.value.splice(i, 1)
 }
 
 async function addNode() {
