@@ -94,7 +94,16 @@ class UnitExerciseViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UnitExerciseUiState())
     val uiState: StateFlow<UnitExerciseUiState> = _uiState.asStateFlow()
 
-    init { loadUnit() }
+    init {
+        loadRemoteAndLocalProgress()
+        loadUnit()
+    }
+
+    private fun loadRemoteAndLocalProgress() {
+        viewModelScope.launch {
+            try { progressRepository.loadRemoteProgress() } catch (_: Exception) {}
+        }
+    }
 
     fun loadUnit() {
         viewModelScope.launch {
@@ -221,6 +230,7 @@ class UnitExerciseViewModel @Inject constructor(
                 readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
         } else if (state.currentBlockIndex + 1 < state.blocks.size) {
+            saveProgress()
             _uiState.value = state.copy(
                 currentBlockIndex = state.currentBlockIndex + 1, currentItemIndex = 0,
                 userInput = "", feedback = null, isCorrect = null,
@@ -257,6 +267,7 @@ class UnitExerciseViewModel @Inject constructor(
             )
         }
         else if (state.currentBlockIndex + 1 < state.blocks.size) {
+            saveProgress()
             _uiState.value = state.copy(
                 currentBlockIndex = state.currentBlockIndex + 1,
                 currentItemIndex = 0,
@@ -406,7 +417,6 @@ class UnitExerciseViewModel @Inject constructor(
         if (correct) {
             val newScore = state.score + 1; val newCompleted = state.completedItems + 1
             _uiState.value = state.copy(userInput = userAnswer, isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
-            saveProgress()
             if (item.itemType == "fill-blank") {
                 val fullSentence = item.sentence.replace(Regex("_{2,}"), item.answer)
                 viewModelScope.launch { delay(600); _uiState.value = _uiState.value.copy(playingFullAudio = true, fullSentenceToPlay = fullSentence) }
@@ -481,23 +491,33 @@ class UnitExerciseViewModel @Inject constructor(
                 score = state.score, totalItems = state.totalItems, completed = completed
             )
 
-            // Save per-block progress
-            val block = state.blocks.getOrNull(state.currentBlockIndex) ?: return@launch
-            val blockScore = block.items.count { item ->
-                state.wrongItems.none { it.sentence == item.sentence && it.correctAnswer == item.answer }
+            val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
+            for ((blockIdx, block) in state.blocks.withIndex()) {
+                val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
+                val blockScore = (block.items.size - wrongInBlock).coerceAtLeast(0)
+                val blockCompleted = blockScore == block.items.size
+                progressRepository.saveBlockProgress(
+                    topicId = topicId, unitId = unitId,
+                    blockIndex = blockIdx,
+                    score = blockScore,
+                    totalItems = block.items.size,
+                    completed = blockCompleted
+                )
+                blockEntries.add(
+                    com.appenglish.data.remote.dto.BlockProgressEntryDto(
+                        topicId = topicId,
+                        unitId = unitId,
+                        blockIndex = blockIdx,
+                        completed = blockCompleted,
+                        score = blockScore,
+                        totalItems = block.items.size
+                    )
+                )
             }
-            val blockCompleted = blockScore == block.items.size
-            progressRepository.saveBlockProgress(
-                topicId = topicId, unitId = unitId,
-                blockIndex = state.currentBlockIndex,
-                score = blockScore,
-                totalItems = block.items.size,
-                completed = blockCompleted
-            )
-            // Sync to backend
+
             try {
                 progressRepository.syncProgress(
-                    listOf(
+                    entries = listOf(
                         com.appenglish.data.remote.dto.ProgressEntryDto(
                             topicId = topicId,
                             unitId = unitId,
@@ -506,7 +526,8 @@ class UnitExerciseViewModel @Inject constructor(
                             totalItems = state.totalItems,
                             completedItems = items
                         )
-                    )
+                    ),
+                    blockEntries = blockEntries
                 )
             } catch (_: Exception) {}
         }

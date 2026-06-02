@@ -2,7 +2,8 @@ package com.appenglish.data.remote.dto
 
 data class ProgressSyncRequest(
     val deviceId: String,
-    val progress: List<ProgressEntryDto>
+    val progress: List<ProgressEntryDto>,
+    val blockProgress: List<BlockProgressEntryDto> = emptyList()
 )
 
 data class ProgressEntryDto(
@@ -16,6 +17,16 @@ data class ProgressEntryDto(
     val completedAt: String? = null
 )
 
+data class BlockProgressEntryDto(
+    val topicId: String,
+    val unitId: String,
+    val blockIndex: Int,
+    val completed: Boolean = false,
+    val score: Int = 0,
+    val totalItems: Int = 0,
+    val completedAt: String? = null
+)
+
 data class ProgressSyncResponse(
     val status: String,
     val syncedAt: String,
@@ -25,6 +36,7 @@ data class ProgressSyncResponse(
 data class ProgressResponse(
     val deviceId: String,
     val subjects: List<ProgressSubjectDto>,
+    val blockProgress: List<BlockProgressDto> = emptyList(),
     val lastSyncedAt: String? = null
 )
 
@@ -42,5 +54,18 @@ data class ProgressTopicDto(
 data class ProgressUnitDto(
     val unitId: String,
     val completed: Boolean,
-    val score: Int
+    val score: Int,
+    val totalItems: Int = 0,
+    val completedItems: Int = 0,
+    val testScore: Int? = null
+)
+
+data class BlockProgressDto(
+    val topicId: String,
+    val unitId: String,
+    val blockIndex: Int,
+    val completed: Boolean,
+    val score: Int,
+    val totalItems: Int,
+    val completedAt: String? = null
 )

@@ -5,6 +5,7 @@ import com.appenglish.data.local.entity.BlockProgressEntity
 import com.appenglish.data.local.entity.ProgressEntity
 import com.appenglish.data.remote.api.AuthInterceptor
 import com.appenglish.data.remote.api.ProgressApi
+import com.appenglish.data.remote.dto.BlockProgressEntryDto
 import com.appenglish.data.remote.dto.ProgressEntryDto
 import com.appenglish.data.remote.dto.ProgressSyncRequest
 import kotlinx.coroutines.flow.Flow
@@ -21,8 +22,11 @@ class ProgressRepository @Inject constructor(
 
     fun getDeviceId(): String = userId
 
-    suspend fun syncProgress(entries: List<ProgressEntryDto>): Result<Unit> = runCatching {
-        api.syncProgress(ProgressSyncRequest(userId, entries))
+    suspend fun syncProgress(
+        entries: List<ProgressEntryDto>,
+        blockEntries: List<BlockProgressEntryDto> = emptyList()
+    ): Result<Unit> = runCatching {
+        api.syncProgress(ProgressSyncRequest(userId, entries, blockEntries))
     }
 
     suspend fun loadRemoteProgress(): Result<Unit> = runCatching {
@@ -31,18 +35,39 @@ class ProgressRepository @Inject constructor(
             for (topic in subject.topics) {
                 for (unit in topic.units) {
                     val existing = dao.getProgress(userId, topic.topicId, unit.unitId)
-                    if (existing == null || !existing.completed) {
+                    val remoteScore = unit.score
+                    val remoteCompleted = unit.completed
+                    if (existing == null || (!existing.completed && remoteCompleted)) {
                         dao.upsert(
                             ProgressEntity(
                                 deviceId = userId,
                                 topicId = topic.topicId,
                                 unitId = unit.unitId,
-                                completed = unit.completed,
-                                score = unit.score
+                                completed = remoteCompleted,
+                                score = remoteScore,
+                                totalItems = unit.totalItems,
+                                completedItems = unit.completedItems,
+                                testScore = unit.testScore ?: existing?.testScore
                             )
                         )
                     }
                 }
+            }
+        }
+        for (bp in response.blockProgress) {
+            val existing = dao.getBlockProgress(userId, bp.topicId, bp.unitId, bp.blockIndex)
+            if (existing == null || bp.score > existing.score) {
+                dao.upsertBlockProgress(
+                    BlockProgressEntity(
+                        deviceId = userId,
+                        topicId = bp.topicId,
+                        unitId = bp.unitId,
+                        blockIndex = bp.blockIndex,
+                        score = bp.score,
+                        totalItems = bp.totalItems,
+                        completed = bp.completed
+                    )
+                )
             }
         }
     }
@@ -97,8 +122,6 @@ class ProgressRepository @Inject constructor(
     fun observeAllProgress(): Flow<List<ProgressEntity>> {
         return dao.observeAllProgress(userId)
     }
-
-    // ── Block Progress ──
 
     suspend fun getBlockProgress(topicId: String, unitId: String, blockIndex: Int): BlockProgressEntity? {
         return dao.getBlockProgress(userId, topicId, unitId, blockIndex)

@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from config import CONTENT_DIR
 from database import get_db
-from models import Progress
+from models import Progress, BlockProgress
 from schemas.progress import (
     ProgressSyncRequest,
     ProgressSyncResponse,
@@ -16,6 +16,7 @@ from schemas.progress import (
     ProgressSubjectResponse,
     ProgressTopicResponse,
     ProgressUnitResponse,
+    BlockProgressResponse,
 )
 
 router = APIRouter()
@@ -86,6 +87,39 @@ async def sync_progress(
 
         synced_count += 1
 
+    for bp_entry in request.blockProgress:
+        result = await db.execute(
+            select(BlockProgress).where(
+                BlockProgress.user_id == request.deviceId,
+                BlockProgress.topic_id == bp_entry.topicId,
+                BlockProgress.unit_id == bp_entry.unitId,
+                BlockProgress.block_index == bp_entry.blockIndex,
+            )
+        )
+        existing_bp = result.scalar_one_or_none()
+
+        if existing_bp:
+            if bp_entry.score > existing_bp.score:
+                existing_bp.score = bp_entry.score
+            existing_bp.completed = bp_entry.completed
+            existing_bp.total_items = bp_entry.totalItems
+            if bp_entry.completedAt:
+                existing_bp.completed_at = bp_entry.completedAt
+        else:
+            new_bp = BlockProgress(
+                user_id=request.deviceId,
+                topic_id=bp_entry.topicId,
+                unit_id=bp_entry.unitId,
+                block_index=bp_entry.blockIndex,
+                completed=bp_entry.completed,
+                score=bp_entry.score,
+                total_items=bp_entry.totalItems,
+                completed_at=bp_entry.completedAt,
+            )
+            db.add(new_bp)
+
+        synced_count += 1
+
     await db.commit()
 
     return ProgressSyncResponse(
@@ -104,6 +138,11 @@ async def get_progress(
         select(Progress).where(Progress.user_id == device_id)
     )
     rows = result.scalars().all()
+
+    bp_result = await db.execute(
+        select(BlockProgress).where(BlockProgress.user_id == device_id)
+    )
+    block_rows = bp_result.scalars().all()
 
     topic_map = _get_topic_subject_map()
     subjects_map: dict[str, dict] = {}
@@ -130,6 +169,9 @@ async def get_progress(
                         unitId=p.unit_id,
                         completed=p.completed,
                         score=p.score,
+                        totalItems=p.total_items,
+                        completedItems=p.completed_items,
+                        testScore=p.test_score,
                     )
                 )
             topics.append(
@@ -143,4 +185,17 @@ async def get_progress(
             ProgressSubjectResponse(subjectId=subject_id, topics=topics)
         )
 
-    return ProgressResponse(deviceId=device_id, subjects=subjects)
+    block_progress = [
+        BlockProgressResponse(
+            topicId=bp.topic_id,
+            unitId=bp.unit_id,
+            blockIndex=bp.block_index,
+            completed=bp.completed,
+            score=bp.score,
+            totalItems=bp.total_items,
+            completedAt=bp.completed_at,
+        )
+        for bp in block_rows
+    ]
+
+    return ProgressResponse(deviceId=device_id, subjects=subjects, blockProgress=block_progress)

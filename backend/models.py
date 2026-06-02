@@ -236,6 +236,23 @@ class Progress(Base):
     completed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class BlockProgress(Base):
+    __tablename__ = "block_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "topic_id", "unit_id", "block_index", name="uq_block_progress_user_topic_unit_block"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
+    topic_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    unit_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    block_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    total_items: Mapped[int] = mapped_column(Integer, default=0)
+    completed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class StudySession(Base):
     __tablename__ = "study_sessions"
 

@@ -184,7 +184,23 @@ class FinalTestViewModel @Inject constructor(
 
     private fun saveTestScore() {
         viewModelScope.launch {
-            progressRepository.saveTestScore(topicId, _uiState.value.score)
+            val score = _uiState.value.score
+            progressRepository.saveTestScore(topicId, score)
+            try {
+                val allProgress = progressRepository.getTopicProgress(topicId)
+                val entries = allProgress.map { p ->
+                    com.appenglish.data.remote.dto.ProgressEntryDto(
+                        topicId = p.topicId,
+                        unitId = p.unitId,
+                        completed = p.completed,
+                        score = p.score,
+                        totalItems = p.totalItems,
+                        completedItems = p.completedItems,
+                        testScore = if (p.topicId == topicId) score else p.testScore
+                    )
+                }
+                progressRepository.syncProgress(entries = entries)
+            } catch (_: Exception) {}
         }
     }
 }

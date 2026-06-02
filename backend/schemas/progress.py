@@ -13,9 +13,20 @@ class ProgressEntry(BaseModel):
     completedAt: datetime | None = None
 
 
+class BlockProgressEntry(BaseModel):
+    topicId: str
+    unitId: str
+    blockIndex: int
+    completed: bool = False
+    score: int = 0
+    totalItems: int = 0
+    completedAt: datetime | None = None
+
+
 class ProgressSyncRequest(BaseModel):
     deviceId: str
     progress: list[ProgressEntry]
+    blockProgress: list[BlockProgressEntry] = []
 
 
 class ProgressSyncResponse(BaseModel):
@@ -28,6 +39,19 @@ class ProgressUnitResponse(BaseModel):
     unitId: str
     completed: bool
     score: int
+    totalItems: int = 0
+    completedItems: int = 0
+    testScore: int | None = None
+
+
+class BlockProgressResponse(BaseModel):
+    topicId: str
+    unitId: str
+    blockIndex: int
+    completed: bool
+    score: int
+    totalItems: int
+    completedAt: datetime | None = None
 
 
 class ProgressTopicResponse(BaseModel):
@@ -44,4 +68,5 @@ class ProgressSubjectResponse(BaseModel):
 class ProgressResponse(BaseModel):
     deviceId: str
     subjects: list[ProgressSubjectResponse]
+    blockProgress: list[BlockProgressResponse] = []
     lastSyncedAt: datetime | None = None
