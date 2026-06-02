@@ -160,4 +160,14 @@ class ProgressRepository @Inject constructor(
     suspend fun recordAnswers(answers: List<AnswerEntryDto>): Result<Unit> = runCatching {
         api.recordAnswers(AnswerBatchRequest(userId, answers))
     }
+
+    suspend fun resetAllProgress() {
+        dao.deleteAllProgress(userId)
+        dao.deleteAllBlockProgress(userId)
+    }
+
+    suspend fun resetUnitProgress(topicId: String, unitId: String) {
+        dao.deleteUnitProgress(userId, topicId, unitId)
+        dao.deleteUnitBlockProgress(userId, topicId, unitId)
+    }
 }

@@ -83,4 +83,11 @@ class UnitsViewModel @Inject constructor(
     fun selectTab(index: Int) {
         _uiState.value = _uiState.value.copy(selectedTab = index)
     }
+
+    fun resetUnitProgress(unitId: String) {
+        viewModelScope.launch {
+            progressRepository.resetUnitProgress(topicId, unitId)
+            loadUnits()
+        }
+    }
 }

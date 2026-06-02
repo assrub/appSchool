@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -285,6 +286,7 @@ private fun UnitProgressItem(unit: UnitProgress) {
     val percent = if (progress != null && progress.totalItems > 0) {
         (progress.completedItems.toFloat() / progress.totalItems * 100).toInt()
     } else 0
+    val isApproved = percent >= 70
 
     Row(
         modifier = Modifier
@@ -293,9 +295,17 @@ private fun UnitProgressItem(unit: UnitProgress) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.Schedule,
+            imageVector = when {
+                isCompleted -> Icons.Default.CheckCircle
+                isApproved -> Icons.Default.CheckCircle
+                else -> Icons.Default.Schedule
+            },
             contentDescription = null,
-            tint = if (isCompleted) CorrectGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = when {
+                isCompleted -> CorrectGreen
+                isApproved -> Color(0xFF4CAF50)
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
             modifier = Modifier.size(18.dp)
         )
         Spacer(Modifier.width(8.dp))
@@ -309,7 +319,11 @@ private fun UnitProgressItem(unit: UnitProgress) {
                 LinearProgressIndicator(
                     progress = { progress.completedItems.toFloat() / progress.totalItems.coerceAtLeast(1) },
                     modifier = Modifier.fillMaxWidth().height(3.dp),
-                    color = if (isCompleted) CorrectGreen else MaterialTheme.colorScheme.primary,
+                    color = when {
+                        isCompleted -> CorrectGreen
+                        isApproved -> Color(0xFF4CAF50)
+                        else -> MaterialTheme.colorScheme.primary
+                    },
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
@@ -319,7 +333,11 @@ private fun UnitProgressItem(unit: UnitProgress) {
             Text(
                 "${progress.score}/${progress.totalItems}",
                 style = MaterialTheme.typography.labelSmall,
-                color = if (isCompleted) CorrectGreen else MaterialTheme.colorScheme.primary,
+                color = when {
+                    isCompleted -> CorrectGreen
+                    isApproved -> Color(0xFF4CAF50)
+                    else -> MaterialTheme.colorScheme.primary
+                },
                 fontWeight = FontWeight.Bold
             )
         }

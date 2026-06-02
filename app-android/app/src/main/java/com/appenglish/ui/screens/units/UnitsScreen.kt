@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,11 +36,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -115,11 +120,37 @@ fun UnitsScreen(
                     }
                 }
                 selectedTab == 0 || !hasTheory -> {
+                    var unitToRedo by remember { mutableStateOf<String?>(null) }
+
                     UnitsListContent(
                         units = uiState.units,
                         onUnitClick = onUnitClick,
-                        onTestClick = onTestClick
+                        onTestClick = onTestClick,
+                        onRedoClick = { unitToRedo = it }
                     )
+
+                    unitToRedo?.let { unitId ->
+                        AlertDialog(
+                            onDismissRequest = { unitToRedo = null },
+                            title = { Text("Rehacer unidad") },
+                            text = { Text("¿Querés reiniciar esta unidad? Se perderá el progreso actual.") },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        viewModel.resetUnitProgress(unitId)
+                                        unitToRedo = null
+                                    }
+                                ) {
+                                    Text("Rehacer", color = WarningOrange)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { unitToRedo = null }) {
+                                    Text("Cancelar")
+                                }
+                            }
+                        )
+                    }
                 }
                 selectedTab == 1 && hasTheory -> {
                     TheoryTabContent(
@@ -135,7 +166,8 @@ fun UnitsScreen(
 private fun UnitsListContent(
     units: List<DomainUnit>,
     onUnitClick: (String, String) -> Unit,
-    onTestClick: (String) -> Unit
+    onTestClick: (String) -> Unit,
+    onRedoClick: (String) -> Unit = {}
 ) {
     if (units.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -155,6 +187,8 @@ private fun UnitsListContent(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             itemsIndexed(units) { _, u ->
                 val displayIcon = u.icon
+                val isApproved = u.percent >= 70.0 && u.percent < 100.0
+                val isCompleted = u.percent >= 100.0
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -165,7 +199,11 @@ private fun UnitsListContent(
                     shape = MaterialTheme.shapes.large,
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (u.percent >= 100.0) CorrectBackground else MaterialTheme.colorScheme.surface
+                        containerColor = when {
+                            isCompleted -> CorrectBackground
+                            isApproved -> Color(0xFFE8F5E9)
+                            else -> MaterialTheme.colorScheme.surface
+                        }
                     )
                 ) {
                     Row(
@@ -189,7 +227,11 @@ private fun UnitsListContent(
                             LinearProgressIndicator(
                                 progress = { (u.percent / 100.0).toFloat() },
                                 modifier = Modifier.fillMaxWidth().height(6.dp),
-                                color = if (u.percent >= 100.0) CorrectGreen else MaterialTheme.colorScheme.primary,
+                                color = when {
+                                    isCompleted -> CorrectGreen
+                                    isApproved -> Color(0xFF4CAF50)
+                                    else -> MaterialTheme.colorScheme.primary
+                                },
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                             Text(
@@ -201,16 +243,27 @@ private fun UnitsListContent(
                         Icon(
                             imageVector = when {
                                 u.isLocked -> Icons.Default.Lock
-                                u.percent >= 100.0 -> Icons.Default.CheckCircle
+                                isCompleted -> Icons.Default.CheckCircle
+                                isApproved -> Icons.Default.CheckCircle
                                 else -> Icons.Default.PlayArrow
                             },
                             contentDescription = null,
                             tint = when {
                                 u.isLocked -> MaterialTheme.colorScheme.onSurfaceVariant
-                                u.percent >= 100.0 -> CorrectGreen
+                                isCompleted -> CorrectGreen
+                                isApproved -> Color(0xFF4CAF50)
                                 else -> MaterialTheme.colorScheme.primary
                             }
                         )
+                        if (isApproved || isCompleted) {
+                            Spacer(Modifier.width(4.dp))
+                            TextButton(
+                                onClick = { onRedoClick(u.id) },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text("Rehacer", style = MaterialTheme.typography.labelSmall, color = WarningOrange)
+                            }
+                        }
                     }
                 }
                 Spacer(Modifier.height(10.dp))

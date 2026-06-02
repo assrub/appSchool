@@ -1,0 +1,20 @@
+package com.appenglish.ui.screens.settings
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.appenglish.data.repository.ProgressRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val progressRepository: ProgressRepository
+) : ViewModel() {
+
+    fun resetAllProgress() {
+        viewModelScope.launch {
+            progressRepository.resetAllProgress()
+        }
+    }
+}

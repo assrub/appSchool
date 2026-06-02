@@ -40,6 +40,18 @@ interface ProgressDao {
     @Query("UPDATE progress SET testScore = :testScore WHERE deviceId = :deviceId AND topicId = :topicId")
     suspend fun updateTestScore(deviceId: String, topicId: String, testScore: Int)
 
+    @Query("DELETE FROM progress WHERE deviceId = :deviceId")
+    suspend fun deleteAllProgress(deviceId: String)
+
+    @Query("DELETE FROM block_progress WHERE deviceId = :deviceId")
+    suspend fun deleteAllBlockProgress(deviceId: String)
+
+    @Query("DELETE FROM progress WHERE deviceId = :deviceId AND topicId = :topicId AND unitId = :unitId")
+    suspend fun deleteUnitProgress(deviceId: String, topicId: String, unitId: String)
+
+    @Query("DELETE FROM block_progress WHERE deviceId = :deviceId AND topicId = :topicId AND unitId = :unitId")
+    suspend fun deleteUnitBlockProgress(deviceId: String, topicId: String, unitId: String)
+
     // ── Block Progress ──
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

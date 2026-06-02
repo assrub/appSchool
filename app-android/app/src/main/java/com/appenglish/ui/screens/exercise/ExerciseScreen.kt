@@ -397,7 +397,7 @@ private fun ExerciseContent(
                     onDraggingWordChange = { draggingWord = it },
                     onIsOverDropZoneChange = { isOverDropZone = it },
                     getCurrentBlockTitle = { viewModel.getCurrentBlockTitle() },
-                    onSelectOption = { viewModel.selectOption(it); viewModel.checkTextAnswer() },
+                    onSelectOption = { viewModel.selectOption(it) },
                     onInputChanged = { viewModel.onInputChanged(it) },
                     onCheckTextAnswer = { viewModel.checkTextAnswer() }
                 )
