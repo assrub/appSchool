@@ -290,6 +290,23 @@
                     <span class="text-caption text-grey ml-2">({{ m.count }} veces)</span>
                   </div>
                 </div>
+
+                <div v-if="analytics.hardestExercises?.length" class="mt-4">
+                  <h4 class="text-subtitle-1 font-weight-medium mb-2">Ejercicios más difíciles:</h4>
+                  <div v-for="(ex, i) in analytics.hardestExercises.slice(0, 8)" :key="i" class="d-flex align-center py-2 px-3 mb-2 rounded" style="background:#FFF3E0">
+                    <div class="flex-grow-1">
+                      <div class="text-body-2 font-weight-medium">{{ ex.correctAnswer }}</div>
+                      <div class="text-caption text-grey">
+                        {{ ex.failedAttempts }}/{{ ex.totalAttempts }} fallos
+                        <span v-if="ex.commonWrongAnswers?.length"> — Respuestas comunes: </span>
+                        <v-chip v-for="(wa, wi) in ex.commonWrongAnswers" :key="wi" size="x-small" color="error" variant="tonal" class="mr-1">
+                          "{{ wa }}"
+                        </v-chip>
+                      </div>
+                      <div class="text-caption text-grey">Unidad: {{ ex.unitId }}</div>
+                    </div>
+                  </div>
+                </div>
               </v-card-text>
             </v-card>
           </template>

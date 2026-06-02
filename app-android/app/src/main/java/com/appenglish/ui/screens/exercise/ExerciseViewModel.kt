@@ -92,6 +92,8 @@ class UnitExerciseViewModel @Inject constructor(
     private val progressRepository: ProgressRepository
 ) : AndroidViewModel(application) {
 
+    private var syncDebounceJob: kotlinx.coroutines.Job? = null
+
     private val topicId: String = savedStateHandle.get<String>("topicId") ?: "verb-to-be"
     private val unitId: String = savedStateHandle.get<String>("unitId") ?: "affirmative"
 
@@ -496,6 +498,7 @@ class UnitExerciseViewModel @Inject constructor(
             val newScore = state.score + 1; val newCompleted = state.completedItems + 1
             _uiState.value = state.copy(userInput = userAnswer, isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
             saveProgressLocal()
+            triggerDebouncedSync()
             if (item.itemType == "fill-blank") {
                 val fullSentence = item.sentence.replace(Regex("_{2,}"), item.answer)
                 viewModelScope.launch { delay(600); _uiState.value = _uiState.value.copy(playingFullAudio = true, fullSentenceToPlay = fullSentence) }
@@ -560,6 +563,37 @@ class UnitExerciseViewModel @Inject constructor(
 
     private val allAnswerOptions = listOf("I am","I'm not","he is","he isn't","she is","she isn't","it is","it isn't","you are","you aren't","we are","we aren't","they are","they aren't","am not","isn't","aren't","Am","Is","Are")
 
+    private fun triggerDebouncedSync() {
+        syncDebounceJob?.cancel()
+        syncDebounceJob = viewModelScope.launch {
+            delay(3000)
+            val s = _uiState.value
+            val items = s.completedItems
+            try {
+                val existing = progressRepository.getProgress(topicId, unitId)
+                progressRepository.syncProgress(
+                    entries = listOf(
+                        com.appenglish.data.remote.dto.ProgressEntryDto(
+                            topicId = topicId,
+                            unitId = unitId,
+                            completed = false,
+                            score = s.score,
+                            totalItems = s.totalItems,
+                            completedItems = items,
+                            testScore = existing?.testScore
+                        )
+                    )
+                )
+            } catch (_: Exception) {}
+            if (pendingAnswers.isNotEmpty()) {
+                try {
+                    progressRepository.recordAnswers(pendingAnswers.toList())
+                    pendingAnswers.clear()
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     private fun saveProgressLocal() {
         viewModelScope.launch {
             val state = _uiState.value
@@ -621,13 +655,6 @@ class UnitExerciseViewModel @Inject constructor(
                     blockEntries = blockEntries
                 )
             } catch (_: Exception) {}
-
-            if (pendingAnswers.isNotEmpty()) {
-                try {
-                    progressRepository.recordAnswers(pendingAnswers.toList())
-                    pendingAnswers.clear()
-                } catch (_: Exception) {}
-            }
         }
     }
 

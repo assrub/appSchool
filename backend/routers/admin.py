@@ -1867,10 +1867,54 @@ async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin:
 
     # Overall
     total = len(all_answers)
-    correct = sum(1 for a in all_answers if a.is_correct)
-    accuracy = round(correct/total*100, 1) if total > 0 else 0
+    correct_count = sum(1 for a in all_answers if a.is_correct)
+    accuracy = round(correct_count/total*100, 1) if total > 0 else 0
 
-    return {"weakUnits": weak_units[:5], "strongUnits": strong_units[:5], "commonMistakes": common_mistakes, "overallAccuracy": accuracy, "totalAnswered": total, "totalCorrect": correct}
+    # Per-exercise stats (most failed specific sentences)
+    sentence_map = {}
+    for e in errors:
+        key = e.topic_id + "::" + e.unit_id + "::" + e.given_answer + "→" + e.correct_answer
+        sentence_key = e.topic_id + "::" + e.unit_id + "::" + e.correct_answer
+        if sentence_key not in sentence_map:
+            sentence_map[sentence_key] = {
+                "topicId": e.topic_id,
+                "unitId": e.unit_id,
+                "correctAnswer": e.correct_answer,
+                "totalAttempts": 0,
+                "failedAttempts": 0,
+                "commonWrongAnswers": []
+            }
+        sentence_map[sentence_key]["failedAttempts"] += 1
+    for a in all_answers:
+        sentence_key = a.topic_id + "::" + a.unit_id + "::" + a.correct_answer
+        if sentence_key in sentence_map:
+            sentence_map[sentence_key]["totalAttempts"] += 1
+
+    # Track common wrong answers per exercise
+    wrong_map = {}
+    for e in errors:
+        key = e.topic_id + "::" + e.unit_id + "::" + e.correct_answer
+        wrong_key = key + "::" + e.given_answer
+        if wrong_key not in wrong_map:
+            wrong_map[wrong_key] = {"answer": e.given_answer, "count": 0}
+        wrong_map[wrong_key]["count"] += 1
+    for sk, sdata in sentence_map.items():
+        exercise_wrongs = {k: v for k, v in wrong_map.items() if k.startswith(sk + "::")}
+        sorted_wrongs = sorted(exercise_wrongs.values(), key=lambda x: -x["count"])[:3]
+        sdata["commonWrongAnswers"] = [w["answer"] for w in sorted_wrongs]
+        sdata["commonWrongCounts"] = [w["count"] for w in sorted_wrongs]
+
+    hardest_exercises = sorted(sentence_map.values(), key=lambda x: -x["failedAttempts"])[:10]
+
+    return {
+        "weakUnits": weak_units[:5],
+        "strongUnits": strong_units[:5],
+        "commonMistakes": common_mistakes,
+        "overallAccuracy": accuracy,
+        "totalAnswered": total,
+        "totalCorrect": correct_count,
+        "hardestExercises": hardest_exercises,
+    }
 
 
 @router.get("/progress/{user_id}/detail")
