@@ -82,7 +82,7 @@ async def get_topic(topic_id: str, db: AsyncSession = Depends(get_db)):
             selectinload(Topic.theory).selectinload(TopicTheory.sections),
             selectinload(Topic.videos),
             selectinload(Topic.units).selectinload(ExerciseUnit.theory).selectinload(UnitTheory.sections),
-            selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.theory),
+            selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.theory).selectinload(BlockTheory.sections),
             selectinload(Topic.units).selectinload(ExerciseUnit.blocks).selectinload(ExerciseBlock.items),
             selectinload(Topic.subject),
         )

@@ -597,7 +597,11 @@ async def get_topic_theory(topic_id: str, db: AsyncSession = Depends(get_db), ad
 
 @router.put("/topics/{topic_id}/theory", response_model=MessageResponse)
 async def save_topic_theory(topic_id: str, data: TheorySaveRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    result = await db.execute(select(TopicTheory).where(TopicTheory.topic_id == topic_id))
+    result = await db.execute(
+        select(TopicTheory)
+        .where(TopicTheory.topic_id == topic_id)
+        .options(selectinload(TopicTheory.sections))
+    )
     theory = result.scalar_one_or_none()
     if not theory:
         theory = TopicTheory(topic_id=topic_id, text="")
@@ -607,16 +611,20 @@ async def save_topic_theory(topic_id: str, data: TheorySaveRequest, db: AsyncSes
     if data.blocks:
         import json
         theory.text = json.dumps(data.blocks, ensure_ascii=False)
-    else:
+    elif data.text:
         theory.text = data.text
 
-    await db.execute(delete(TheorySection).where(TheorySection.theory_id == theory.id))
-    for idx, s in enumerate(data.sections):
-        db.add(TheorySection(theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
+    if data.sections:
+        await db.execute(delete(TheorySection).where(TheorySection.theory_id == theory.id))
+        for idx, s in enumerate(data.sections):
+            db.add(TheorySection(theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
 
-    theory.table_headers = data.table_headers
-    theory.table_rows = data.table_rows
-    theory.tips = data.tips
+    if data.table_headers is not None:
+        theory.table_headers = data.table_headers
+    if data.table_rows is not None:
+        theory.table_rows = data.table_rows
+    if data.tips is not None:
+        theory.tips = data.tips
     await db.commit()
     return MessageResponse(message="Theory saved")
 
@@ -639,7 +647,11 @@ async def get_unit_theory(unit_id: str, db: AsyncSession = Depends(get_db), admi
 
 @router.put("/units/{unit_id}/theory", response_model=MessageResponse)
 async def save_unit_theory(unit_id: str, data: TheorySaveRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    result = await db.execute(select(UnitTheory).where(UnitTheory.unit_id == unit_id))
+    result = await db.execute(
+        select(UnitTheory)
+        .where(UnitTheory.unit_id == unit_id)
+        .options(selectinload(UnitTheory.sections))
+    )
     theory = result.scalar_one_or_none()
     if not theory:
         theory = UnitTheory(unit_id=unit_id, text="")
@@ -649,16 +661,20 @@ async def save_unit_theory(unit_id: str, data: TheorySaveRequest, db: AsyncSessi
     if data.blocks:
         import json
         theory.text = json.dumps(data.blocks, ensure_ascii=False)
-    else:
+    elif data.text:
         theory.text = data.text
 
-    await db.execute(delete(UnitTheorySection).where(UnitTheorySection.unit_theory_id == theory.id))
-    for idx, s in enumerate(data.sections):
-        db.add(UnitTheorySection(unit_theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
+    if data.sections:
+        await db.execute(delete(UnitTheorySection).where(UnitTheorySection.unit_theory_id == theory.id))
+        for idx, s in enumerate(data.sections):
+            db.add(UnitTheorySection(unit_theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
 
-    theory.table_headers = data.table_headers
-    theory.table_rows = data.table_rows
-    theory.tips = data.tips
+    if data.table_headers is not None:
+        theory.table_headers = data.table_headers
+    if data.table_rows is not None:
+        theory.table_rows = data.table_rows
+    if data.tips is not None:
+        theory.tips = data.tips
     await db.commit()
     return MessageResponse(message="Theory saved")
 
@@ -681,7 +697,11 @@ async def get_block_theory(block_id: int, db: AsyncSession = Depends(get_db), ad
 
 @router.put("/blocks/{block_id}/theory", response_model=MessageResponse)
 async def save_block_theory(block_id: int, data: TheorySaveRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
-    result = await db.execute(select(BlockTheory).where(BlockTheory.block_id == block_id))
+    result = await db.execute(
+        select(BlockTheory)
+        .where(BlockTheory.block_id == block_id)
+        .options(selectinload(BlockTheory.sections))
+    )
     theory = result.scalar_one_or_none()
     if not theory:
         theory = BlockTheory(block_id=block_id, text="")
@@ -691,16 +711,20 @@ async def save_block_theory(block_id: int, data: TheorySaveRequest, db: AsyncSes
     if data.blocks:
         import json
         theory.text = json.dumps(data.blocks, ensure_ascii=False)
-    else:
+    elif data.text:
         theory.text = data.text
 
-    await db.execute(delete(BlockTheorySection).where(BlockTheorySection.block_theory_id == theory.id))
-    for idx, s in enumerate(data.sections):
-        db.add(BlockTheorySection(block_theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
+    if data.sections:
+        await db.execute(delete(BlockTheorySection).where(BlockTheorySection.block_theory_id == theory.id))
+        for idx, s in enumerate(data.sections):
+            db.add(BlockTheorySection(block_theory_id=theory.id, title=s.title, text=s.text, examples=s.examples, sort_order=idx))
 
-    theory.table_headers = data.table_headers
-    theory.table_rows = data.table_rows
-    theory.tips = data.tips
+    if data.table_headers is not None:
+        theory.table_headers = data.table_headers
+    if data.table_rows is not None:
+        theory.table_rows = data.table_rows
+    if data.tips is not None:
+        theory.tips = data.tips
     await db.commit()
     return MessageResponse(message="Theory saved")
 
