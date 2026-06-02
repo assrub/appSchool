@@ -67,7 +67,10 @@ data class UnitExerciseUiState(
     val retryIndex: Int = 0,
     val selectedTab: Int = 0,
     val currentBlockTheory: BlockTheory? = null,
-    // Multi-type support
+    val blockCompleted: Boolean = false,
+    val blockScore: Int = 0,
+    val blockTotalItems: Int = 0,
+    val unitPassed: Boolean = false,
     val mcSelectedIndex: Int? = null,
     val reorderWords: List<String> = emptyList(),
     val reorderSlots: List<String?> = emptyList(),
@@ -230,15 +233,21 @@ class UnitExerciseViewModel @Inject constructor(
                 readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
         } else if (state.currentBlockIndex + 1 < state.blocks.size) {
-            saveProgress()
+            val wrongInBlock = state.wrongItems.count { it.blockIndex == state.currentBlockIndex }
+            val blockScore = (currentBlock.items.size - wrongInBlock).coerceAtLeast(0)
             _uiState.value = state.copy(
-                currentBlockIndex = state.currentBlockIndex + 1, currentItemIndex = 0,
+                blockCompleted = true,
+                blockScore = blockScore,
+                blockTotalItems = currentBlock.items.size,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
                 readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
+            saveProgress()
         } else {
-            _uiState.value = state.copy(isFinished = true)
+            val percent = if (state.totalItems > 0) (state.score.toFloat() / state.totalItems) * 100 else 0f
+            val passed = percent >= 70f
+            _uiState.value = state.copy(isFinished = true, unitPassed = passed)
             saveProgress(completed = true)
         }
         updateCurrentBlockTheory()
@@ -267,18 +276,23 @@ class UnitExerciseViewModel @Inject constructor(
             )
         }
         else if (state.currentBlockIndex + 1 < state.blocks.size) {
-            saveProgress()
+            val wrongInBlock = state.wrongItems.count { it.blockIndex == state.currentBlockIndex }
+            val blockScore = (currentBlock.items.size - wrongInBlock).coerceAtLeast(0)
             _uiState.value = state.copy(
-                currentBlockIndex = state.currentBlockIndex + 1,
-                currentItemIndex = 0,
+                blockCompleted = true,
+                blockScore = blockScore,
+                blockTotalItems = currentBlock.items.size,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
                 readyForNext = false, fullSentenceToPlay = "",
                 showAcceptButton = false
             )
+            saveProgress()
         }
         else {
-            _uiState.value = state.copy(isFinished = true)
+            val percent = if (state.totalItems > 0) (state.score.toFloat() / state.totalItems) * 100 else 0f
+            val passed = percent >= 70f
+            _uiState.value = state.copy(isFinished = true, unitPassed = passed)
             saveProgress(completed = true)
         }
         updateCurrentBlockTheory()
@@ -333,11 +347,57 @@ class UnitExerciseViewModel @Inject constructor(
         }
     }
 
+    fun continueToNextBlock() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            blockCompleted = false,
+            currentBlockIndex = state.currentBlockIndex + 1,
+            currentItemIndex = 0,
+            userInput = "", feedback = null, isCorrect = null,
+            showingAnswer = false, playingFullAudio = false,
+            readyForNext = false, fullSentenceToPlay = "",
+            showAcceptButton = false
+        )
+        updateCurrentBlockTheory()
+    }
+
+    fun redoUnit() {
+        viewModelScope.launch {
+            progressRepository.saveProgress(
+                topicId = topicId, unitId = unitId,
+                completedItems = 0, score = 0,
+                totalItems = _uiState.value.totalItems, completed = false
+            )
+            for (i in _uiState.value.blocks.indices) {
+                progressRepository.saveBlockProgress(
+                    topicId = topicId, unitId = unitId,
+                    blockIndex = i, score = 0,
+                    totalItems = _uiState.value.blocks[i].items.size,
+                    completed = false
+                )
+            }
+            _uiState.value = UnitExerciseUiState(
+                unitTitle = _uiState.value.unitTitle,
+                unitExplanation = _uiState.value.unitExplanation,
+                unitTheory = _uiState.value.unitTheory,
+                soundCorrectUrl = _uiState.value.soundCorrectUrl,
+                soundIncorrectUrl = _uiState.value.soundIncorrectUrl,
+                blocks = _uiState.value.blocks,
+                totalBlocks = _uiState.value.totalBlocks,
+                totalItems = _uiState.value.totalItems,
+                isLoading = false
+            )
+            updateCurrentBlockTheory()
+        }
+    }
+
     fun getCurrentItem(): ExerciseItem? {
         val state = _uiState.value
         if (state.retryMode) {
-            val wrong = state.wrongItems.getOrNull(state.retryIndex)
-            return wrong?.let { ExerciseItem(it.sentence, it.correctAnswer, null) }
+            val wrong = state.wrongItems.getOrNull(state.retryIndex) ?: return null
+            val originalItem = state.blocks.getOrNull(wrong.blockIndex)?.items?.getOrNull(wrong.itemIndex)
+            return originalItem?.copy(sentence = wrong.sentence, answer = wrong.correctAnswer)
+                ?: ExerciseItem(wrong.sentence, wrong.correctAnswer, null)
         }
         val block = state.blocks.getOrNull(state.currentBlockIndex) ?: return null
         return block.items.getOrNull(state.currentItemIndex)

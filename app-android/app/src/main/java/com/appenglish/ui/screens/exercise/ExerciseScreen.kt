@@ -152,10 +152,20 @@ fun UnitExerciseScreen(
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
             }
+        } else if (uiState.blockCompleted) {
+            BlockCompletionContent(
+                blockTitle = viewModel.getCurrentBlockTitle(),
+                blockScore = uiState.blockScore,
+                blockTotalItems = uiState.blockTotalItems,
+                wrongItems = uiState.wrongItems.filter { it.blockIndex == uiState.currentBlockIndex },
+                onContinue = { viewModel.continueToNextBlock() },
+                modifier = Modifier.padding(padding)
+            )
         } else if (uiState.isFinished) {
             CompletionContent(
                 uiState = uiState,
                 onRetryClick = { viewModel.startRetryWrongItems() },
+                onRedoClick = { viewModel.redoUnit() },
                 onBackClick = onBackClick,
                 modifier = Modifier.padding(padding)
             )
@@ -174,19 +184,30 @@ fun UnitExerciseScreen(
 private fun CompletionContent(
     uiState: UnitExerciseUiState,
     onRetryClick: () -> Unit,
+    onRedoClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val percent = if (uiState.totalItems > 0) (uiState.score.toFloat() / uiState.totalItems) * 100 else 0f
+    val passed = percent >= 70f
+
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("🎉", fontSize = 80.sp)
-        Text("¡Unidad completada!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Primary)
+        Text(if (passed) "🎉" else "📚", fontSize = 80.sp)
+        Text(
+            if (passed) "¡Unidad aprobada!" else "No aprobaste",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (passed) CorrectGreen else ErrorRed
+        )
         Text("Puntuación: ${uiState.score} / ${uiState.totalItems}", style = MaterialTheme.typography.titleLarge)
-        val percent = if (uiState.totalItems > 0) (uiState.score.toFloat() / uiState.totalItems) * 100 else 0f
-        Text("${percent.toInt()}%", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = if (percent >= 70) CorrectGreen else ErrorRed)
+        Text("${percent.toInt()}%", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = if (passed) CorrectGreen else ErrorRed)
+        if (!passed) {
+            Text("Necesitás 70% para aprobar", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        }
 
         if (uiState.wrongItems.isNotEmpty()) {
             Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = WarningBackground), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
@@ -194,10 +215,10 @@ private fun CompletionContent(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("⚠️", fontSize = 24.sp)
                         Spacer(Modifier.width(8.dp))
-                        Text("Errores para revisar (${uiState.wrongItems.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarningOrange)
+                        Text("Errores (${uiState.wrongItems.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarningOrange)
                     }
                     Spacer(Modifier.height(12.dp))
-                    uiState.wrongItems.forEach { wrong ->
+                    uiState.wrongItems.take(5).forEach { wrong ->
                         Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                             Column(Modifier.padding(12.dp)) {
                                 Text(wrong.sentence, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
@@ -205,13 +226,87 @@ private fun CompletionContent(
                             }
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = onRetryClick, colors = ButtonDefaults.buttonColors(containerColor = WarningOrange), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) { Text("Rehacer errores", style = MaterialTheme.typography.titleMedium, color = Color.White) }
+                    if (uiState.wrongItems.size > 5) {
+                        Text("... y ${uiState.wrongItems.size - 5} más", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(top = 8.dp))
+                    }
                 }
             }
         }
 
-        Button(onClick = onBackClick, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Volver", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White) }
+        Spacer(Modifier.height(8.dp))
+
+        if (!passed && uiState.wrongItems.isNotEmpty()) {
+            Button(onClick = onRetryClick, colors = ButtonDefaults.buttonColors(containerColor = WarningOrange), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                Text("Rehacer errores", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        }
+
+        if (!passed) {
+            Button(onClick = onRedoClick, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                Text("Rehacer unidad completa", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        }
+
+        Button(onClick = onBackClick, colors = ButtonDefaults.buttonColors(containerColor = if (passed) Primary else Color.Gray), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) {
+            Text(if (passed) "Continuar" else "Volver", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+        }
+
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun BlockCompletionContent(
+    blockTitle: String,
+    blockScore: Int,
+    blockTotalItems: Int,
+    wrongItems: List<WrongAnswer>,
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val percent = if (blockTotalItems > 0) (blockScore.toFloat() / blockTotalItems) * 100 else 0f
+
+    Column(
+        modifier = modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("✅", fontSize = 80.sp)
+        Text("Bloque completado", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Primary)
+        if (blockTitle.isNotBlank()) {
+            Text(blockTitle, style = MaterialTheme.typography.titleLarge, color = Color.Gray)
+        }
+        Text("$blockScore / $blockTotalItems", style = MaterialTheme.typography.titleLarge)
+        Text("${percent.toInt()}%", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = if (percent >= 70) CorrectGreen else WarningOrange)
+
+        if (wrongItems.isNotEmpty()) {
+            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = WarningBackground), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
+                Column(Modifier.padding(20.dp).fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("⚠️", fontSize = 24.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Errores en este bloque (${wrongItems.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarningOrange)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    wrongItems.forEach { wrong ->
+                        Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(wrong.sentence, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Row { Text("Vos: ", style = MaterialTheme.typography.bodySmall, color = Color.Gray); Text(wrong.givenAnswer, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = ErrorRed) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Button(onClick = onContinue, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(56.dp)) {
+            Text("Continuar al siguiente bloque", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+        }
+
+        Spacer(Modifier.height(16.dp))
     }
 }
 
