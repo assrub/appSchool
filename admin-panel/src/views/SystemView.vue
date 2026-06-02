@@ -150,7 +150,7 @@
 
       <!-- SCRIPTS TAB -->
       <v-window-item value="scripts">
-        <ScriptsView />
+        <ScriptView />
       </v-window-item>
 
       <!-- HEALTH TAB -->
@@ -206,7 +206,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import api from '../api/client'
-import ScriptsView from './ScriptsView.vue'
+import ScriptView from './ScriptView.vue'
 
 const tab = ref('logs')
 const wsConnected = ref(false)
