@@ -83,8 +83,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideContentRepository(api: ContentApi): ContentRepository =
-        ContentRepository(api)
+    fun provideContentRepository(api: ContentApi, db: AppDatabase): ContentRepository =
+        ContentRepository(api, db.contentCacheDao())
 
     @Provides
     @Singleton

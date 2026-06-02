@@ -84,6 +84,21 @@ class UnitsViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedTab = index)
     }
 
+    fun refreshProgress() {
+        viewModelScope.launch {
+            val topic = _uiState.value
+            if (topic.units.isEmpty()) return@launch
+            val localProgress = progressRepository.getTopicProgress(topicId)
+            val updatedUnits = topic.units.map { u ->
+                val local = localProgress.find { it.unitId == u.id }
+                u.copy(
+                    completedItems = local?.completedItems ?: u.completedItems,
+                )
+            }
+            _uiState.value = topic.copy(units = updatedUnits)
+        }
+    }
+
     fun resetUnitProgress(unitId: String) {
         viewModelScope.launch {
             progressRepository.resetUnitProgress(topicId, unitId)

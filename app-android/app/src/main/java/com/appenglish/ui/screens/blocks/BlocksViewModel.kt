@@ -59,6 +59,23 @@ class BlocksViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedTab = index)
     }
 
+    fun refreshProgress() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            if (state.blocks.isEmpty()) return@launch
+            val blockProgressList = progressRepository.getAllBlockProgress(state.topicId, state.unitId)
+            val blockProgress = blockProgressList.associate {
+                it.blockIndex to BlockProgressData(
+                    blockIndex = it.blockIndex,
+                    score = it.score,
+                    totalItems = it.totalItems,
+                    completed = it.completed
+                )
+            }
+            _uiState.value = state.copy(blockProgress = blockProgress)
+        }
+    }
+
     fun loadBlocks() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
