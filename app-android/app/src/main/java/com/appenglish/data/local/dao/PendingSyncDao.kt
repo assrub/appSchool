@@ -26,4 +26,16 @@ interface PendingSyncDao {
 
     @Query("SELECT COUNT(*) FROM pending_syncs")
     suspend fun count(): Int
+
+    @Query("DELETE FROM pending_syncs WHERE syncType = 'progress' AND topicId = :topicId AND unitId = :unitId")
+    suspend fun deleteByUnit(topicId: String, unitId: String)
+
+    @Query("DELETE FROM pending_syncs WHERE syncType = 'progress' AND topicId = :topicId")
+    suspend fun deleteByTopic(topicId: String)
+
+    @Query("DELETE FROM pending_syncs WHERE syncType = 'progress'")
+    suspend fun deleteAllProgressSyncs()
+
+    @Query("DELETE FROM pending_syncs")
+    suspend fun deleteAll()
 }

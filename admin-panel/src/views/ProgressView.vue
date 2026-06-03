@@ -142,6 +142,23 @@
           </v-card>
 
           <template v-else>
+            <v-card v-if="weaknesses.length" rounded="lg" elevation="2" class="mb-4">
+              <v-card-title class="d-flex align-center">
+                <v-icon class="mr-2" color="warning">mdi-alert-circle</v-icon>
+                Áreas que necesitan atención
+                <v-chip size="small" variant="tonal" color="warning" class="ml-2">{{ weaknesses.length }}</v-chip>
+              </v-card-title>
+              <v-card-text>
+                <WeaknessCard
+                  v-for="w in weaknesses"
+                  :key="w.unitId"
+                  :weakness="w"
+                  @redo="confirmRedoUnitById(w.unitId, w.topicId)"
+                  @reset="confirmResetUnit(w)"
+                />
+              </v-card-text>
+            </v-card>
+
             <v-card rounded="lg" elevation="2" class="mb-4">
               <v-card-title class="d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-format-list-bulleted</v-icon>
@@ -175,9 +192,9 @@
                         Test {{ u.testScore }}/20
                       </v-chip>
                       <v-btn icon="mdi-restart" variant="text" size="x-small" color="orange" @click="confirmRedoUnit(u)" />
+                      <v-btn icon="mdi-delete" variant="text" size="x-small" color="error" @click="confirmResetUnitById(u)" />
                     </div>
 
-                    <!-- New pedagogical metrics -->
                     <div v-if="u.itemsAttempted > 0" class="d-flex align-center mt-2 mb-2" style="gap: 12px;">
                       <v-chip size="x-small" :color="u.accuracy >= 70 ? 'success' : u.accuracy >= 50 ? 'warning' : 'error'" variant="tonal">
                         Precisión: {{ Math.round(u.accuracy) }}%
@@ -202,10 +219,31 @@
                         <span v-else class="text-success ml-1">✨ perfecto</span>
                       </span>
                       <span v-else class="text-caption text-grey">{{ b.score }}/{{ b.totalItems }}</span>
+                      <v-btn icon="mdi-restart" variant="text" size="x-small" color="orange" class="ml-1" @click="confirmResetBlock(u, b.blockIndex)" />
                     </div>
                   </div>
                 </div>
               </div>
+            </v-card>
+
+            <v-card v-if="timelineEvents.length" rounded="lg" elevation="2" class="mb-4">
+              <v-card-title class="d-flex align-center">
+                <v-icon class="mr-2" color="info">mdi-timeline-clock</v-icon>
+                Actividad reciente
+                <v-spacer />
+                <v-chip-group v-model="timelineFilter" mandatory selected-class="text-primary">
+                  <v-chip size="small" value="all">Todo</v-chip>
+                  <v-chip size="small" value="reset">Resets</v-chip>
+                  <v-chip size="small" value="sync">Syncs</v-chip>
+                </v-chip-group>
+              </v-card-title>
+              <v-card-text>
+                <TimelineEvent
+                  v-for="event in filteredTimeline"
+                  :key="event.id"
+                  :event="event"
+                />
+              </v-card-text>
             </v-card>
 
             <v-card v-if="progressData.errors?.length" rounded="lg" elevation="2" class="mb-4">
@@ -241,7 +279,6 @@
               </v-card-title>
 
               <v-card-text>
-                <!-- Overall stats row -->
                 <v-row>
                   <v-col cols="4">
                     <v-sheet rounded="lg" color="grey-lighten-4" class="pa-3 text-center">
@@ -268,7 +305,16 @@
                   </v-col>
                 </v-row>
 
-                <!-- Weak Units Section -->
+                <div v-if="evolutionChart" class="mt-4">
+                  <h4 class="text-subtitle-1 font-weight-medium mb-2">
+                    <v-icon color="primary" class="mr-1">mdi-chart-line</v-icon>
+                    Evolución por unidad
+                  </h4>
+                  <div style="height: 300px;">
+                    <Line :data="evolutionChart" :options="chartOptions" />
+                  </div>
+                </div>
+
                 <div v-if="analytics.weakUnits?.length" class="mt-4">
                   <h4 class="text-subtitle-1 font-weight-medium mb-2">
                     <v-icon color="warning" class="mr-1">mdi-alert-circle</v-icon>
@@ -289,7 +335,6 @@
                   </div>
                 </div>
 
-                <!-- Common Mistakes Section -->
                 <div v-if="analytics.commonMistakes?.length" class="mt-4">
                   <h4 class="text-subtitle-1 font-weight-medium mb-2">
                     <v-icon color="error" class="mr-1">mdi-alert-rhombus</v-icon>
@@ -317,7 +362,6 @@
                   </div>
                 </div>
 
-                <!-- Hardest Exercises Section -->
                 <div v-if="analytics.hardestExercises?.length" class="mt-4">
                   <h4 class="text-subtitle-1 font-weight-medium mb-2">
                     <v-icon color="deep-orange" class="mr-1">mdi-fire</v-icon>
@@ -342,7 +386,6 @@
                   </div>
                 </div>
 
-                <!-- Retry Improvement Section -->
                 <div v-if="analytics.retryImprovement?.length" class="mt-4">
                   <h4 class="text-subtitle-1 font-weight-medium mb-2">
                     <v-icon color="info" class="mr-1">mdi-trending-up</v-icon>
@@ -403,13 +446,49 @@
           Marcar para rehacer
         </v-card-title>
         <v-card-text>
-          ¿Marcar "<b>{{ unitToRedo }}</b>" para que el estudiante la rehega?<br />
+          ¿Marcar "<b>{{ unitToRedo }}</b>" para que el estudiante la rehaga?<br />
           La unidad aparecerá como no completada.
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="redoDialog = false">Cancelar</v-btn>
           <v-btn color="warning" :loading="redoing" @click="doRedoUnit">Marcar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="resetUnitDialog" max-width="400">
+      <v-card rounded="lg">
+        <v-card-title class="text-error">
+          <v-icon class="mr-2">mdi-delete</v-icon>
+          Resetear unidad
+        </v-card-title>
+        <v-card-text>
+          ¿Resetear la unidad "<b>{{ unitToReset }}</b>" de <b>{{ selectedUser?.displayName }}</b>?<br />
+          Se borrará todo el progreso de esta unidad.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="resetUnitDialog = false">Cancelar</v-btn>
+          <v-btn color="error" :loading="resettingUnit" @click="doResetUnit">Resetear</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="resetBlockDialog" max-width="400">
+      <v-card rounded="lg">
+        <v-card-title class="text-error">
+          <v-icon class="mr-2">mdi-delete</v-icon>
+          Resetear bloque
+        </v-card-title>
+        <v-card-text>
+          ¿Resetear el bloque "<b>{{ blockToResetTitle }}</b>" de "<b>{{ unitToReset }}</b>"?<br />
+          El estudiante deberá rehacer este bloque.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="resetBlockDialog = false">Cancelar</v-btn>
+          <v-btn color="error" :loading="resettingBlock" @click="doResetBlock">Resetear</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -420,6 +499,12 @@
 import { ref, computed, onMounted, inject, watch } from 'vue'
 import api from '../api/client'
 import { useWebSocket } from '../composables/useWebSocket'
+import { Line } from 'vue-chartjs'
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
+import WeaknessCard from '../components/WeaknessCard.vue'
+import TimelineEvent from '../components/TimelineEvent.vue'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
 const snackbar = inject('snackbar')
 
@@ -430,7 +515,7 @@ const { connected: wsConnected, lastMessage: wsMessage } = useWebSocket(wsUrl)
 
 watch(wsMessage, (msg) => {
   if (!msg) return
-  if (msg.type === 'progress_synced' || msg.type === 'answers_recorded') {
+  if (msg.type === 'progress_synced' || msg.type === 'answers_recorded' || msg.type === 'progress_reset') {
     fetchUsers()
     if (selectedUser.value) selectUser(selectedUser.value)
   }
@@ -443,6 +528,10 @@ const loadingDetail = ref(false)
 const searchQuery = ref('')
 const progressData = ref({ progress: [], errors: [], sessions: [] })
 const analytics = ref(null)
+const weaknesses = ref([])
+const timelineEvents = ref([])
+const evolutionData = ref({})
+const timelineFilter = ref('all')
 
 const resetDialog = ref(false)
 const resetting = ref(false)
@@ -452,6 +541,16 @@ const unitToRedo = ref('')
 const unitToRedoTopic = ref('')
 const redoing = ref(false)
 
+const resetUnitDialog = ref(false)
+const unitToReset = ref('')
+const unitToResetTopic = ref('')
+const resettingUnit = ref(false)
+
+const resetBlockDialog = ref(false)
+const blockToResetIndex = ref(null)
+const blockToResetTitle = ref('')
+const resettingBlock = ref(false)
+
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value
   const q = searchQuery.value.toLowerCase()
@@ -459,6 +558,57 @@ const filteredUsers = computed(() => {
     (u.displayName || '').toLowerCase().includes(q) ||
     (u.username || '').toLowerCase().includes(q)
   )
+})
+
+const filteredTimeline = computed(() => {
+  if (timelineFilter.value === 'all') return timelineEvents.value
+  return timelineEvents.value.filter(e => e.eventType === timelineFilter.value)
+})
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'top' },
+    tooltip: { mode: 'index', intersect: false }
+  },
+  scales: {
+    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Precisión (%)' } }
+  }
+}
+
+const evolutionChart = computed(() => {
+  const data = evolutionData.value
+  if (!data || Object.keys(data).length === 0) return null
+
+  const entries = Object.values(data).filter(d => d.attempts > 1)
+  if (entries.length === 0) return null
+
+  const labels = entries.map(d => d.unitId)
+  const firstAccuracies = entries.map(d => d.firstAccuracy)
+  const currentAccuracies = entries.map(d => d.currentAccuracy)
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Primera vez',
+        data: firstAccuracies,
+        borderColor: '#FF9800',
+        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+        fill: true,
+        tension: 0.3
+      },
+      {
+        label: 'Actual',
+        data: currentAccuracies,
+        borderColor: '#4CAF50',
+        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+        fill: true,
+        tension: 0.3
+      }
+    ]
+  }
 })
 
 function formatDate(dateStr) {
@@ -499,6 +649,9 @@ async function selectUser(user) {
   selectedUser.value = user
   loadingDetail.value = true
   analytics.value = null
+  weaknesses.value = []
+  timelineEvents.value = []
+  evolutionData.value = {}
 
   try {
     const { data } = await api.get(`/admin/progress/${user.userId}/detail`)
@@ -512,8 +665,17 @@ async function selectUser(user) {
   try {
     const { data } = await api.get(`/admin/progress/${user.userId}/analytics`)
     analytics.value = data
+    weaknesses.value = data.weaknesses || []
   } catch {
     analytics.value = null
+  }
+
+  try {
+    const { data } = await api.get(`/admin/progress/${user.userId}/timeline`)
+    timelineEvents.value = data.events || []
+    evolutionData.value = data.evolution || {}
+  } catch {
+    timelineEvents.value = []
   }
 }
 
@@ -561,13 +723,64 @@ async function doResetAll() {
   }
 }
 
+function confirmResetUnitById(u) {
+  unitToReset.value = u.unitId || u.title
+  unitToResetTopic.value = u.topicId
+  resetUnitDialog.value = true
+}
+
+function confirmResetUnit(w) {
+  unitToReset.value = w.unitId
+  unitToResetTopic.value = w.topicId
+  resetUnitDialog.value = true
+}
+
+async function doResetUnit() {
+  resettingUnit.value = true
+  try {
+    await api.delete(`/admin/progress/${selectedUser.value.userId}/${unitToResetTopic.value}/${unitToReset.value}`)
+    snackbar.success('Unidad reseteada')
+    resetUnitDialog.value = false
+    await selectUser(selectedUser.value)
+  } catch (e) {
+    snackbar.error(e.response?.data?.detail || 'Error al resetear unidad')
+  } finally {
+    resettingUnit.value = false
+  }
+}
+
+function confirmResetBlock(u, blockIndex) {
+  unitToReset.value = u.unitId || u.title
+  unitToResetTopic.value = u.topicId
+  blockToResetIndex.value = blockIndex
+  blockToResetTitle.value = u.blocks?.find(b => b.blockIndex === blockIndex)?.title || `Bloque ${blockIndex + 1}`
+  resetBlockDialog.value = true
+}
+
+async function doResetBlock() {
+  resettingBlock.value = true
+  try {
+    await api.delete(`/admin/progress/${selectedUser.value.userId}/${unitToResetTopic.value}/${unitToReset.value}/block/${blockToResetIndex.value}`)
+    snackbar.success('Bloque reseteado')
+    resetBlockDialog.value = false
+    await selectUser(selectedUser.value)
+  } catch (e) {
+    snackbar.error(e.response?.data?.detail || 'Error al resetear bloque')
+  } finally {
+    resettingBlock.value = false
+  }
+}
+
 function exportProgress() {
   if (!selectedUser.value) return
   const data = {
     user: selectedUser.value,
     progress: progressData.value.progress,
     errors: progressData.value.errors,
-    analytics: analytics.value
+    analytics: analytics.value,
+    weaknesses: weaknesses.value,
+    timeline: timelineEvents.value,
+    evolution: evolutionData.value
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)

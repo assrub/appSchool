@@ -50,7 +50,6 @@ class ProgressUnitResponse(BaseModel):
     totalItems: int = 0
     completedItems: int = 0
     testScore: int | None = None
-    # New pedagogical metrics
     accuracy: float = 0.0
     mastery: float = 0.0
     status: str = "not_started"
@@ -58,6 +57,7 @@ class ProgressUnitResponse(BaseModel):
     itemsMastered: int = 0
     itemsCorrectFirst: int = 0
     timeSpentSeconds: int = 0
+    redoData: dict | None = None
 
 
 class BlockProgressResponse(BaseModel):

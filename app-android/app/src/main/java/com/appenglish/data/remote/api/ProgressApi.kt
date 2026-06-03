@@ -5,6 +5,7 @@ import com.appenglish.data.remote.dto.AnswerBatchResponse
 import com.appenglish.data.remote.dto.ProgressSyncRequest
 import com.appenglish.data.remote.dto.ProgressSyncResponse
 import com.appenglish.data.remote.dto.ProgressResponse
+import com.appenglish.data.remote.dto.ResetUnitRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -18,4 +19,10 @@ interface ProgressApi {
 
     @POST("progress/answer")
     suspend fun recordAnswers(@Body request: AnswerBatchRequest): AnswerBatchResponse
+
+    @POST("progress/reset-all")
+    suspend fun resetAllProgress()
+
+    @POST("progress/reset-unit")
+    suspend fun resetUnitProgress(@Body request: ResetUnitRequest)
 }

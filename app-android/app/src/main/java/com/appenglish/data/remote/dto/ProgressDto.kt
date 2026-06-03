@@ -66,14 +66,14 @@ data class ProgressUnitDto(
     val totalItems: Int = 0,
     val completedItems: Int = 0,
     val testScore: Int? = null,
-    // New pedagogical metrics
     val accuracy: Float = 0f,
     val mastery: Float = 0f,
     val status: String = "not_started",
     val itemsAttempted: Int = 0,
     val itemsMastered: Int = 0,
     val itemsCorrectFirst: Int = 0,
-    val timeSpentSeconds: Int = 0
+    val timeSpentSeconds: Int = 0,
+    val redoData: Map<String, Any>? = null
 )
 
 data class BlockProgressDto(
@@ -102,4 +102,9 @@ data class AnswerBatchRequest(
 data class AnswerBatchResponse(
     val status: String = "",
     val recorded: Int = 0
+)
+
+data class ResetUnitRequest(
+    val topicId: String,
+    val unitId: String
 )

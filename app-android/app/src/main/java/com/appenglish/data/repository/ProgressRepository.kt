@@ -41,15 +41,17 @@ class ProgressRepository @Inject constructor(
             api.syncProgress(request)
             Result.success(Unit)
         } catch (e: Exception) {
-            // Save to pending sync queue for retry
+            val topicId = entries.firstOrNull()?.topicId
+            val unitId = entries.firstOrNull()?.unitId
             val payload = gson.toJson(request)
             pendingSyncDao.insert(
                 PendingSyncEntity(
                     syncType = "progress",
-                    payload = payload
+                    payload = payload,
+                    topicId = topicId,
+                    unitId = unitId
                 )
             )
-            // Enqueue WorkManager to retry
             SyncWorker.enqueue(context)
             Result.failure(e)
         }
@@ -80,12 +82,22 @@ class ProgressRepository @Inject constructor(
         for (subject in response.subjects) {
             for (topic in subject.topics) {
                 for (unit in topic.units) {
+                    val isMarkedForRedo = unit.redoData?.get("marked") == true
+                    if (isMarkedForRedo) {
+                        dao.deleteUnitProgress(userId, topic.topicId, unit.unitId)
+                        dao.deleteUnitBlockProgress(userId, topic.topicId, unit.unitId)
+                        pendingSyncDao.deleteByUnit(topic.topicId, unit.unitId)
+                        try {
+                            api.resetUnitProgress(com.appenglish.data.remote.dto.ResetUnitRequest(topic.topicId, unit.unitId))
+                        } catch (_: Exception) {}
+                        continue
+                    }
+
                     val existing = dao.getProgress(userId, topic.topicId, unit.unitId)
                     val remoteScore = unit.score
                     val remoteCompleted = unit.completed
 
                     if (existing == null) {
-                        // No local record - create from remote
                         dao.upsert(
                             ProgressEntity(
                                 deviceId = userId,
@@ -97,7 +109,6 @@ class ProgressRepository @Inject constructor(
                                 completedItems = unit.completedItems,
                                 testScore = unit.testScore,
                                 startedAt = System.currentTimeMillis(),
-                                // New pedagogical metrics from remote
                                 accuracy = unit.accuracy,
                                 mastery = unit.mastery,
                                 status = unit.status,
@@ -108,15 +119,12 @@ class ProgressRepository @Inject constructor(
                             )
                         )
                     }
-                    // If local exists, always keep local - user is actively working
-                    // Local will sync TO backend, not the other way around
                 }
             }
         }
         for (bp in response.blockProgress) {
             val existing = dao.getBlockProgress(userId, bp.topicId, bp.unitId, bp.blockIndex)
             if (existing == null) {
-                // Only create from remote if no local record exists
                 val remoteCompletedAt = bp.completedAt?.let { parseTimestamp(it) }
                 dao.upsertBlockProgress(
                     BlockProgressEntity(
@@ -132,7 +140,6 @@ class ProgressRepository @Inject constructor(
                     )
                 )
             }
-            // If local exists, always keep local (user is actively working)
         }
     }
 
@@ -266,39 +273,23 @@ class ProgressRepository @Inject constructor(
     suspend fun resetAllProgress() {
         dao.deleteAllProgress(userId)
         dao.deleteAllBlockProgress(userId)
-        // Sync reset to backend - send empty sync to clear server data
+        pendingSyncDao.deleteAllProgressSyncs()
         try {
-            api.syncProgress(ProgressSyncRequest(
-                progress = emptyList(),
-                blockProgress = emptyList()
-            ))
+            api.resetAllProgress()
         } catch (_: Exception) {}
     }
 
     suspend fun resetUnitProgress(topicId: String, unitId: String) {
         dao.deleteUnitProgress(userId, topicId, unitId)
         dao.deleteUnitBlockProgress(userId, topicId, unitId)
-        // Sync reset to backend for this unit
+        pendingSyncDao.deleteByUnit(topicId, unitId)
         try {
-            api.syncProgress(ProgressSyncRequest(
-                progress = listOf(
-                    ProgressEntryDto(
-                        topicId = topicId,
-                        unitId = unitId,
-                        completed = false,
-                        score = 0,
-                        totalItems = 0,
-                        completedItems = 0,
-                        status = "not_started"
-                    )
-                ),
-                blockProgress = emptyList()
-            ))
+            api.resetUnitProgress(com.appenglish.data.remote.dto.ResetUnitRequest(topicId, unitId))
         } catch (_: Exception) {}
     }
 
-        suspend fun resetBlockProgress(topicId: String, unitId: String, blockIndex: Int, totalItems: Int) {
-        // 1. Reset local del bloque
+    suspend fun resetBlockProgress(topicId: String, unitId: String, blockIndex: Int, totalItems: Int) {
+        pendingSyncDao.deleteByUnit(topicId, unitId)
         dao.upsertBlockProgress(
             BlockProgressEntity(
                 deviceId = userId,

@@ -252,6 +252,7 @@ class Progress(Base):
     items_correct_first: Mapped[int] = mapped_column(Integer, default=0)  # correct on first attempt
     time_spent_seconds: Mapped[int] = mapped_column(Integer, default=0)  # total time in seconds
     last_activity_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    last_reset_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class BlockProgress(Base):
@@ -271,6 +272,23 @@ class BlockProgress(Base):
     total_items: Mapped[int] = mapped_column(Integer, default=0)
     completed_items: Mapped[int] = mapped_column(Integer, default=0)
     completed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ProgressEvent(Base):
+    __tablename__ = "progress_events"
+    __table_args__ = (
+        Index("ix_progress_events_user", "user_id"),
+        Index("ix_progress_events_user_topic_unit", "user_id", "topic_id", "unit_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    topic_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    unit_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    block_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    event_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class StudySession(Base):

@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from database import get_db
 from dependencies import get_current_admin
-from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, BlockTheory, BlockTheorySection, Progress, BlockProgress, AnswerHistory, StudySession, DictionaryEntry, AppUser
+from models import Subject, Topic, ExerciseUnit, ExerciseBlock, ExerciseItem, TopicTheory, TheorySection, UnitTheory, UnitTheorySection, TheoryVideo, BlockTheory, BlockTheorySection, Progress, BlockProgress, AnswerHistory, StudySession, DictionaryEntry, AppUser, ProgressEvent
 from schemas.admin import (
     SubjectCreate, SubjectUpdate, SubjectResponse as AdminSubjectResponse,
     TopicCreate, TopicUpdate, TopicResponse as AdminTopicResponse,
@@ -323,8 +323,24 @@ async def unlock_unit(unit_id: str, db: AsyncSession = Depends(get_db), admin: d
 async def reset_unit_progress(user_id: int, topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     from sqlalchemy import delete as sqldelete
     await db.execute(sqldelete(Progress).where(Progress.user_id == user_id, Progress.topic_id == topic_id, Progress.unit_id == unit_id))
+    await db.execute(sqldelete(BlockProgress).where(BlockProgress.user_id == user_id, BlockProgress.topic_id == topic_id, BlockProgress.unit_id == unit_id))
     await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.user_id == user_id, AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
+    db.add(ProgressEvent(
+        user_id=user_id,
+        event_type="reset",
+        topic_id=topic_id,
+        unit_id=unit_id,
+        event_data={"scope": "unit", "source": "admin"}
+    ))
     await db.commit()
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_reset",
+        "userId": user_id,
+        "scope": "unit",
+        "topicId": topic_id,
+        "unitId": unit_id
+    })
     return MessageResponse(message="Progress reset for user")
 
 
@@ -334,21 +350,94 @@ async def reset_all_user_progress(user_id: int, db: AsyncSession = Depends(get_d
     await db.execute(sqldelete(Progress).where(Progress.user_id == user_id))
     await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.user_id == user_id))
     await db.execute(sqldelete(BlockProgress).where(BlockProgress.user_id == user_id))
+    all_progress = (await db.execute(select(Progress.topic_id, Progress.unit_id).where(Progress.user_id == user_id))).all()
+    for p in all_progress:
+        db.add(ProgressEvent(
+            user_id=user_id,
+            event_type="reset",
+            topic_id=p.topic_id,
+            unit_id=p.unit_id,
+            event_data={"scope": "all", "source": "admin"}
+        ))
+    await db.commit()
     from routers.websocket_manager import ws_manager
     await ws_manager.broadcast({
         "type": "progress_reset",
         "userId": user_id,
+        "scope": "all"
     })
-    await db.commit()
     return MessageResponse(message="All progress reset for user")
+
+
+@router.delete("/progress/{user_id}/{topic_id}/{unit_id}/block/{block_index}", response_model=MessageResponse)
+async def reset_block_progress(user_id: int, topic_id: str, unit_id: str, block_index: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    from sqlalchemy import delete as sqldelete
+    await db.execute(sqldelete(BlockProgress).where(
+        BlockProgress.user_id == user_id,
+        BlockProgress.topic_id == topic_id,
+        BlockProgress.unit_id == unit_id,
+        BlockProgress.block_index == block_index
+    ))
+    await db.commit()
+    all_blocks = (await db.execute(
+        select(BlockProgress).where(
+            BlockProgress.user_id == user_id,
+            BlockProgress.topic_id == topic_id,
+            BlockProgress.unit_id == unit_id
+        )
+    )).scalars().all()
+    new_completed_items = sum(bp.completed_items for bp in all_blocks)
+    new_score = sum(bp.score for bp in all_blocks)
+    new_total_items = sum(bp.total_items for bp in all_blocks)
+    new_completed = new_completed_items >= new_total_items and new_total_items > 0
+    prog = (await db.execute(select(Progress).where(
+        Progress.user_id == user_id,
+        Progress.topic_id == topic_id,
+        Progress.unit_id == unit_id
+    ))).scalar_one_or_none()
+    if prog:
+        prog.completed_items = new_completed_items
+        prog.score = new_score
+        prog.total_items = new_total_items
+        prog.completed = new_completed
+        prog.status = "completed" if new_completed else "in_progress"
+        prog.last_reset_at = datetime.datetime.now(datetime.timezone.utc)
+        await db.commit()
+    db.add(ProgressEvent(
+        user_id=user_id,
+        event_type="reset",
+        topic_id=topic_id,
+        unit_id=unit_id,
+        block_index=block_index,
+        event_data={"scope": "block", "source": "admin", "blockIndex": block_index}
+    ))
+    await db.commit()
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_reset",
+        "userId": user_id,
+        "scope": "block",
+        "topicId": topic_id,
+        "unitId": unit_id,
+        "blockIndex": block_index
+    })
+    return MessageResponse(message="Block progress reset for user")
 
 
 @router.delete("/progress/{topic_id}/{unit_id}/reset-all-users", response_model=MessageResponse)
 async def reset_all_users_progress(topic_id: str, unit_id: str, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     from sqlalchemy import delete as sqldelete
     await db.execute(sqldelete(Progress).where(Progress.topic_id == topic_id, Progress.unit_id == unit_id))
+    await db.execute(sqldelete(BlockProgress).where(BlockProgress.topic_id == topic_id, BlockProgress.unit_id == unit_id))
     await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.topic_id == topic_id, AnswerHistory.unit_id == unit_id))
     await db.commit()
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_reset",
+        "scope": "unit_all_users",
+        "topicId": topic_id,
+        "unitId": unit_id
+    })
     return MessageResponse(message="Progress reset for all users")
 
 
@@ -378,8 +467,15 @@ async def reset_topic_progress(topic_id: str, db: AsyncSession = Depends(get_db)
     from sqlalchemy import delete as sqldelete, update as sqlupdate
     from models import Progress, AnswerHistory
     await db.execute(sqldelete(Progress).where(Progress.topic_id == topic_id))
+    await db.execute(sqldelete(BlockProgress).where(BlockProgress.topic_id == topic_id))
     await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.topic_id == topic_id))
     await db.commit()
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_reset",
+        "scope": "topic",
+        "topicId": topic_id
+    })
     return MessageResponse(message="All progress reset")
 
 
@@ -1964,6 +2060,68 @@ async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin:
     # ── Strong units ──
     strong_units = sorted(weak_units, key=lambda x: x["errorRate"])[:5]
 
+    # ── Weakness detection (post-reset analysis) ──
+    weaknesses = []
+    reset_events = (await db.execute(
+        select(ProgressEvent)
+        .where(ProgressEvent.user_id == user_id, ProgressEvent.event_type == "reset")
+        .order_by(ProgressEvent.created_at.asc())
+    )).scalars().all()
+
+    reset_map = {}
+    for re in reset_events:
+        key = (re.topic_id, re.unit_id)
+        if key not in reset_map:
+            reset_map[key] = []
+        reset_map[key].append(re)
+
+    for (tid, uid), resets in reset_map.items():
+        if uid is None:
+            continue
+        unit_answers = [a for a in all_answers if a.topic_id == tid and a.unit_id == uid]
+        if not unit_answers:
+            continue
+
+        reset_times = [r.created_at for r in resets]
+        before_reset = [a for a in unit_answers if a.answered_at < reset_times[0]]
+        after_reset = [a for a in unit_answers if a.answered_at >= reset_times[-1]]
+
+        before_accuracy = round(sum(1 for a in before_reset if a.is_correct) / len(before_reset) * 100, 1) if before_reset else None
+        after_accuracy = round(sum(1 for a in after_reset if a.is_correct) / len(after_reset) * 100, 1) if after_reset else None
+
+        if after_accuracy is not None and after_accuracy < 50:
+            if before_accuracy is not None and after_accuracy < before_accuracy:
+                weakness_type = "post_reset_decline"
+                trend = "declining"
+                description = f"Reseteadas {len(resets)} vez/veces, precisión bajó de {before_accuracy}% a {after_accuracy}%"
+                recommendation = "Requiere refuerzo adicional y práctica guiada"
+            else:
+                weakness_type = "persistent_weakness"
+                trend = "stable" if after_accuracy >= 40 else "declining"
+                description = f"Reseteadas {len(resets)} vez/veces, precisión actual {after_accuracy}%"
+                recommendation = "Considerar ejercicios de repaso adicionales"
+        elif after_accuracy is not None and before_accuracy is not None and after_accuracy > before_accuracy:
+            weakness_type = "improving_after_reset"
+            trend = "improving"
+            description = f"Mejoró de {before_accuracy}% a {after_accuracy}% después del reset"
+            recommendation = "Continuar con práctica regular"
+        else:
+            continue
+
+        weaknesses.append({
+            "unitId": uid,
+            "topicId": tid,
+            "type": weakness_type,
+            "description": description,
+            "resetCount": len(resets),
+            "firstAttemptAccuracy": before_accuracy,
+            "currentAccuracy": after_accuracy,
+            "trend": trend,
+            "recommendation": recommendation
+        })
+
+    weaknesses.sort(key=lambda x: (x["trend"] == "declining", -x.get("currentAccuracy", 100)))
+
     return {
         "weakUnits": weak_units[:5],
         "strongUnits": strong_units[:5],
@@ -1973,6 +2131,103 @@ async def get_analytics(user_id: int, db: AsyncSession = Depends(get_db), admin:
         "totalCorrect": correct_count,
         "hardestExercises": hardest_exercises,
         "retryImprovement": retry_improvement[:10],
+        "weaknesses": weaknesses,
+    }
+
+
+@router.get("/progress/{user_id}/timeline")
+async def get_progress_timeline(user_id: int, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    events = (await db.execute(
+        select(ProgressEvent)
+        .where(ProgressEvent.user_id == user_id)
+        .order_by(ProgressEvent.created_at.desc())
+        .limit(100)
+    )).scalars().all()
+
+    all_answers = (await db.execute(
+        select(AnswerHistory)
+        .where(AnswerHistory.user_id == user_id)
+        .order_by(AnswerHistory.answered_at.asc())
+    )).scalars().all()
+
+    evolution = {}
+    for a in all_answers:
+        key = (a.topic_id, a.unit_id)
+        if key not in evolution:
+            evolution[key] = {"attempts": [], "resetCount": 0}
+        evolution[key]["attempts"].append({
+            "correct": a.is_correct,
+            "timestamp": a.answered_at
+        })
+
+    reset_events = (await db.execute(
+        select(ProgressEvent)
+        .where(ProgressEvent.user_id == user_id, ProgressEvent.event_type == "reset")
+        .order_by(ProgressEvent.created_at.asc())
+    )).scalars().all()
+
+    for re in reset_events:
+        key = (re.topic_id, re.unit_id)
+        if key in evolution:
+            evolution[key]["resetCount"] += 1
+
+    evolution_data = {}
+    for (tid, uid), data in evolution.items():
+        if uid is None:
+            continue
+        attempts = data["attempts"]
+        if not attempts:
+            continue
+
+        first_batch = attempts[:len(attempts)//2] if len(attempts) > 1 else attempts
+        last_batch = attempts[len(attempts)//2:] if len(attempts) > 1 else attempts
+
+        first_accuracy = round(sum(1 for a in first_batch if a["correct"]) / len(first_batch) * 100, 1) if first_batch else 0
+        current_accuracy = round(sum(1 for a in last_batch if a["correct"]) / len(last_batch) * 100, 1) if last_batch else 0
+        improvement = round(current_accuracy - first_accuracy, 1)
+
+        is_weakness = data["resetCount"] > 0 and current_accuracy < 50
+
+        evolution_data[f"{tid}_{uid}"] = {
+            "topicId": tid,
+            "unitId": uid,
+            "attempts": len(attempts),
+            "firstAccuracy": first_accuracy,
+            "currentAccuracy": current_accuracy,
+            "improvement": improvement,
+            "wasReset": data["resetCount"] > 0,
+            "resetCount": data["resetCount"],
+            "isWeakness": is_weakness
+        }
+
+    topic_names = {}
+    unit_names = {}
+    all_topics = (await db.execute(select(Topic))).scalars().all()
+    for t in all_topics:
+        topic_names[t.id] = t.name
+
+    all_units = (await db.execute(select(ExerciseUnit))).scalars().all()
+    for u in all_units:
+        unit_names[u.id] = u.title
+
+    events_data = []
+    for e in events:
+        event_dict = {
+            "id": e.id,
+            "eventType": e.event_type,
+            "topicId": e.topic_id,
+            "topicName": topic_names.get(e.topic_id, e.topic_id),
+            "unitId": e.unit_id,
+            "unitName": unit_names.get(e.unit_id, e.unit_id) if e.unit_id else None,
+            "blockIndex": e.block_index,
+            "eventData": e.event_data,
+            "createdAt": e.created_at.isoformat() if e.created_at else None
+        }
+        events_data.append(event_dict)
+
+    return {
+        "events": events_data,
+        "evolution": evolution_data
     }
 
 

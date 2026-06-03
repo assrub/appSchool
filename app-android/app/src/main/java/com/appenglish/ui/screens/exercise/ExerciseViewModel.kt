@@ -362,16 +362,14 @@ class UnitExerciseViewModel @Inject constructor(
             viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundCorrectUrl, isCorrect = true) }
             val remainingWrongs = state.wrongItems.toMutableList()
             remainingWrongs.removeAt(state.retryIndex)
-            // Track mastered on retry
             val itemKey = "${wrong.blockIndex}_${wrong.itemIndex}"
             val newMastered = state.masteredItems + itemKey
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = true,
                 showingAnswer = true,
-                wrongItems = remainingWrongs, score = state.score + 1,
+                wrongItems = remainingWrongs,
                 masteredItems = newMastered
             )
-            // Don't auto-advance — wait for user to tap modal button
         } else {
             val app = getApplication<Application>()
             viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundIncorrectUrl, isCorrect = false) }
@@ -706,6 +704,35 @@ class UnitExerciseViewModel @Inject constructor(
             val metrics = calculateMetrics()
             val cappedCompletedItems = s.completedItems.coerceAtMost(s.totalItems)
             val cappedScore = s.score.coerceAtMost(s.totalItems)
+
+            val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
+            for ((blockIdx, block) in s.blocks.withIndex()) {
+                if (blockIdx > s.currentBlockIndex) break
+                val savedBlock = progressRepository.getBlockProgress(topicId, unitId, blockIdx)
+                val blockCompletedItems = if (blockIdx < s.currentBlockIndex) {
+                    savedBlock?.completedItems ?: block.items.size
+                } else {
+                    s.currentBlockCompletedItems
+                }
+                val blockScore = if (blockIdx < s.currentBlockIndex) {
+                    savedBlock?.score ?: 0
+                } else {
+                    s.currentBlockScore
+                }
+                val blockCompleted = blockCompletedItems >= block.items.size
+                blockEntries.add(
+                    com.appenglish.data.remote.dto.BlockProgressEntryDto(
+                        topicId = topicId,
+                        unitId = unitId,
+                        blockIndex = blockIdx,
+                        completed = blockCompleted,
+                        score = blockScore.coerceAtMost(block.items.size),
+                        totalItems = block.items.size,
+                        completedItems = blockCompletedItems.coerceAtMost(block.items.size)
+                    )
+                )
+            }
+
             try {
                 val existing = progressRepository.getProgress(topicId, unitId)
                 progressRepository.syncProgress(
@@ -726,7 +753,8 @@ class UnitExerciseViewModel @Inject constructor(
                             itemsCorrectFirst = metrics.itemsCorrectFirst,
                             timeSpentSeconds = metrics.timeSpentSeconds
                         )
-                    )
+                    ),
+                    blockEntries = blockEntries
                 )
             } catch (_: Exception) {}
             val answersToSend = pendingAnswersMutex.withLock {

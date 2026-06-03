@@ -10,7 +10,7 @@ from sqlalchemy import select
 from config import CONTENT_DIR
 from database import get_db
 from dependencies import get_current_app_user
-from models import Progress, BlockProgress, AnswerHistory
+from models import Progress, BlockProgress, AnswerHistory, ProgressEvent
 from schemas.progress import (
     ProgressSyncRequest,
     ProgressSyncResponse,
@@ -73,24 +73,42 @@ async def sync_progress(
                 await db.execute(sqldelete(Progress).where(Progress.id.in_(duplicate_ids)))
 
             if existing:
-                existing.completed = entry.completed
-                existing.score = entry.score
-                existing.total_items = entry.totalItems
-                existing.completed_items = entry.completedItems
-                existing.test_score = entry.testScore
-                existing.accuracy = entry.accuracy
-                existing.mastery = entry.mastery
-                existing.status = entry.status
-                existing.items_attempted = entry.itemsAttempted
-                existing.items_mastered = entry.itemsMastered
-                existing.items_correct_first = entry.itemsCorrectFirst
-                existing.time_spent_seconds = entry.timeSpentSeconds
-                existing.last_activity_at = now
-                if entry.completedAt:
-                    if entry.completedAt.tzinfo is not None:
-                        existing.completed_at = entry.completedAt.replace(tzinfo=None)
-                    else:
-                        existing.completed_at = entry.completedAt
+                is_explicit_reset = (entry.score == 0 and entry.completed == False and entry.status == "not_started")
+                if is_explicit_reset:
+                    existing.completed = entry.completed
+                    existing.score = entry.score
+                    existing.total_items = entry.totalItems
+                    existing.completed_items = entry.completedItems
+                    existing.test_score = entry.testScore
+                    existing.accuracy = entry.accuracy
+                    existing.mastery = entry.mastery
+                    existing.status = entry.status
+                    existing.items_attempted = entry.itemsAttempted
+                    existing.items_mastered = entry.itemsMastered
+                    existing.items_correct_first = entry.itemsCorrectFirst
+                    existing.time_spent_seconds = entry.timeSpentSeconds
+                    existing.last_activity_at = now
+                    existing.last_reset_at = now
+                    existing.completed_at = None
+                else:
+                    existing.completed = entry.completed
+                    existing.score = entry.score
+                    existing.total_items = entry.totalItems
+                    existing.completed_items = entry.completedItems
+                    existing.test_score = entry.testScore
+                    existing.accuracy = entry.accuracy
+                    existing.mastery = entry.mastery
+                    existing.status = entry.status
+                    existing.items_attempted = entry.itemsAttempted
+                    existing.items_mastered = entry.itemsMastered
+                    existing.items_correct_first = entry.itemsCorrectFirst
+                    existing.time_spent_seconds = entry.timeSpentSeconds
+                    existing.last_activity_at = now
+                    if entry.completedAt:
+                        if entry.completedAt.tzinfo is not None:
+                            existing.completed_at = entry.completedAt.replace(tzinfo=None)
+                        else:
+                            existing.completed_at = entry.completedAt
             else:
                 new_progress = Progress(
                     user_id=user_id,
@@ -173,6 +191,21 @@ async def sync_progress(
             "syncedCount": synced_count,
             "timestamp": now.isoformat()
         })
+        for entry in request.progress:
+            db.add(ProgressEvent(
+                user_id=user_id,
+                event_type="sync",
+                topic_id=entry.topicId,
+                unit_id=entry.unitId,
+                event_data={
+                    "score": entry.score,
+                    "completed": entry.completed,
+                    "accuracy": entry.accuracy,
+                    "mastery": entry.mastery,
+                    "status": entry.status
+                }
+            ))
+        await db.commit()
         return ProgressSyncResponse(status="ok", syncedAt=now, syncedCount=synced_count)
     except Exception as e:
         import logging
@@ -228,6 +261,7 @@ async def get_progress(
                         itemsMastered=p.items_mastered,
                         itemsCorrectFirst=p.items_correct_first,
                         timeSpentSeconds=p.time_spent_seconds,
+                        redoData=p.redo_data,
                     )
                 )
             topics.append(
@@ -254,6 +288,63 @@ async def get_progress(
     ]
 
     return ProgressResponse(deviceId=str(uid), subjects=subjects, blockProgress=block_progress)
+
+@router.post("/reset-all")
+async def reset_all_progress(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
+):
+    from sqlalchemy import delete as sqldelete
+    user_id = int(current_user["sub"])
+    await db.execute(sqldelete(Progress).where(Progress.user_id == user_id))
+    await db.execute(sqldelete(BlockProgress).where(BlockProgress.user_id == user_id))
+    await db.execute(sqldelete(AnswerHistory).where(AnswerHistory.user_id == user_id))
+    await db.commit()
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_reset",
+        "userId": user_id,
+        "scope": "all"
+    })
+    return {"status": "ok", "message": "All progress reset"}
+
+class ResetUnitRequest(BaseModel):
+    topicId: str
+    unitId: str
+
+@router.post("/reset-unit")
+async def reset_unit_progress(
+    request: ResetUnitRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
+):
+    from sqlalchemy import delete as sqldelete
+    user_id = int(current_user["sub"])
+    await db.execute(sqldelete(Progress).where(
+        Progress.user_id == user_id,
+        Progress.topic_id == request.topicId,
+        Progress.unit_id == request.unitId
+    ))
+    await db.execute(sqldelete(BlockProgress).where(
+        BlockProgress.user_id == user_id,
+        BlockProgress.topic_id == request.topicId,
+        BlockProgress.unit_id == request.unitId
+    ))
+    await db.execute(sqldelete(AnswerHistory).where(
+        AnswerHistory.user_id == user_id,
+        AnswerHistory.topic_id == request.topicId,
+        AnswerHistory.unit_id == request.unitId
+    ))
+    await db.commit()
+    from routers.websocket_manager import ws_manager
+    await ws_manager.broadcast({
+        "type": "progress_reset",
+        "userId": user_id,
+        "scope": "unit",
+        "topicId": request.topicId,
+        "unitId": request.unitId
+    })
+    return {"status": "ok", "message": "Unit progress reset"}
 
 class AnswerEntry(BaseModel):
     topicId: str
