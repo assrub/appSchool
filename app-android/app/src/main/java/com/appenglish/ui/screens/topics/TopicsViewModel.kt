@@ -44,23 +44,7 @@ class TopicsViewModel @Inject constructor(
                 onSuccess = { response ->
                     val subject = response.subjects.find { it.id == subjectId }
                     if (subject != null) {
-                        val topics = subject.topics.map { t ->
-                            val localProgress = progressRepository.getTopicProgress(t.id)
-                            val totalUnits = t.progress?.totalUnits ?: localProgress.size
-                            val completedUnits = localProgress.count { it.completed }
-                            TopicSummary(
-                                id = t.id,
-                                name = t.name,
-                                order = t.order,
-                                difficulty = t.difficulty,
-                                icon = t.icon,
-                                isLocked = t.isLocked,
-                                completedUnits = completedUnits,
-                                totalUnits = totalUnits,
-                                percentComplete = if (totalUnits > 0) (completedUnits.toDouble() / totalUnits * 100) else 0.0
-                            )
-                        }
-                        _uiState.value = _uiState.value.copy(isLoading = false, subjectName = subject.name, topics = topics)
+                        updateTopics(subject, response)
                     } else {
                         _uiState.value = _uiState.value.copy(isLoading = false, error = "Materia no encontrada")
                     }
@@ -68,5 +52,42 @@ class TopicsViewModel @Inject constructor(
                 onFailure = { e -> _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error") }
             )
         }
+    }
+
+    fun refreshProgress() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            if (state.subjectName.isNotBlank()) {
+                contentRepository.getSubjects().fold(
+                    onSuccess = { response ->
+                        val subject = response.subjects.find { it.id == subjectId }
+                        if (subject != null) {
+                            updateTopics(subject, response)
+                        }
+                    },
+                    onFailure = { }
+                )
+            }
+        }
+    }
+
+    private suspend fun updateTopics(subject: com.appenglish.data.remote.dto.SubjectDto, response: com.appenglish.data.remote.dto.SubjectsResponse) {
+        val topics = subject.topics.map { t ->
+            val localProgress = progressRepository.getTopicProgress(t.id)
+            val totalUnits = t.progress?.totalUnits ?: localProgress.size
+            val completedUnits = localProgress.count { it.completed }
+            TopicSummary(
+                id = t.id,
+                name = t.name,
+                order = t.order,
+                difficulty = t.difficulty,
+                icon = t.icon,
+                isLocked = t.isLocked,
+                completedUnits = completedUnits,
+                totalUnits = totalUnits,
+                percentComplete = if (totalUnits > 0) (completedUnits.toDouble() / totalUnits * 100) else 0.0
+            )
+        }
+        _uiState.value = _uiState.value.copy(isLoading = false, subjectName = subject.name, topics = topics)
     }
 }

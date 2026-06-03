@@ -67,6 +67,7 @@ data class UnitExerciseUiState(
     val fullSentenceToPlay: String = "",
     val wrongItems: List<WrongAnswer> = emptyList(),
     val retryMode: Boolean = false,
+    val blockRetryMode: Boolean = false,
     val retryIndex: Int = 0,
     val selectedTab: Int = 0,
     val currentBlockTheory: BlockTheory? = null,
@@ -331,8 +332,23 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun startRetryWrongItems() {
         val wrongs = _uiState.value.wrongItems
-        if (wrongs.isEmpty()) { _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false, currentBlockTheory = null); return }
-        _uiState.value = _uiState.value.copy(retryMode = true, retryIndex = 0, isFinished = false, currentBlockTheory = null)
+        if (wrongs.isEmpty()) { _uiState.value = _uiState.value.copy(isFinished = true, retryMode = false, blockRetryMode = false, currentBlockTheory = null); return }
+        _uiState.value = _uiState.value.copy(retryMode = true, blockRetryMode = false, retryIndex = 0, isFinished = false, currentBlockTheory = null)
+    }
+
+    fun startBlockRetry() {
+        val state = _uiState.value
+        val blockWrongs = state.wrongItems.filter { it.blockIndex == state.currentBlockIndex }
+        if (blockWrongs.isEmpty()) return
+        _uiState.value = state.copy(
+            retryMode = true,
+            blockRetryMode = true,
+            blockCompleted = false,
+            wrongItems = blockWrongs,
+            retryIndex = 0,
+            isFinished = false,
+            currentBlockTheory = null
+        )
     }
 
     fun retryWrongAnswer(selectedOption: String) {
@@ -376,8 +392,18 @@ class UnitExerciseViewModel @Inject constructor(
                 playingFullAudio = false, readyForNext = false, showAcceptButton = false,
                 currentBlockTheory = null
             )
+        } else if (state.blockRetryMode) {
+            // Done retrying block errors, return to block completion
+            _uiState.value = state.copy(
+                retryMode = false,
+                blockRetryMode = false,
+                blockCompleted = true,
+                isFinished = false,
+                currentBlockTheory = null
+            )
+            saveProgress()
         } else {
-            _uiState.value = state.copy(isFinished = true, retryMode = false)
+            _uiState.value = state.copy(isFinished = true, retryMode = false, blockRetryMode = false)
             saveProgress(completed = true)
         }
     }

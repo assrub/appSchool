@@ -191,6 +191,7 @@ fun UnitExerciseScreen(
                 blockTotalItems = uiState.blockTotalItems,
                 wrongItems = uiState.wrongItems.filter { it.blockIndex == uiState.currentBlockIndex },
                 onContinue = { viewModel.continueToNextBlock() },
+                onRetryErrors = { viewModel.startBlockRetry() },
                 modifier = Modifier.padding(padding)
             )
         } else if (uiState.isFinished) {
@@ -294,6 +295,7 @@ private fun BlockCompletionContent(
     blockTotalItems: Int,
     wrongItems: List<WrongAnswer>,
     onContinue: () -> Unit,
+    onRetryErrors: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val percent = if (blockTotalItems > 0) (blockScore.toFloat() / blockTotalItems) * 100 else 0f
@@ -327,6 +329,15 @@ private fun BlockCompletionContent(
                                 Row { Text("Vos: ", style = MaterialTheme.typography.bodySmall, color = Color.Gray); Text(wrong.givenAnswer, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = ErrorRed) }
                             }
                         }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Button(
+                        onClick = onRetryErrors,
+                        colors = ButtonDefaults.buttonColors(containerColor = WarningOrange),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text("Rehacer solo errores", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }

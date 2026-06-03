@@ -11,7 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -50,6 +49,8 @@ class ProgressViewModel @Inject constructor(
     private val _subjectProgress = MutableStateFlow<List<SubjectProgress>>(emptyList())
     val subjectProgress: StateFlow<List<SubjectProgress>> = _subjectProgress.asStateFlow()
 
+    private var subjectsCache: List<Subject> = emptyList()
+
     init {
         loadData()
     }
@@ -60,7 +61,7 @@ class ProgressViewModel @Inject constructor(
 
             contentRepository.getSubjects().fold(
                 onSuccess = { response ->
-                    val subjects = response.subjects.map { dto ->
+                    subjectsCache = response.subjects.map { dto ->
                         Subject(
                             id = dto.id,
                             name = dto.name,
@@ -72,11 +73,13 @@ class ProgressViewModel @Inject constructor(
                             }
                         )
                     }
-                    _uiState.value = _uiState.value.copy(isLoading = false, subjects = subjects)
+                    _uiState.value = _uiState.value.copy(isLoading = false, subjects = subjectsCache)
 
-                    val entries = progressRepository.observeAllProgress().first()
-                    val subjectProgressList = buildSubjectProgress(subjects, entries)
-                    _subjectProgress.value = subjectProgressList
+                    // Collect progress reactively so it auto-updates when Room changes
+                    progressRepository.observeAllProgress().collect { entries ->
+                        val subjectProgressList = buildSubjectProgress(subjectsCache, entries)
+                        _subjectProgress.value = subjectProgressList
+                    }
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false)
