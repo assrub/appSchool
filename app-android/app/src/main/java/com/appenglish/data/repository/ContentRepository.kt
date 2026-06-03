@@ -51,6 +51,10 @@ class ContentRepository @Inject constructor(
         return try {
             val cached = cacheDao.get(key) ?: return null
             gson.fromJson(cached.jsonData, clazz)
-        } catch (_: Exception) { null }
+        } catch (_: Exception) { 
+            // Cache is corrupted or incompatible - delete it
+            try { cacheDao.delete(key) } catch (_: Exception) {}
+            null
+        }
     }
 }
