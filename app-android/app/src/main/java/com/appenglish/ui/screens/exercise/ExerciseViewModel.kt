@@ -583,7 +583,7 @@ class UnitExerciseViewModel @Inject constructor(
             val wrong = WrongAnswer(blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex, sentence = item.sentence, givenAnswer = userAnswer, correctAnswer = item.answer)
             _uiState.value = state.copy(
                 isCorrect = false, feedback = Feedback("❌ Incorrecto", false),
-                showAcceptButton = true, wrongItems = state.wrongItems + wrong,
+                showAcceptButton = true, showingAnswer = true, wrongItems = state.wrongItems + wrong,
                 completedItems = newCompleted, userInput = userAnswer,
                 currentBlockCompletedItems = newBlockCompletedItems,
                 currentBlockScore = newBlockScore,
