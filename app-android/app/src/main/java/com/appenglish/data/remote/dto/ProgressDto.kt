@@ -96,3 +96,8 @@ data class AnswerEntryDto(
 data class AnswerBatchRequest(
     val answers: List<AnswerEntryDto>
 )
+
+data class AnswerBatchResponse(
+    val status: String = "",
+    val recorded: Int = 0
+)
