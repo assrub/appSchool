@@ -110,7 +110,7 @@ class TopicViewModel @Inject constructor(
                                             words = itemDto.words,
                                             correctOrder = itemDto.correctOrder,
                                             audioUrl = itemDto.audioUrl,
-                                            pairs = itemDto.pairs,
+                                            pairs = itemDto.pairs?.map { p -> com.appenglish.domain.model.ExercisePair(p.left, p.right) },
                                             isCorrect = itemDto.isCorrect
                                         )
                                     },

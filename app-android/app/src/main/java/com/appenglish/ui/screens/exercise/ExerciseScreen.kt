@@ -1051,8 +1051,8 @@ private fun ReorderCard(uiState: UnitExerciseUiState, onSelectWord: (String) -> 
 @Composable
 private fun MatchingCard(item: com.appenglish.domain.model.ExerciseItem, matchedPairs: Int, onMatch: (String, String) -> Unit, onReset: () -> Unit) {
     val pairs = item.pairs ?: emptyList()
-    val leftItems = pairs.map { it["left"] ?: "" }
-    val rightItems = remember { pairs.map { it["right"] ?: "" }.shuffled() }
+    val leftItems = pairs.map { it.left }
+    val rightItems = remember { pairs.map { it.right }.shuffled() }
     var selL by remember { mutableStateOf("") }
     var selR by remember { mutableStateOf("") }
     var matchedLeft by remember { mutableStateOf(setOf<String>()) }
@@ -1087,7 +1087,7 @@ private fun MatchingCard(item: com.appenglish.domain.model.ExerciseItem, matched
                                         lastWrongLeft = null
                                         lastWrongRight = null
                                         if (selR.isNotEmpty()) {
-                                            val isCorrect = pairs.any { it["left"] == l && it["right"] == selR }
+                                            val isCorrect = pairs.any { it.left == l && it.right == selR }
                                             if (isCorrect) {
                                                 matchedLeft = matchedLeft + l
                                                 matchedRight = matchedRight + selR
@@ -1135,7 +1135,7 @@ private fun MatchingCard(item: com.appenglish.domain.model.ExerciseItem, matched
                                         lastWrongLeft = null
                                         lastWrongRight = null
                                         if (selL.isNotEmpty()) {
-                                            val isCorrect = pairs.any { it["left"] == selL && it["right"] == r }
+                                            val isCorrect = pairs.any { it.left == selL && it.right == r }
                                             if (isCorrect) {
                                                 matchedLeft = matchedLeft + selL
                                                 matchedRight = matchedRight + r

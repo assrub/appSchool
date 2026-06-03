@@ -131,8 +131,13 @@ data class ExerciseItemDto(
     val words: List<String>? = null,
     val correctOrder: List<String>? = null,
     val audioUrl: String? = null,
-    val pairs: List<Map<String, String>>? = null,
+    val pairs: List<ExercisePairDto>? = null,
     val isCorrect: Boolean? = null
+)
+
+data class ExercisePairDto(
+    val left: String = "",
+    val right: String = ""
 )
 
 data class TestConfigDto(

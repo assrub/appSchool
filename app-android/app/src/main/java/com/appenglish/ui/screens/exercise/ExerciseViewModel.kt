@@ -149,7 +149,7 @@ class UnitExerciseViewModel @Inject constructor(
                             ExerciseItem(
                                 it.sentence, it.answer, it.hint, it.itemType, it.inputMode,
                                 it.answers, it.options, it.question, it.words, it.correctOrder,
-                                it.audioUrl, it.pairs, it.isCorrect
+                                it.audioUrl, it.pairs?.map { p -> com.appenglish.domain.model.ExercisePair(p.left, p.right) }, it.isCorrect
                             )
                         }, blockTheory)
                     }
@@ -487,7 +487,7 @@ class UnitExerciseViewModel @Inject constructor(
     fun checkMatchingPair(left: String, right: String) {
         val item = getCurrentItem() ?: return
         val pairs = item.pairs ?: return
-        val isMatch = pairs.any { (it["left"] == left && it["right"] == right) || (it["left"] == right && it["right"] == left) }
+        val isMatch = pairs.any { (it.left == left && it.right == right) || (it.left == right && it.right == left) }
         if (isMatch) {
             val newCount = _uiState.value.matchedPairs + 1
             _uiState.value = _uiState.value.copy(matchedPairs = newCount)
