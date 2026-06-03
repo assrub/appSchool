@@ -20,30 +20,68 @@ async def translate_text(
     ).hexdigest()
 
     if db:
-        result = await db.execute(
-            select(TranslationCache).where(
-                TranslationCache.text_hash == text_hash
+        try:
+            result = await db.execute(
+                select(TranslationCache).where(
+                    TranslationCache.text_hash == text_hash
+                )
             )
-        )
-        cached = result.scalar_one_or_none()
-        if cached:
+            cached = result.scalar_one_or_none()
+            if cached:
+                return {
+                    "text": text,
+                    "translation": cached.translation,
+                    "sourceLang": source_lang,
+                    "targetLang": target_lang,
+                    "confidence": 1.0,
+                }
+        except Exception:
+            pass  # Cache miss is not fatal
+
+    try:
+        async with httpx.AsyncClient() as client:
+            params = {
+                "q": text,
+                "langpair": f"{source_lang}|{target_lang}",
+            }
+            response = await client.get(MYMEMORY_URL, params=params, timeout=10.0)
+            data = response.json()
+
+        if "responseData" not in data:
             return {
                 "text": text,
-                "translation": cached.translation,
+                "translation": text,
                 "sourceLang": source_lang,
                 "targetLang": target_lang,
-                "confidence": 1.0,
+                "confidence": 0.0,
             }
 
-    async with httpx.AsyncClient() as client:
-        params = {
-            "q": text,
-            "langpair": f"{source_lang}|{target_lang}",
-        }
-        response = await client.get(MYMEMORY_URL, params=params, timeout=10.0)
-        data = response.json()
+        translation = data["responseData"].get("translatedText", text)
+        confidence = data["responseData"].get("match", 0) * 100
 
-    if "responseData" not in data:
+        if db:
+            try:
+                cache_entry = TranslationCache(
+                    text_hash=text_hash,
+                    source_text=text,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    translation=translation,
+                )
+                db.add(cache_entry)
+                await db.commit()
+            except Exception:
+                pass  # Cache write failure is not fatal
+
+        return {
+            "text": text,
+            "translation": translation,
+            "sourceLang": source_lang,
+            "targetLang": target_lang,
+            "confidence": confidence,
+        }
+    except Exception as e:
+        # Return original text if translation fails
         return {
             "text": text,
             "translation": text,
@@ -51,25 +89,3 @@ async def translate_text(
             "targetLang": target_lang,
             "confidence": 0.0,
         }
-
-    translation = data["responseData"].get("translatedText", text)
-    confidence = data["responseData"].get("match", 0) * 100
-
-    if db:
-        cache_entry = TranslationCache(
-            text_hash=text_hash,
-            source_text=text,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            translation=translation,
-        )
-        db.add(cache_entry)
-        await db.commit()
-
-    return {
-        "text": text,
-        "translation": translation,
-        "sourceLang": source_lang,
-        "targetLang": target_lang,
-        "confidence": confidence,
-    }
