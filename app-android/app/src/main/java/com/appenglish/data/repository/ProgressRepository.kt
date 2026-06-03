@@ -211,10 +211,12 @@ class ProgressRepository @Inject constructor(
         blockIndex: Int,
         score: Int,
         totalItems: Int,
-        completed: Boolean
+        completed: Boolean,
+        completedItems: Int = 0
     ) {
         val existing = dao.getBlockProgress(userId, topicId, unitId, blockIndex)
         val bestScore = if (existing != null) maxOf(existing.score, score) else score
+        val maxCompletedItems = if (existing != null) maxOf(existing.completedItems, completedItems) else completedItems
         dao.upsertBlockProgress(
             BlockProgressEntity(
                 deviceId = userId,
@@ -224,6 +226,7 @@ class ProgressRepository @Inject constructor(
                 score = bestScore,
                 totalItems = totalItems,
                 completed = completed,
+                completedItems = maxCompletedItems,
                 completedAt = if (completed) System.currentTimeMillis() else existing?.completedAt
             )
         )

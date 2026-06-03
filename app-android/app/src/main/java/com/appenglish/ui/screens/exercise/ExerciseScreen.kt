@@ -738,15 +738,6 @@ private fun ExerciseTabContent(
                         }
                     }
 
-                    if (uiState.playingFullAudio) {
-                        Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Reproduciendo audio...", style = MaterialTheme.typography.bodySmall, color = Primary)
-                        }
-                    }
-
                     // Corregir button for type mode
                     if (inputMode == "type" && uiState.isCorrect == null && uiState.userInput.isNotBlank()) {
                         Spacer(Modifier.height(12.dp))

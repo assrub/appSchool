@@ -159,6 +159,7 @@ class UnitExerciseViewModel @Inject constructor(
                     // Load saved progress from local DB
                     val savedProgress = progressRepository.getProgress(topicId, unitId)
                     val savedScore = savedProgress?.score ?: 0
+                    val savedCompletedItems = savedProgress?.completedItems ?: 0
 
                     val unitTheory = unitDto.theory?.let { t ->
                         UnitTheory(
@@ -171,15 +172,34 @@ class UnitExerciseViewModel @Inject constructor(
                         )
                     }
 
-                    // Always start from the specified block
-                    val blockIdx = startBlockIndex.coerceIn(0, blocks.lastIndex)
-                    val itemIdx = 0
+                    // Calculate starting position based on saved progress
+                    var remaining = savedCompletedItems
+                    var blockIdx = startBlockIndex.coerceIn(0, blocks.lastIndex)
+                    var itemIdx = 0
+                    
+                    // If resuming (not starting fresh), find where to resume
+                    if (savedCompletedItems > 0 && startBlockIndex == 0) {
+                        for ((i, block) in blocks.withIndex()) {
+                            if (remaining >= block.items.size) {
+                                remaining -= block.items.size
+                            } else {
+                                blockIdx = i
+                                itemIdx = remaining
+                                break
+                            }
+                        }
+                        // If all items completed, start from beginning (unit was completed)
+                        if (savedCompletedItems >= totalItems && totalItems > 0) {
+                            blockIdx = 0
+                            itemIdx = 0
+                        }
+                    }
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false, unitTitle = unitDto.title, unitExplanation = unitDto.explanation,
                         soundCorrectUrl = unitDto.soundCorrectUrl, soundIncorrectUrl = unitDto.soundIncorrectUrl,
                         unitTheory = unitTheory, blocks = blocks, totalBlocks = blocks.size, totalItems = totalItems,
-                        completedItems = 0, score = 0,
+                        completedItems = savedCompletedItems, score = savedScore,
                         currentBlockIndex = blockIdx, currentItemIndex = itemIdx
                     )
                     updateCurrentBlockTheory()
@@ -719,7 +739,8 @@ class UnitExerciseViewModel @Inject constructor(
                 progressRepository.saveBlockProgress(
                     topicId = topicId, unitId = unitId,
                     blockIndex = blockIdx, score = blockScore,
-                    totalItems = block.items.size, completed = blockCompleted
+                    totalItems = block.items.size, completed = blockCompleted,
+                    completedItems = completedInBlock
                 )
                 itemsBeforeBlock += block.items.size
             }

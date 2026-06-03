@@ -23,7 +23,8 @@ data class BlockProgressData(
     val blockIndex: Int,
     val score: Int = 0,
     val totalItems: Int = 0,
-    val completed: Boolean = false
+    val completed: Boolean = false,
+    val completedItems: Int = 0
 )
 
 data class BlocksUiState(
@@ -69,7 +70,8 @@ class BlocksViewModel @Inject constructor(
                     blockIndex = it.blockIndex,
                     score = it.score,
                     totalItems = it.totalItems,
-                    completed = it.completed
+                    completed = it.completed,
+                    completedItems = it.completedItems
                 )
             }
             _uiState.value = state.copy(blockProgress = blockProgress)
@@ -106,7 +108,8 @@ class BlocksViewModel @Inject constructor(
                                                 blockIndex = it.blockIndex,
                                                 score = it.score,
                                                 totalItems = it.totalItems,
-                                                completed = it.completed
+                                                completed = it.completed,
+                                                completedItems = it.completedItems
                                             )
                                         }
                                         val topicTheory = UnitTheory(

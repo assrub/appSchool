@@ -232,12 +232,12 @@ private fun BlocksListContent(
             itemsIndexed(blocks) { idx, block ->
                 val rawProgress = blockProgress[idx]
                 val isComplete = rawProgress?.completed == true
-                val hasStarted = rawProgress != null && (rawProgress.score > 0 || rawProgress.completed)
+                val hasStarted = rawProgress != null && rawProgress.completedItems > 0
                 
-                // If completed, show 100%. Otherwise show accuracy (score/total)
+                // Progress bar: completedItems / totalItems (how much was attempted)
                 val percent = when {
                     isComplete -> 1f
-                    rawProgress != null && rawProgress.totalItems > 0 -> rawProgress.score.toFloat() / rawProgress.totalItems
+                    rawProgress != null && rawProgress.totalItems > 0 -> rawProgress.completedItems.toFloat() / rawProgress.totalItems
                     else -> 0f
                 }
 
@@ -268,7 +268,7 @@ private fun BlocksListContent(
                             Column(Modifier.weight(1f)) {
                                 Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    "${block.items.size} ejercicios",
+                                    "${rawProgress?.completedItems ?: 0}/${block.items.size} ejercicios",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -282,7 +282,7 @@ private fun BlocksListContent(
                                 .fillMaxWidth()
                                 .height(10.dp)
                                 .clip(RoundedCornerShape(5.dp)),
-                            color = if (isComplete && (rawProgress?.totalItems ?: 0 - (rawProgress?.score ?: 0)) > 0) WarningOrange else barColor,
+                            color = barColor,
                             trackColor = barColor.copy(alpha = 0.15f)
                         )
                         Spacer(Modifier.height(4.dp))
@@ -291,8 +291,8 @@ private fun BlocksListContent(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (isComplete) {
-                                val wrongCount = ((rawProgress?.totalItems ?: 0) - (rawProgress?.score ?: 0)).coerceAtLeast(0)
+                            if (hasStarted) {
+                                val wrongCount = ((rawProgress?.completedItems ?: 0) - (rawProgress?.score ?: 0)).coerceAtLeast(0)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("✅ ", style = MaterialTheme.typography.labelSmall)
                                     Text("${rawProgress?.score ?: 0}", style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.Bold)
@@ -301,22 +301,10 @@ private fun BlocksListContent(
                                     Text("${wrongCount}", style = MaterialTheme.typography.labelSmall, color = ErrorRed, fontWeight = FontWeight.Bold)
                                 }
                                 Text(
-                                    "${((rawProgress?.score ?: 0).toFloat() / (rawProgress?.totalItems ?: 1).coerceAtLeast(1) * 100).toInt()}%",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = CorrectGreen,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            } else if (hasStarted) {
-                                Text(
                                     "${(animatedProgress * 100).toInt()}%",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = barColor,
                                     fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "✅ ${rawProgress?.score ?: 0}  ❌ ${((rawProgress?.totalItems ?: 0) - (rawProgress?.score ?: 0)).coerceAtLeast(0)}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             } else {
                                 Text(
