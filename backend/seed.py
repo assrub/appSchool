@@ -254,10 +254,17 @@ async def _upsert_topic(db, topic_data: dict, subject_id: str):
                 ).order_by(ExerciseBlock.id)
             )
             all_blocks = existing_block.scalars().all()
-            # Keep first, delete duplicates
+            # Keep first, delete duplicates and their items first
             block = all_blocks[0] if all_blocks else None
             if len(all_blocks) > 1:
                 for dup in all_blocks[1:]:
+                    # Delete items of duplicate block first
+                    dup_items = await db.execute(
+                        select(ExerciseItem).where(ExerciseItem.block_id == dup.id)
+                    )
+                    for item in dup_items.scalars().all():
+                        await db.delete(item)
+                    await db.flush()
                     await db.delete(dup)
                 await db.flush()
 
