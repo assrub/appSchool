@@ -83,7 +83,6 @@ class ProgressRepository @Inject constructor(
                     val existing = dao.getProgress(userId, topic.topicId, unit.unitId)
                     val remoteScore = unit.score
                     val remoteCompleted = unit.completed
-                    val remoteCompletedAt = unit.completedAt?.let { parseTimestamp(it) }
 
                     if (existing == null) {
                         // No local record - create from remote
@@ -98,7 +97,6 @@ class ProgressRepository @Inject constructor(
                                 completedItems = unit.completedItems,
                                 testScore = unit.testScore,
                                 startedAt = System.currentTimeMillis(),
-                                completedAt = remoteCompletedAt,
                                 // New pedagogical metrics from remote
                                 accuracy = unit.accuracy,
                                 mastery = unit.mastery,
@@ -123,7 +121,7 @@ class ProgressRepository @Inject constructor(
                                 completedItems = unit.completedItems,
                                 testScore = unit.testScore ?: existing.testScore,
                                 startedAt = existing.startedAt,
-                                completedAt = remoteCompletedAt ?: existing.completedAt,
+                                completedAt = existing.completedAt,
                                 // Merge metrics: take max values
                                 accuracy = maxOf(existing.accuracy, unit.accuracy),
                                 mastery = maxOf(existing.mastery, unit.mastery),
@@ -308,10 +306,6 @@ class ProgressRepository @Inject constructor(
             timeSpentSeconds = timeSpentSeconds,
             lastActivityAt = System.currentTimeMillis()
         )
-    }
-
-    suspend fun recordAnswers(answers: List<AnswerEntryDto>): Result<Unit> = runCatching {
-        api.recordAnswers(AnswerBatchRequest(answers))
     }
 
     suspend fun resetAllProgress() {

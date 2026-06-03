@@ -635,7 +635,7 @@ class UnitExerciseViewModel @Inject constructor(
         val status = when {
             attempted == 0 -> "not_started"
             mastered >= totalItems && totalItems > 0 -> "mastered"
-            state.completed -> "completed"
+            state.isFinished -> "completed"
             else -> "in_progress"
         }
 

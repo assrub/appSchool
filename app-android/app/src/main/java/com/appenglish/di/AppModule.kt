@@ -2,6 +2,7 @@ package com.appenglish.di
 
 import android.content.Context
 import com.appenglish.data.local.AppDatabase
+import com.appenglish.data.local.dao.PendingSyncDao
 import com.appenglish.data.remote.api.ContentApi
 import com.appenglish.data.remote.api.TtsApi
 import com.appenglish.data.remote.api.TranslateApi
@@ -100,6 +101,11 @@ object AppModule {
     @Singleton
     fun provideAppDatabase(application: android.app.Application): AppDatabase =
         AppDatabase.getInstance(application)
+
+    @Provides
+    @Singleton
+    fun providePendingSyncDao(db: AppDatabase): PendingSyncDao =
+        db.pendingSyncDao()
 
     @Provides
     @Singleton

@@ -19,12 +19,12 @@ val appVersionName = versionProps.getProperty("versionName", "3.2.0")
 val localProps = Properties()
 val localPropsFile = rootProject.file("local.properties")
 if (localPropsFile.exists()) {
-    localProps.load(localPropsFile.reader())
+    localProps.load(localPropsFile.inputStream())
 }
 val keystorePath = localProps.getProperty("storeFile", "../release.keystore")
-val keystorePassword = localProps.getProperty("storePassword", "")
-val keyAlias = localProps.getProperty("keyAlias", "")
-val keyPassword = localProps.getProperty("keyPassword", "")
+val keystorePassword = localProps.getProperty("storePassword", "appenglish")
+val keyAlias = localProps.getProperty("keyAlias", "appenglish")
+val keyPassword = localProps.getProperty("keyPassword", "appenglish")
 
 android {
     namespace = "com.appenglish"
@@ -45,10 +45,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(keystorePath)
-            storePassword = keystorePassword
-            keyAlias = keyAlias
-            keyPassword = keyPassword
+            storeFile = file("../release.keystore")
+            storePassword = "appenglish"
+            keyAlias = "appenglish"
+            keyPassword = "appenglish"
         }
     }
 
