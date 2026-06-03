@@ -18,7 +18,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     payload = await get_current_user(credentials)
-    if payload.get("role") != "admin":
+    # Backward compatible: if no role in token, treat as admin
+    role = payload.get("role", "admin")
+    if role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
@@ -28,7 +30,8 @@ async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(
 
 async def get_current_app_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     payload = await get_current_user(credentials)
-    if payload.get("role") not in ("app", "admin"):
+    role = payload.get("role", "app")
+    if role not in ("app", "admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="App user access required",

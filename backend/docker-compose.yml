@@ -4,8 +4,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-appuser}:${DB_PASSWORD:-apppass}@db:5432/${DB_NAME:-appenglish}
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production-use-openssl-rand-hex-32}
+      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/appenglish
+      - SECRET_KEY=${SECRET_KEY:-a3f8b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:9000,http://2.25.142.139:9000}
     depends_on:
       db:
@@ -27,14 +27,14 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=${DB_USER:-appuser}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-apppass}
-      - POSTGRES_DB=${DB_NAME:-appenglish}
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=appenglish
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-appuser} -d ${DB_NAME:-appenglish}"]
+      test: ["CMD-SHELL", "pg_isready -U user -d appenglish"]
       interval: 5s
       timeout: 5s
       retries: 5
