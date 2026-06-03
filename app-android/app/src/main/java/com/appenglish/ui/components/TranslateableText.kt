@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
@@ -160,75 +161,61 @@ fun TranslateableText(
 
         if (popupVisible && selectedWord != null) {
             Popup(
-                alignment = Alignment.TopCenter,
+                alignment = Alignment.BottomCenter,
                 onDismissRequest = { popupVisible = false; selectedWord = null; translation = null },
                 properties = PopupProperties(focusable = false)
             ) {
                 Card(
-                    shape = MaterialTheme.shapes.medium,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = CorrectBackground),
-                    modifier = Modifier.fillMaxWidth(0.9f)
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    selectedWord!!,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Primary
-                                )
-                                if (isTranslating) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.height(14.dp).width(14.dp),
-                                            strokeWidth = 2.dp,
-                                            color = Primary
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Traduciendo...", style = MaterialTheme.typography.bodySmall)
-                                    }
-                                } else if (translation != null) {
-                                    Text(
-                                        translation!!,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.SemiBold
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                selectedWord!!,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Primary
+                            )
+                            if (isTranslating) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.height(12.dp).width(12.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Primary
                                     )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("...", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                 }
-                            }
-                            IconButton(
-                                onClick = {
-                                    tts.language = Locale.US
-                                    tts.setSpeechRate(0.85f)
-                                    tts.speak(selectedWord, TextToSpeech.QUEUE_FLUSH, null, "tts_word2")
-                                },
-                                modifier = Modifier.width(32.dp).height(32.dp)
-                            ) {
-                                Icon(Icons.Default.VolumeUp, contentDescription = "Escuchar", tint = Primary, modifier = Modifier.height(20.dp).width(20.dp))
-                            }
-                            IconButton(
-                                onClick = { popupVisible = false; selectedWord = null; translation = null },
-                                modifier = Modifier.width(32.dp).height(32.dp)
-                            ) {
-                                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.height(20.dp).width(20.dp))
+                            } else if (translation != null) {
+                                Text(
+                                    translation!!,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             }
                         }
-                        if (!isTranslating && translation != null && onDictionarySave != null) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            TextButton(
-                                onClick = {
-                                    onDictionarySave(selectedWord!!, translation!!)
-                                    popupVisible = false
-                                    selectedWord = null
-                                    translation = null
-                                }
-                            ) {
-                                Text("Guardar en diccionario", color = Primary, fontSize = 12.sp)
-                            }
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                tts.language = Locale.US
+                                tts.setSpeechRate(0.85f)
+                                tts.speak(selectedWord, TextToSpeech.QUEUE_FLUSH, null, "tts_word2")
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.VolumeUp, null, tint = Primary, modifier = Modifier.size(18.dp))
+                        }
+                        IconButton(
+                            onClick = { popupVisible = false; selectedWord = null; translation = null },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.Default.Close, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
                         }
                     }
                 }

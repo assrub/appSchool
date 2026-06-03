@@ -806,25 +806,6 @@ private fun ExerciseTabContent(
                 }
             }
 
-            if (inputMode == "tap" && uiState.isCorrect != null) {
-                options.forEach { option ->
-                    val isCorrectOpt = option.trim().lowercase() == currentItem?.answer?.trim()?.lowercase()
-                    val wasSelected = uiState.userInput == option
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        colors = CardDefaults.cardColors(containerColor = when { isCorrectOpt -> CorrectBackground; wasSelected -> com.appenglish.ui.theme.IncorrectBackground; else -> Color.White })
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            if (isCorrectOpt) { Icon(Icons.Default.Check, null, tint = CorrectGreen, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
-                            else if (wasSelected) { Icon(Icons.Default.Close, null, tint = ErrorRed, modifier = Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)) }
-                            Text(option, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = when { isCorrectOpt -> CorrectGreen; wasSelected -> ErrorRed; else -> MaterialTheme.colorScheme.onSurfaceVariant })
-                        }
-                    }
-                }
-            }
-
             Spacer(Modifier.height(80.dp))
         }
     }
