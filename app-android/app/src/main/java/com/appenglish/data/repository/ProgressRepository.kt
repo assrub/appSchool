@@ -16,6 +16,7 @@ import com.appenglish.data.remote.dto.ProgressSyncRequest
 import com.appenglish.workers.SyncWorker
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -200,6 +201,12 @@ class ProgressRepository @Inject constructor(
 
     fun observeAllProgress(): Flow<List<ProgressEntity>> {
         return dao.observeAllProgress(userId)
+    }
+
+    fun observeTopicProgress(topicId: String): Flow<List<ProgressEntity>> {
+        return dao.observeAllProgress(userId).map { list ->
+            list.filter { it.topicId == topicId }
+        }
     }
 
     suspend fun getBlockProgress(topicId: String, unitId: String, blockIndex: Int): BlockProgressEntity? {

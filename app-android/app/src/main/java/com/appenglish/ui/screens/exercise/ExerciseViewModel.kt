@@ -19,6 +19,7 @@ import com.appenglish.ui.components.SoundHelper
 import com.appenglish.util.ApiConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -429,15 +430,16 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun redoUnit() {
         viewModelScope.launch {
-            // Reset all block progress on backend
-            for (i in _uiState.value.blocks.indices) {
-                progressRepository.resetBlockProgress(
-                    topicId = topicId, unitId = unitId,
-                    blockIndex = i, totalItems = _uiState.value.blocks[i].items.size
-                )
+            // Use NonCancellable so Room operations complete even if ViewModel is destroyed
+            withContext(NonCancellable + Dispatchers.IO) {
+                for (i in _uiState.value.blocks.indices) {
+                    progressRepository.resetBlockProgress(
+                        topicId = topicId, unitId = unitId,
+                        blockIndex = i, totalItems = _uiState.value.blocks[i].items.size
+                    )
+                }
+                progressRepository.resetUnitProgress(topicId, unitId)
             }
-            // Reset unit progress
-            progressRepository.resetUnitProgress(topicId, unitId)
             _uiState.value = UnitExerciseUiState(
                 unitTitle = _uiState.value.unitTitle,
                 unitExplanation = _uiState.value.unitExplanation,
