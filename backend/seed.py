@@ -36,6 +36,15 @@ async def seed():
             "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT ''",
             "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS shuffle BOOLEAN DEFAULT FALSE",
             "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS input_mode VARCHAR(10)",
+            # New pedagogical metrics columns for Progress
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS accuracy REAL DEFAULT 0",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS mastery REAL DEFAULT 0",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'not_started'",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS items_attempted INTEGER DEFAULT 0",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS items_mastered INTEGER DEFAULT 0",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS items_correct_first INTEGER DEFAULT 0",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS time_spent_seconds INTEGER DEFAULT 0",
+            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMP",
         ]
         for m in migrations:
             try:
