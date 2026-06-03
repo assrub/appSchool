@@ -48,14 +48,14 @@
                   </v-chip>
                 </td>
                 <td>
+                  <v-tooltip text="Ver temas" location="top">
+                    <template #activator="{ props: tp }">
+                      <v-btn icon="mdi-eye" v-bind="tp" variant="text" size="small" color="secondary" :to="`/subjects/${s.id}/topics`" />
+                    </template>
+                  </v-tooltip>
                   <v-tooltip text="Editar materia" location="top">
                     <template #activator="{ props: tp }">
                       <v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(s)" />
-                    </template>
-                  </v-tooltip>
-                  <v-tooltip text="Ver temas" location="top">
-                    <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-book-open-page-variant" v-bind="tp" variant="text" size="small" color="secondary" :to="`/subjects/${s.id}/topics`" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Asignar usuarios" location="top">
@@ -65,12 +65,12 @@
                   </v-tooltip>
                   <v-tooltip text="Desactivar materia" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(s)" />
+                      <v-btn icon="mdi-lock" v-bind="tp" variant="text" size="small" color="warning" @click="confirmDelete(s)" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Eliminar permanentemente" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(s)" />
+                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="error" @click="confirmHardDelete(s)" />
                     </template>
                   </v-tooltip>
                 </td>

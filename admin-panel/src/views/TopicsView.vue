@@ -53,7 +53,7 @@
                 <td>
                   <v-tooltip text="Ver unidades" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-format-list-bulleted-type" v-bind="tp" variant="text" size="small" color="secondary" :to="`/topics/${t.id}/units`" />
+                      <v-btn icon="mdi-eye" v-bind="tp" variant="text" size="small" color="secondary" :to="`/topics/${t.id}/units`" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Editar tema" location="top">
@@ -63,12 +63,12 @@
                   </v-tooltip>
                   <v-tooltip text="Desactivar tema" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(t)" />
+                      <v-btn icon="mdi-lock" v-bind="tp" variant="text" size="small" color="warning" @click="confirmDelete(t)" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Eliminar permanentemente" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(t)" />
+                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="error" @click="confirmHardDelete(t)" />
                     </template>
                   </v-tooltip>
                 </td>

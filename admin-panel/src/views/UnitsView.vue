@@ -52,14 +52,14 @@
                   </v-chip>
                 </td>
                 <td>
+                  <v-tooltip text="Ver bloques" location="top">
+                    <template #activator="{ props: tp }">
+                      <v-btn icon="mdi-eye" v-bind="tp" variant="text" size="small" color="secondary" :to="`/units/${u.id}/blocks`" />
+                    </template>
+                  </v-tooltip>
                   <v-tooltip text="Editar unidad" location="top">
                     <template #activator="{ props: tp }">
                       <v-btn icon="mdi-pencil" v-bind="tp" variant="text" size="small" color="primary" @click="openDialog(u)" />
-                    </template>
-                  </v-tooltip>
-                  <v-tooltip text="Ver bloques" location="top">
-                    <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-list-box-outline" v-bind="tp" variant="text" size="small" color="secondary" :to="`/units/${u.id}/blocks`" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Editar teoría de la unidad" location="top">
@@ -74,7 +74,7 @@
                   </v-tooltip>
                   <v-tooltip text="Eliminar permanentemente" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(u)" />
+                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="error" @click="confirmHardDelete(u)" />
                     </template>
                   </v-tooltip>
                 </td>

@@ -46,7 +46,7 @@
                 <td>
                   <v-tooltip text="Ver ejercicios" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-dumbbell" v-bind="tp" variant="text" size="small" color="secondary" :to="`/blocks/${b.id}/items`" />
+                      <v-btn icon="mdi-eye" v-bind="tp" variant="text" size="small" color="secondary" :to="`/blocks/${b.id}/items`" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Editar bloque" location="top">
@@ -61,12 +61,12 @@
                   </v-tooltip>
                   <v-tooltip text="Desactivar bloque" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(b)" />
+                      <v-btn icon="mdi-lock" v-bind="tp" variant="text" size="small" color="warning" @click="confirmDelete(b)" />
                     </template>
                   </v-tooltip>
                   <v-tooltip text="Eliminar permanentemente" location="top">
                     <template #activator="{ props: tp }">
-                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(b)" />
+                      <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="error" @click="confirmHardDelete(b)" />
                     </template>
                   </v-tooltip>
                 </td>

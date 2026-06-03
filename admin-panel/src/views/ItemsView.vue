@@ -89,12 +89,12 @@
               </v-tooltip>
               <v-tooltip text="Desactivar ejercicio" location="top">
                 <template #activator="{ props: tp }">
-                  <v-btn icon="mdi-delete" v-bind="tp" variant="text" size="small" color="error" @click="confirmDelete(i)" />
+                  <v-btn icon="mdi-lock" v-bind="tp" variant="text" size="small" color="warning" @click="confirmDelete(i)" />
                 </template>
               </v-tooltip>
               <v-tooltip text="Eliminar permanentemente" location="top">
                 <template #activator="{ props: tp }">
-                  <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="deep-orange" @click="confirmHardDelete(i)" />
+                  <v-btn icon="mdi-delete-forever" v-bind="tp" variant="text" size="small" color="error" @click="confirmHardDelete(i)" />
                 </template>
               </v-tooltip>
             </td>
