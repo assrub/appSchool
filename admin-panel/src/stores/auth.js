@@ -22,5 +22,12 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('username')
   }
 
-  return { token, username, isAuthenticated, login, logout }
+  function clearInvalidToken() {
+    token.value = ''
+    username.value = ''
+    localStorage.removeItem('token')
+    localStorage.removeItem('username')
+  }
+
+  return { token, username, isAuthenticated, login, logout, clearInvalidToken }
 })
