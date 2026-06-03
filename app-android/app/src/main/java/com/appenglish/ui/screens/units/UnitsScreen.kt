@@ -151,7 +151,7 @@ fun UnitsScreen(
                     UnitsListContent(
                         units = uiState.units,
                         onUnitClick = onUnitClick,
-                        onTestClick = onTestClick,
+                        onTestClick = { onTestClick(uiState.topicId) },
                         onRedoClick = { unitToRedo = it }
                     )
 
@@ -192,7 +192,7 @@ fun UnitsScreen(
 private fun UnitsListContent(
     units: List<DomainUnit>,
     onUnitClick: (String, String) -> Unit,
-    onTestClick: (String) -> Unit,
+    onTestClick: () -> Unit,
     onRedoClick: (String) -> Unit = {}
 ) {
     if (units.isEmpty()) {
@@ -300,7 +300,7 @@ private fun UnitsListContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(
-                            if (allComplete) Modifier.clickable { onTestClick(units.firstOrNull()?.id ?: "") }
+                            if (allComplete) Modifier.clickable { onTestClick() }
                             else Modifier
                         ),
                     shape = MaterialTheme.shapes.large,

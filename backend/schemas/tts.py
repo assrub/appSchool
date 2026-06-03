@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TtsRequest(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, max_length=5000)
     voice: str = "en-US-ChristopherNeural"
     rate: str = "+0%"
     pitch: str = "+0Hz"

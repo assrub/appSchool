@@ -18,6 +18,7 @@ import javax.inject.Inject
 
 data class UnitsUiState(
     val isLoading: Boolean = true,
+    val topicId: String = "",
     val topicName: String = "",
     val topicTheory: Theory? = null,
     val units: List<DomainUnit> = emptyList(),
@@ -68,6 +69,7 @@ class UnitsViewModel @Inject constructor(
                     )
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        topicId = topicId,
                         topicName = response.name,
                         topicTheory = topicTheory,
                         units = units

@@ -1,4 +1,4 @@
-import { reactive, readonly } from 'vue'
+import { reactive } from 'vue'
 
 const state = reactive({
   show: false,
@@ -12,6 +12,10 @@ function show(message, color = 'success', timeout = 4000) {
   state.color = color
   state.timeout = timeout
   state.show = true
+}
+
+function hide() {
+  state.show = false
 }
 
 function success(message, timeout = 4000) {
@@ -32,11 +36,12 @@ function info(message, timeout = 4000) {
 
 export function useSnackbar() {
   return {
-    state: readonly(state),
+    state,
     success,
     error,
     warning,
     info,
-    show
+    show,
+    hide
   }
 }

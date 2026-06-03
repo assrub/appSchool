@@ -2,10 +2,10 @@ import hashlib
 import hmac
 import time
 import json
-import secrets
 import os
 
-SECRET_KEY = secrets.token_hex(32)
+from config import SECRET_KEY
+
 TOKEN_EXPIRY_HOURS = 24
 
 
@@ -23,12 +23,13 @@ def verify_password(password: str, hashed: str) -> bool:
     return hmac.compare_digest(key, new_key)
 
 
-def create_token(user_id: int, username: str) -> str:
+def create_token(user_id: int, username: str, role: str = "app") -> str:
     header = {"alg": "HS256", "typ": "JWT"}
     now = int(time.time())
     payload = {
         "sub": str(user_id),
         "username": username,
+        "role": role,
         "iat": now,
         "exp": now + TOKEN_EXPIRY_HOURS * 3600,
     }

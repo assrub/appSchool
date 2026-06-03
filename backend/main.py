@@ -2,13 +2,17 @@ from contextlib import asynccontextmanager
 import os, sys, logging
 from logging.handlers import RotatingFileHandler
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from database import init_db
 from routers import content, tts, translate, progress, dictionary
 from routers import auth, admin, ws
+from config import CORS_ORIGINS
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -40,8 +44,11 @@ try:
                     _VERSION_CODE = int(line.split("=")[1])
                 elif line.startswith("versionName="):
                     _VERSION_NAME = line.split("=")[1]
-except: pass
+except (ValueError, IOError) as e:
+    logging.warning(f"Failed to read version.properties: {e}")
 
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -49,11 +56,13 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="AppEnglish API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="AppEnglish API", version=_VERSION_NAME, lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,7 +81,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 async def root():
-    return {"name": "AppEnglish API", "version": "1.0.0", "status": "ok"}
+    return {"name": "AppEnglish API", "version": _VERSION_NAME, "status": "ok"}
 
 
 @app.get("/health")

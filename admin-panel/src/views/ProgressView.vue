@@ -408,7 +408,9 @@ import { useWebSocket } from '../composables/useWebSocket'
 
 const snackbar = inject('snackbar')
 
-const wsUrl = `ws://${window.location.hostname}:8000/ws/progress`
+const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+const wsPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80')
+const wsUrl = `${wsProtocol}//${window.location.hostname}:${wsPort}/ws/progress`
 const { connected: wsConnected, lastMessage: wsMessage } = useWebSocket(wsUrl)
 
 watch(wsMessage, (msg) => {
@@ -478,7 +480,7 @@ async function selectUser(user) {
     const { data } = await api.get(`/admin/progress/${user.userId}/detail`)
     progressData.value = data
   } catch {
-    progressData.value = data || { topics: [], errors: [], sessions: [] }
+    progressData.value = { topics: [], errors: [], sessions: [] }
   } finally {
     loadingDetail.value = false
   }

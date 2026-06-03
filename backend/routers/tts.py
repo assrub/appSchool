@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from config import TTS_VOICES
 from database import get_db
@@ -8,6 +10,7 @@ from schemas.tts import TtsRequest, TtsVoicesResponse, TtsVoice
 from services.edge_tts_service import generate_tts
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("/voices", response_model=TtsVoicesResponse)
@@ -17,14 +20,16 @@ async def get_voices():
 
 
 @router.post("")
+@limiter.limit("30/minute")
 async def text_to_speech(
-    request: TtsRequest,
+    request: Request,
+    body: TtsRequest,
     db: AsyncSession = Depends(get_db),
 ):
     try:
         audio_data = await generate_tts(
-            text=request.text,
-            voice=request.voice,
+            text=body.text,
+            voice=body.voice,
             db=db,
         )
         return Response(
@@ -37,5 +42,5 @@ async def text_to_speech(
     except Exception as e:
         raise HTTPException(
             status_code=503,
-            detail=f"TTS service unavailable: {str(e)}",
+            detail="TTS service unavailable",
         )

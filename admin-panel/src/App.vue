@@ -17,7 +17,7 @@
         <span class="text-body-2">{{ snackbar.state.message }}</span>
       </div>
       <template #actions>
-        <v-btn icon variant="text" size="small" @click="snackbar.state.show = false">
+        <v-btn icon variant="text" size="small" @click="snackbar.hide()">
           <v-icon size="18">mdi-close</v-icon>
         </v-btn>
       </template>

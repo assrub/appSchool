@@ -3,7 +3,6 @@ from datetime import datetime
 
 
 class DictionaryEntryRequest(BaseModel):
-    deviceId: str
     word: str
     translation: str
     sourceLang: str = "en"

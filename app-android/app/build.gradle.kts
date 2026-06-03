@@ -15,6 +15,17 @@ if (versionFile.exists()) {
 val appVersionCode = versionProps.getProperty("versionCode", "29").toInt()
 val appVersionName = versionProps.getProperty("versionName", "3.2.0")
 
+// Read signing credentials from local.properties (not committed to repo)
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localProps.load(localPropsFile.reader())
+}
+val keystorePath = localProps.getProperty("storeFile", "../release.keystore")
+val keystorePassword = localProps.getProperty("storePassword", "")
+val keyAlias = localProps.getProperty("keyAlias", "")
+val keyPassword = localProps.getProperty("keyPassword", "")
+
 android {
     namespace = "com.appenglish"
     compileSdk = 34
@@ -34,10 +45,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../release.keystore")
-            storePassword = "appenglish"
-            keyAlias = "appenglish"
-            keyPassword = "appenglish"
+            storeFile = file(keystorePath)
+            storePassword = keystorePassword
+            keyAlias = keyAlias
+            keyPassword = keyPassword
         }
     }
 
@@ -63,6 +74,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

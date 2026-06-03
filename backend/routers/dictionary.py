@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 
 from database import get_db
+from dependencies import get_current_app_user
 from models import DictionaryEntry
 from schemas.dictionary import (
     DictionaryEntryRequest,
@@ -19,10 +20,12 @@ router = APIRouter()
 async def add_dictionary_entry(
     request: DictionaryEntryRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
 ):
+    user_id = int(current_user["sub"])
     result = await db.execute(
         select(DictionaryEntry).where(
-            DictionaryEntry.user_id == request.deviceId,
+            DictionaryEntry.user_id == user_id,
             DictionaryEntry.word == request.word,
         )
     )
@@ -44,7 +47,7 @@ async def add_dictionary_entry(
         )
 
     entry = DictionaryEntry(
-        user_id=request.deviceId,
+        user_id=user_id,
         word=request.word,
         translation=request.translation,
         source_lang=request.sourceLang,
@@ -63,18 +66,19 @@ async def add_dictionary_entry(
     )
 
 
-@router.get("/{device_id}", response_model=DictionaryListResponse)
+@router.get("", response_model=DictionaryListResponse)
 async def list_dictionary(
-    device_id: str,
     sort_by: str = Query(default="date", pattern="^(date|alphabetical|frequency)$"),
     order: str = Query(default="desc", pattern="^(asc|desc)$"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
 ):
+    user_id = int(current_user["sub"])
     count_result = await db.execute(
         select(func.count()).select_from(DictionaryEntry).where(
-            DictionaryEntry.user_id == device_id
+            DictionaryEntry.user_id == user_id
         )
     )
     total = count_result.scalar()
@@ -90,7 +94,7 @@ async def list_dictionary(
 
     result = await db.execute(
         select(DictionaryEntry)
-        .where(DictionaryEntry.user_id == device_id)
+        .where(DictionaryEntry.user_id == user_id)
         .order_by(sort_column)
         .offset(offset)
         .limit(limit)
@@ -116,16 +120,17 @@ async def list_dictionary(
     )
 
 
-@router.delete("/{device_id}/{entry_id}")
+@router.delete("/{entry_id}")
 async def delete_dictionary_entry(
-    device_id: str,
     entry_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
 ):
+    user_id = int(current_user["sub"])
     result = await db.execute(
         select(DictionaryEntry).where(
             DictionaryEntry.id == entry_id,
-            DictionaryEntry.user_id == device_id,
+            DictionaryEntry.user_id == user_id,
         )
     )
     entry = result.scalar_one_or_none()

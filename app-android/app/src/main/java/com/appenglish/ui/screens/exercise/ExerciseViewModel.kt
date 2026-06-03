@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -98,6 +100,7 @@ class UnitExerciseViewModel @Inject constructor(
     private val unitId: String = savedStateHandle.get<String>("unitId") ?: "affirmative"
 
     private val pendingAnswers = mutableListOf<AnswerEntryDto>()
+    private val pendingAnswersMutex = Mutex()
 
     private val _uiState = MutableStateFlow(UnitExerciseUiState())
     val uiState: StateFlow<UnitExerciseUiState> = _uiState.asStateFlow()
@@ -329,7 +332,8 @@ class UnitExerciseViewModel @Inject constructor(
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = true,
                 showingAnswer = true,
-                wrongItems = remainingWrongs, score = state.score + 1, completedItems = state.completedItems + 1
+                wrongItems = remainingWrongs, score = state.score + 1
+                // Note: completedItems NOT incremented here - it was already counted on first attempt
             )
             // Don't auto-advance — wait for user to tap modal button
         } else {
@@ -486,13 +490,17 @@ class UnitExerciseViewModel @Inject constructor(
         val app = getApplication<Application>()
         viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, if (correct) state.soundCorrectUrl else state.soundIncorrectUrl, correct) }
 
-        pendingAnswers.add(AnswerEntryDto(
-            topicId = topicId,
-            unitId = unitId,
-            givenAnswer = userAnswer,
-            correctAnswer = item.answer,
-            isCorrect = correct
-        ))
+        viewModelScope.launch {
+            pendingAnswersMutex.withLock {
+                pendingAnswers.add(AnswerEntryDto(
+                    topicId = topicId,
+                    unitId = unitId,
+                    givenAnswer = userAnswer,
+                    correctAnswer = item.answer,
+                    isCorrect = correct
+                ))
+            }
+        }
 
         val newCompleted = state.completedItems + 1
         if (correct) {
@@ -588,17 +596,21 @@ class UnitExerciseViewModel @Inject constructor(
                     )
                 )
             } catch (_: Exception) {}
-            if (pendingAnswers.isNotEmpty()) {
+            val answersToSend = pendingAnswersMutex.withLock {
+                val copy = pendingAnswers.toList()
+                pendingAnswers.clear()
+                copy
+            }
+            if (answersToSend.isNotEmpty()) {
                 try {
-                    progressRepository.recordAnswers(pendingAnswers.toList())
-                    pendingAnswers.clear()
+                    progressRepository.recordAnswers(answersToSend)
                 } catch (_: Exception) {}
             }
         }
     }
 
     private fun saveProgressLocal() {
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.NonCancellable + kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             val state = _uiState.value
             progressRepository.saveProgress(
                 topicId = topicId, unitId = unitId,

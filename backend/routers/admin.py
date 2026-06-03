@@ -2166,14 +2166,33 @@ async def system_db_tables(db: AsyncSession = Depends(get_db), admin: dict = Dep
 @router.post("/system/db-query")
 async def system_db_query(req: QueryRequest, db: AsyncSession = Depends(get_db), admin: dict = Depends(get_current_admin)):
     import time
-    query = req.query
-    query_upper = query.strip().upper()
+    import re
+    query = req.query.strip()
+    query_upper = query.upper()
+
+    # Strict validation: must start with SELECT
     if not query_upper.startswith("SELECT"):
         raise HTTPException(status_code=400, detail="Only SELECT queries are allowed")
-    disallowed = ["INTO", "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE"]
+
+    # Block dangerous keywords anywhere in the query (including after comments)
+    # Remove SQL comments first for analysis
+    query_no_comments = re.sub(r'--[^\n]*', '', query)
+    query_no_comments = re.sub(r'/\*.*?\*/', '', query_no_comments, flags=re.DOTALL)
+    query_clean_upper = query_no_comments.upper()
+
+    disallowed = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE",
+                   "GRANT", "REVOKE", "EXECUTE", "EXEC", "INTO", "COPY", "LOCK", "UNION"]
     for kw in disallowed:
-        if kw in query_upper:
-            raise HTTPException(status_code=400, detail=f"Keyword '{kw}' not allowed. Only read-only queries.")
+        # Match keyword as whole word (not part of another word)
+        if re.search(r'\b' + kw + r'\b', query_clean_upper):
+            raise HTTPException(status_code=400, detail=f"Keyword '{kw}' not allowed. Only read-only SELECT queries.")
+
+    # Block subqueries that access sensitive tables
+    sensitive_tables = ["admin_users", "app_users"]
+    for table in sensitive_tables:
+        if table in query_clean_upper:
+            raise HTTPException(status_code=400, detail=f"Access to table '{table}' is not allowed")
+
     start = time.time()
     try:
         result = await db.execute(text(query))

@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from config import CONTENT_DIR
 from database import get_db
+from dependencies import get_current_app_user
 from models import Progress, BlockProgress, AnswerHistory
 from schemas.progress import (
     ProgressSyncRequest,
@@ -49,12 +50,13 @@ def _get_topic_subject_map() -> dict[str, str]:
 async def sync_progress(
     request: ProgressSyncRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
 ):
     import traceback
     try:
         synced_count = 0
-        now = datetime.utcnow()
-        user_id = int(request.deviceId)
+        now = datetime.now(timezone.utc)
+        user_id = int(current_user["sub"])
 
         for entry in request.progress:
             result = await db.execute(
@@ -123,14 +125,14 @@ async def sync_progress(
                     existing_bp.score = bp_entry.score
                 existing_bp.completed = bp_entry.completed
                 existing_bp.total_items = bp_entry.totalItems
-            if bp_entry.completedAt:
-                if isinstance(bp_entry.completedAt, datetime):
-                    if bp_entry.completedAt.tzinfo is not None:
-                        existing_bp.completed_at = bp_entry.completedAt.replace(tzinfo=None)
+                if bp_entry.completedAt:
+                    if isinstance(bp_entry.completedAt, datetime):
+                        if bp_entry.completedAt.tzinfo is not None:
+                            existing_bp.completed_at = bp_entry.completedAt.replace(tzinfo=None)
+                        else:
+                            existing_bp.completed_at = bp_entry.completedAt
                     else:
                         existing_bp.completed_at = bp_entry.completedAt
-                else:
-                    existing_bp.completed_at = bp_entry.completedAt
             else:
                 new_bp = BlockProgress(
                     user_id=user_id,
@@ -161,12 +163,12 @@ async def sync_progress(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{device_id}", response_model=ProgressResponse)
+@router.get("/me", response_model=ProgressResponse)
 async def get_progress(
-    device_id: str,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
 ):
-    uid = int(device_id)
+    uid = int(current_user["sub"])
     result = await db.execute(
         select(Progress).where(Progress.user_id == uid)
     )
@@ -236,7 +238,7 @@ async def get_progress(
         for bp in block_rows
     ]
 
-    return ProgressResponse(deviceId=device_id, subjects=subjects, blockProgress=block_progress)
+    return ProgressResponse(deviceId=str(uid), subjects=subjects, blockProgress=block_progress)
 
 
 class AnswerEntry(BaseModel):
@@ -248,7 +250,6 @@ class AnswerEntry(BaseModel):
 
 
 class AnswerBatchRequest(BaseModel):
-    deviceId: str
     answers: list[AnswerEntry]
 
 
@@ -256,9 +257,10 @@ class AnswerBatchRequest(BaseModel):
 async def record_answers(
     request: AnswerBatchRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_app_user),
 ):
-    now = datetime.utcnow()
-    user_id = int(request.deviceId)
+    now = datetime.now(timezone.utc)
+    user_id = int(current_user["sub"])
     count = 0
     for a in request.answers:
         entry = AnswerHistory(
