@@ -230,11 +230,12 @@ private fun BlocksListContent(
             item { Spacer(modifier = Modifier.height(4.dp)) }
 
             itemsIndexed(blocks) { idx, block ->
-                val progress = blockProgress[idx]
+                val rawProgress = blockProgress[idx]
+                val progress = rawProgress?.takeIf { it.score > 0 || it.completed }
                 val percent = if (progress != null && progress.totalItems > 0) {
                     (progress.score.toFloat() / progress.totalItems)
                 } else 0f
-                val isComplete = progress?.completed == true
+                val isComplete = rawProgress?.completed == true
 
                 val animatedProgress by animateFloatAsState(
                     targetValue = percent,

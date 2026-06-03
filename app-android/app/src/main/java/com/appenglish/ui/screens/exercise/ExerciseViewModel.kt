@@ -607,12 +607,11 @@ class UnitExerciseViewModel @Inject constructor(
             )
             var itemsBeforeBlock = 0
             for ((blockIdx, block) in state.blocks.withIndex()) {
+                if (blockIdx > state.currentBlockIndex) break
                 val completedInBlock = if (blockIdx < state.currentBlockIndex) {
                     block.items.size
-                } else if (blockIdx == state.currentBlockIndex) {
-                    (state.completedItems - itemsBeforeBlock).coerceIn(0, block.items.size)
                 } else {
-                    0
+                    (state.completedItems - itemsBeforeBlock).coerceIn(0, block.items.size)
                 }
                 val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
                 val blockScore = (completedInBlock - wrongInBlock).coerceAtLeast(0)
@@ -634,12 +633,11 @@ class UnitExerciseViewModel @Inject constructor(
             val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
             var itemsBeforeBlock = 0
             for ((blockIdx, block) in state.blocks.withIndex()) {
+                if (blockIdx > state.currentBlockIndex) break
                 val completedInBlock = if (blockIdx < state.currentBlockIndex) {
                     block.items.size
-                } else if (blockIdx == state.currentBlockIndex) {
-                    (state.completedItems - itemsBeforeBlock).coerceIn(0, block.items.size)
                 } else {
-                    0
+                    (state.completedItems - itemsBeforeBlock).coerceIn(0, block.items.size)
                 }
                 val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
                 val blockScore = (completedInBlock - wrongInBlock).coerceAtLeast(0)
