@@ -16,7 +16,6 @@ import com.appenglish.data.remote.dto.ProgressSyncRequest
 import com.appenglish.workers.SyncWorker
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -203,12 +202,6 @@ class ProgressRepository @Inject constructor(
         return dao.observeAllProgress(userId)
     }
 
-    fun observeTopicProgress(topicId: String): Flow<List<ProgressEntity>> {
-        return dao.observeAllProgress(userId).map { list ->
-            list.filter { it.topicId == topicId }
-        }
-    }
-
     suspend fun getBlockProgress(topicId: String, unitId: String, blockIndex: Int): BlockProgressEntity? {
         return dao.getBlockProgress(userId, topicId, unitId, blockIndex)
     }
@@ -304,8 +297,8 @@ class ProgressRepository @Inject constructor(
         } catch (_: Exception) {}
     }
 
-    suspend fun resetBlockProgress(topicId: String, unitId: String, blockIndex: Int, totalItems: Int) {
-        // Reset local
+        suspend fun resetBlockProgress(topicId: String, unitId: String, blockIndex: Int, totalItems: Int) {
+        // 1. Reset local del bloque
         dao.upsertBlockProgress(
             BlockProgressEntity(
                 deviceId = userId,
@@ -315,14 +308,47 @@ class ProgressRepository @Inject constructor(
                 score = 0,
                 totalItems = totalItems,
                 completed = false,
-                completedItems = 0,  // Reset completed items
+                completedItems = 0,
                 completedAt = null
             )
         )
-        // Sync reset to backend
+        
+        // 2. 🛠️ CORRECCIÓN: Recalcular el progreso de la unidad padre basado en TODOS sus bloques
+        val allBlocksInUnit = dao.getAllBlockProgress(userId, topicId, unitId)
+        val newUnitCompletedItems = allBlocksInUnit.sumOf { it.completedItems }
+        val newUnitScore = allBlocksInUnit.sumOf { it.score }
+        val newUnitTotalItems = allBlocksInUnit.sumOf { it.totalItems }
+        val newUnitCompleted = newUnitCompletedItems >= newUnitTotalItems && newUnitTotalItems > 0
+
+        // Actualizar la unidad en la base de datos local
+        val existingUnit = dao.getProgress(userId, topicId, unitId)
+        if (existingUnit != null) {
+            dao.updateProgress(
+                deviceId = userId,
+                topicId = topicId,
+                unitId = unitId,
+                completedItems = newUnitCompletedItems,
+                score = newUnitScore,
+                totalItems = newUnitTotalItems,
+                completed = newUnitCompleted,
+                completedAt = if (newUnitCompleted) System.currentTimeMillis() else null
+            )
+        }
+
+        // 3. Sincronizar AMBOS (el reset del bloque Y el progreso recalculado de la unidad) al backend
         try {
             api.syncProgress(ProgressSyncRequest(
-                progress = emptyList(),
+                progress = listOf(
+                    ProgressEntryDto(
+                        topicId = topicId,
+                        unitId = unitId,
+                        completed = newUnitCompleted,
+                        score = newUnitScore,
+                        totalItems = newUnitTotalItems,
+                        completedItems = newUnitCompletedItems,
+                        status = if (newUnitCompleted) "completed" else "in_progress"
+                    )
+                ),
                 blockProgress = listOf(
                     BlockProgressEntryDto(
                         topicId = topicId,

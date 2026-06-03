@@ -40,21 +40,6 @@ class UnitsViewModel @Inject constructor(
 
     init { loadUnits() }
 
-    private fun observeProgress() {
-        viewModelScope.launch {
-            progressRepository.observeTopicProgress(topicId).collect { entries ->
-                val state = _uiState.value
-                if (state.units.isNotEmpty()) {
-                    val updated = state.units.map { unit ->
-                        val match = entries.find { it.unitId == unit.id }
-                        unit.copy(completedItems = match?.completedItems ?: 0)
-                    }
-                    _uiState.value = state.copy(units = updated)
-                }
-            }
-        }
-    }
-
     fun loadUnits() {
         viewModelScope.launch {
             if (_uiState.value.units.isEmpty()) {
@@ -89,8 +74,6 @@ class UnitsViewModel @Inject constructor(
                         topicTheory = topicTheory,
                         units = units
                     )
-                    // Start reactive progress collection after initial load
-                    observeProgress()
                 },
                 onFailure = { e ->
                     _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error")
@@ -101,6 +84,21 @@ class UnitsViewModel @Inject constructor(
 
     fun selectTab(index: Int) {
         _uiState.value = _uiState.value.copy(selectedTab = index)
+    }
+
+    fun refreshProgress() {
+        viewModelScope.launch {
+            val topic = _uiState.value
+            if (topic.units.isEmpty()) return@launch
+            val localProgress = progressRepository.getTopicProgress(topicId)
+            val updatedUnits = topic.units.map { u ->
+                val local = localProgress.find { it.unitId == u.id }
+                u.copy(
+                    completedItems = local?.completedItems ?: 0,
+                )
+            }
+            _uiState.value = topic.copy(units = updatedUnits)
+        }
     }
 
     fun resetUnitProgress(unitId: String) {

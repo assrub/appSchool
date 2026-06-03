@@ -23,7 +23,6 @@ from schemas.progress import (
 
 router = APIRouter()
 
-
 def _get_topic_subject_map() -> dict[str, str]:
     """Map topic_id -> subject_id from content files."""
     topic_map = {}
@@ -44,7 +43,6 @@ def _get_topic_subject_map() -> dict[str, str]:
                     topic_map[topic_id] = subject_id
 
     return topic_map
-
 
 @router.post("/sync", response_model=ProgressSyncResponse)
 async def sync_progress(
@@ -69,7 +67,6 @@ async def sync_progress(
             all_rows = result.scalars().all()
             existing = all_rows[0] if all_rows else None
 
-            # Delete duplicates if any
             if len(all_rows) > 1:
                 from sqlalchemy import delete as sqldelete
                 duplicate_ids = [r.id for r in all_rows[1:]]
@@ -81,7 +78,6 @@ async def sync_progress(
                 existing.total_items = entry.totalItems
                 existing.completed_items = entry.completedItems
                 existing.test_score = entry.testScore
-                # New pedagogical metrics
                 existing.accuracy = entry.accuracy
                 existing.mastery = entry.mastery
                 existing.status = entry.status
@@ -107,7 +103,6 @@ async def sync_progress(
                     test_score=entry.testScore,
                     started_at=now,
                     completed_at=entry.completedAt,
-                    # New pedagogical metrics
                     accuracy=entry.accuracy,
                     mastery=entry.mastery,
                     status=entry.status,
@@ -139,19 +134,21 @@ async def sync_progress(
                 await db.execute(sqldelete(BlockProgress).where(BlockProgress.id.in_(dup_ids)))
 
             if existing_bp:
-                if bp_entry.score > existing_bp.score:
+                # 🛠️ CORRECCIÓN: Aceptar reinicio explícito (score 0 y completed False) O si el puntaje es mayor
+                is_explicit_reset = (bp_entry.score == 0 and bp_entry.completed == False)
+                if bp_entry.score > existing_bp.score or is_explicit_reset:
                     existing_bp.score = bp_entry.score
-                existing_bp.completed = bp_entry.completed
-                existing_bp.total_items = bp_entry.totalItems
-                existing_bp.completed_items = bp_entry.completedItems
-                if bp_entry.completedAt:
-                    if isinstance(bp_entry.completedAt, datetime):
-                        if bp_entry.completedAt.tzinfo is not None:
-                            existing_bp.completed_at = bp_entry.completedAt.replace(tzinfo=None)
+                    existing_bp.completed = bp_entry.completed
+                    existing_bp.total_items = bp_entry.totalItems
+                    existing_bp.completed_items = bp_entry.completedItems
+                    if bp_entry.completedAt:
+                        if isinstance(bp_entry.completedAt, datetime):
+                            if bp_entry.completedAt.tzinfo is not None:
+                                existing_bp.completed_at = bp_entry.completedAt.replace(tzinfo=None)
+                            else:
+                                existing_bp.completed_at = bp_entry.completedAt
                         else:
                             existing_bp.completed_at = bp_entry.completedAt
-                    else:
-                        existing_bp.completed_at = bp_entry.completedAt
             else:
                 new_bp = BlockProgress(
                     user_id=user_id,
@@ -182,23 +179,18 @@ async def sync_progress(
         logging.error(f"Sync error: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/me", response_model=ProgressResponse)
 async def get_progress(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_app_user),
 ):
     uid = int(current_user["sub"])
-    result = await db.execute(
-        select(Progress).where(Progress.user_id == uid)
-    )
+    result = await db.execute(select(Progress).where(Progress.user_id == uid))
     rows = result.scalars().all()
 
     block_rows = []
     try:
-        bp_result = await db.execute(
-            select(BlockProgress).where(BlockProgress.user_id == uid)
-        )
+        bp_result = await db.execute(select(BlockProgress).where(BlockProgress.user_id == uid))
         block_rows = bp_result.scalars().all()
     except Exception as e:
         import logging
@@ -209,13 +201,10 @@ async def get_progress(
 
     for row in rows:
         subject_id = topic_map.get(row.topic_id, "unknown")
-
         if subject_id not in subjects_map:
             subjects_map[subject_id] = {}
-
         if row.topic_id not in subjects_map[subject_id]:
             subjects_map[subject_id][row.topic_id] = []
-
         subjects_map[subject_id][row.topic_id].append(row)
 
     subjects = []
@@ -232,7 +221,6 @@ async def get_progress(
                         totalItems=p.total_items,
                         completedItems=p.completed_items,
                         testScore=p.test_score,
-                        # New pedagogical metrics
                         accuracy=p.accuracy,
                         mastery=p.mastery,
                         status=p.status,
@@ -249,9 +237,7 @@ async def get_progress(
                     testScore=progress_rows[0].test_score if progress_rows else None,
                 )
             )
-        subjects.append(
-            ProgressSubjectResponse(subjectId=subject_id, topics=topics)
-        )
+        subjects.append(ProgressSubjectResponse(subjectId=subject_id, topics=topics))
 
     block_progress = [
         BlockProgressResponse(
@@ -269,7 +255,6 @@ async def get_progress(
 
     return ProgressResponse(deviceId=str(uid), subjects=subjects, blockProgress=block_progress)
 
-
 class AnswerEntry(BaseModel):
     topicId: str
     unitId: str
@@ -277,10 +262,8 @@ class AnswerEntry(BaseModel):
     correctAnswer: str
     isCorrect: bool
 
-
 class AnswerBatchRequest(BaseModel):
     answers: list[AnswerEntry]
-
 
 @router.post("/answer")
 async def record_answers(
