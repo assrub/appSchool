@@ -107,6 +107,7 @@ class UnitExerciseViewModel @Inject constructor(
 
     private val topicId: String = savedStateHandle.get<String>("topicId") ?: "verb-to-be"
     private val unitId: String = savedStateHandle.get<String>("unitId") ?: "affirmative"
+    private val startBlockIndex: Int = savedStateHandle.get<Int>("startBlockIndex") ?: 0
 
     private val pendingAnswers = mutableListOf<AnswerEntryDto>()
     private val pendingAnswersMutex = Mutex()
@@ -170,8 +171,8 @@ class UnitExerciseViewModel @Inject constructor(
                         )
                     }
 
-                    // Always start from the beginning
-                    val blockIdx = 0
+                    // Always start from the specified block
+                    val blockIdx = startBlockIndex.coerceIn(0, blocks.lastIndex)
                     val itemIdx = 0
 
                     _uiState.value = _uiState.value.copy(

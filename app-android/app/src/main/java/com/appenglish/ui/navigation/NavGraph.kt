@@ -42,7 +42,7 @@ object Routes {
     const val TOPICS_LIST = "topics/{subjectId}"
     const val UNITS_LIST = "units/{topicId}"
     const val BLOCKS = "blocks/{unitId}"
-    const val EXERCISE = "exercise/{topicId}/{unitId}"
+    const val EXERCISE = "exercise/{topicId}/{unitId}/{startBlockIndex}"
     const val TEST = "test/{topicId}"
     const val THEORY = "theory/{topicId}"
     const val UNIT_THEORY = "unit-theory/{topicId}/{unitId}"
@@ -53,7 +53,7 @@ object Routes {
     fun topicsList(subjectId: String) = "topics/$subjectId"
     fun unitsList(topicId: String) = "units/$topicId"
     fun blocks(unitId: String) = "blocks/$unitId"
-    fun exercise(topicId: String, unitId: String) = "exercise/$topicId/$unitId"
+    fun exercise(topicId: String, unitId: String, startBlockIndex: Int = 0) = "exercise/$topicId/$unitId/$startBlockIndex"
     fun test(topicId: String) = "test/$topicId"
     fun theory(topicId: String) = "theory/$topicId"
     fun unitTheory(topicId: String, unitId: String) = "unit-theory/$topicId/$unitId"
@@ -158,7 +158,7 @@ fun AppNavGraph() {
             composable(Routes.BLOCKS, arguments = listOf(navArgument("unitId") { type = NavType.StringType })) {
                 BlocksScreen(
                     onBackClick = { navController.popBackStack() },
-                    onBlockClick = { topicId, unitId -> navController.navigate(Routes.exercise(topicId, unitId)) },
+                    onBlockClick = { topicId, unitId, blockIndex -> navController.navigate(Routes.exercise(topicId, unitId, blockIndex)) },
                     onTopicTheoryClick = { topicId -> navController.navigate(Routes.theory(topicId)) },
                     onUnitTheoryClick = { topicId, unitId -> navController.navigate(Routes.unitTheory(topicId, unitId)) }
                 )
@@ -175,7 +175,11 @@ fun AppNavGraph() {
                 TheoryScreen(onBackClick = { navController.popBackStack() })
             }
 
-            composable(Routes.EXERCISE, arguments = listOf(navArgument("topicId") { type = NavType.StringType }, navArgument("unitId") { type = NavType.StringType })) {
+            composable(Routes.EXERCISE, arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType },
+                navArgument("unitId") { type = NavType.StringType },
+                navArgument("startBlockIndex") { type = NavType.IntType; defaultValue = 0 }
+            )) {
                 UnitExerciseScreen(onBackClick = { navController.popBackStack() })
             }
 
