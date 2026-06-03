@@ -11,6 +11,14 @@ class ProgressEntry(BaseModel):
     completedItems: int = 0
     testScore: int | None = None
     completedAt: datetime | None = None
+    # New pedagogical metrics
+    accuracy: float = 0.0
+    mastery: float = 0.0
+    status: str = "not_started"
+    itemsAttempted: int = 0
+    itemsMastered: int = 0
+    itemsCorrectFirst: int = 0
+    timeSpentSeconds: int = 0
 
 
 class BlockProgressEntry(BaseModel):
@@ -41,6 +49,14 @@ class ProgressUnitResponse(BaseModel):
     totalItems: int = 0
     completedItems: int = 0
     testScore: int | None = None
+    # New pedagogical metrics
+    accuracy: float = 0.0
+    mastery: float = 0.0
+    status: str = "not_started"
+    itemsAttempted: int = 0
+    itemsMastered: int = 0
+    itemsCorrectFirst: int = 0
+    timeSpentSeconds: int = 0
 
 
 class BlockProgressResponse(BaseModel):

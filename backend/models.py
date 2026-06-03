@@ -1,8 +1,12 @@
 import datetime
-from sqlalchemy import String, Integer, Boolean, Float, Text, DateTime, LargeBinary, JSON, UniqueConstraint, ForeignKey
+from sqlalchemy import String, Integer, Boolean, Float, Text, DateTime, LargeBinary, JSON, UniqueConstraint, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
+
+
+def _utcnow():
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 class Subject(Base):
@@ -15,8 +19,8 @@ class Subject(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     map_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     topics: Mapped[list["Topic"]] = relationship(back_populates="subject", order_by="Topic.sort_order")
 
@@ -31,8 +35,8 @@ class Topic(Base):
     difficulty: Mapped[int] = mapped_column(Integer, default=1)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     subject: Mapped["Subject"] = relationship(back_populates="topics")
     theory: Mapped["TopicTheory | None"] = relationship(back_populates="topic", uselist=False)
@@ -49,8 +53,8 @@ class TopicTheory(Base):
     table_headers: Mapped[list | None] = mapped_column(JSON, nullable=True)
     table_rows: Mapped[list | None] = mapped_column(JSON, nullable=True)
     tips: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     topic: Mapped["Topic"] = relationship(back_populates="theory")
     sections: Mapped[list["TheorySection"]] = relationship(back_populates="theory", order_by="TheorySection.sort_order")
@@ -78,7 +82,7 @@ class TheoryVideo(Base):
     url: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
     topic: Mapped["Topic"] = relationship(back_populates="videos")
 
@@ -97,8 +101,8 @@ class ExerciseUnit(Base):
     sound_correct_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     sound_incorrect_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     topic: Mapped["Topic"] = relationship(back_populates="units")
     theory: Mapped["UnitTheory | None"] = relationship(back_populates="unit", uselist=False)
@@ -114,8 +118,8 @@ class UnitTheory(Base):
     table_headers: Mapped[list | None] = mapped_column(JSON, nullable=True)
     table_rows: Mapped[list | None] = mapped_column(JSON, nullable=True)
     tips: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     unit: Mapped["ExerciseUnit"] = relationship(back_populates="theory")
     sections: Mapped[list["UnitTheorySection"]] = relationship(back_populates="unit_theory", order_by="UnitTheorySection.sort_order")
@@ -158,8 +162,8 @@ class BlockTheory(Base):
     table_headers: Mapped[list | None] = mapped_column(JSON, nullable=True)
     table_rows: Mapped[list | None] = mapped_column(JSON, nullable=True)
     tips: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     block: Mapped["ExerciseBlock"] = relationship(back_populates="theory")
     sections: Mapped[list["BlockTheorySection"]] = relationship(back_populates="block_theory", order_by="BlockTheorySection.sort_order")
@@ -203,6 +207,10 @@ class ExerciseItem(Base):
 
 class AnswerHistory(Base):
     __tablename__ = "answer_history"
+    __table_args__ = (
+        Index("ix_answer_history_user_topic", "user_id", "topic_id"),
+        Index("ix_answer_history_user_topic_unit", "user_id", "topic_id", "unit_id"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
@@ -213,13 +221,14 @@ class AnswerHistory(Base):
     correct_answer: Mapped[str] = mapped_column(String(200), nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
     attempt_number: Mapped[int] = mapped_column(Integer, default=1)
-    answered_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    answered_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class Progress(Base):
     __tablename__ = "progress"
     __table_args__ = (
         UniqueConstraint("user_id", "topic_id", "unit_id", name="uq_progress_user_topic_unit"),
+        Index("ix_progress_user_topic", "user_id", "topic_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -232,14 +241,24 @@ class Progress(Base):
     completed_items: Mapped[int] = mapped_column(Integer, default=0)
     test_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     redo_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    started_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    started_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
     completed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
+    # New pedagogical metrics
+    accuracy: Mapped[float] = mapped_column(Float, default=0.0)  # % correct on first attempt
+    mastery: Mapped[float] = mapped_column(Float, default=0.0)  # % mastered (first correct OR retried correct)
+    status: Mapped[str] = mapped_column(String(20), default="not_started")  # not_started, in_progress, completed, mastered
+    items_attempted: Mapped[int] = mapped_column(Integer, default=0)  # distinct items answered
+    items_mastered: Mapped[int] = mapped_column(Integer, default=0)  # items mastered
+    items_correct_first: Mapped[int] = mapped_column(Integer, default=0)  # correct on first attempt
+    time_spent_seconds: Mapped[int] = mapped_column(Integer, default=0)  # total time in seconds
+    last_activity_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class BlockProgress(Base):
     __tablename__ = "block_progress"
     __table_args__ = (
         UniqueConstraint("user_id", "topic_id", "unit_id", "block_index", name="uq_block_progress_user_topic_unit_block"),
+        Index("ix_block_progress_user_topic_unit", "user_id", "topic_id", "unit_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -259,7 +278,7 @@ class StudySession(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"), nullable=False, index=True)
     topic_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    started_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    started_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
     ended_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     exercises_attempted: Mapped[int] = mapped_column(Integer, default=0)
     exercises_correct: Mapped[int] = mapped_column(Integer, default=0)
@@ -279,8 +298,8 @@ class DictionaryEntry(Base):
     source_lang: Mapped[str] = mapped_column(String(10), default="en")
     target_lang: Mapped[str] = mapped_column(String(10), default="es")
     times_looked_up: Mapped[int] = mapped_column(Integer, default=1)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class TranslationCache(Base):
@@ -292,7 +311,7 @@ class TranslationCache(Base):
     source_lang: Mapped[str] = mapped_column(String(10), nullable=False)
     target_lang: Mapped[str] = mapped_column(String(10), nullable=False)
     translation: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class TtsCache(Base):
@@ -303,7 +322,7 @@ class TtsCache(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     voice: Mapped[str] = mapped_column(String(100), nullable=False)
     audio_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class AudioFile(Base):
@@ -315,7 +334,7 @@ class AudioFile(Base):
     voice: Mapped[str | None] = mapped_column(String(100), nullable=True)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class AdminUser(Base):
@@ -324,7 +343,7 @@ class AdminUser(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class AppUser(Base):
@@ -336,7 +355,7 @@ class AppUser(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     display_name: Mapped[str] = mapped_column(String(100), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 class UserSubject(Base):

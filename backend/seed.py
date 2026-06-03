@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Seed the database with content from JSON files."""
+"""Seed the database with content from JSON files. Uses upsert for idempotency."""
 
 import asyncio
 import json
 import os
+import sys
 
 from database import async_session, init_db, engine
-from sqlalchemy import select, text, delete as sqldelete
+from sqlalchemy import select, text
 from models import (
     Subject, Topic, TopicTheory, TheorySection, TheoryVideo,
     ExerciseUnit, UnitTheory, UnitTheorySection,
@@ -16,6 +17,9 @@ from services.auth_service import hash_password
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONTENT_DIR = os.path.join(BASE_DIR, "content")
+
+# Check for --upsert flag (default behavior now)
+UPSERT_MODE = "--upsert" in sys.argv or True  # Always use upsert
 
 
 async def seed():
@@ -31,55 +35,11 @@ async def seed():
             "ALTER TABLE exercise_units ADD COLUMN IF NOT EXISTS sound_incorrect_url VARCHAR(500)",
             "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS icon VARCHAR(50) DEFAULT ''",
             "ALTER TABLE exercise_blocks ADD COLUMN IF NOT EXISTS shuffle BOOLEAN DEFAULT FALSE",
-            "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS answers JSONB",
             "ALTER TABLE exercise_items ADD COLUMN IF NOT EXISTS input_mode VARCHAR(10)",
         ]
         for m in migrations:
             try:
                 await db.execute(text(m))
-                await db.commit()
-            except Exception:
-                await db.rollback()
-
-        # Convert device_id -> user_id with type change (VARCHAR -> INTEGER)
-        id_migrations = [
-            # Drop old + new columns, then recreate with correct type
-            "ALTER TABLE progress DROP COLUMN IF EXISTS device_id",
-            "ALTER TABLE progress DROP COLUMN IF EXISTS user_id",
-            "ALTER TABLE progress ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
-            "ALTER TABLE answer_history DROP COLUMN IF EXISTS device_id",
-            "ALTER TABLE answer_history DROP COLUMN IF EXISTS user_id",
-            "ALTER TABLE answer_history ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
-            "ALTER TABLE dictionary_entries DROP COLUMN IF EXISTS device_id",
-            "ALTER TABLE dictionary_entries DROP COLUMN IF EXISTS user_id",
-            "ALTER TABLE dictionary_entries ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
-            "ALTER TABLE study_sessions DROP COLUMN IF EXISTS device_id",
-            "ALTER TABLE study_sessions DROP COLUMN IF EXISTS user_id",
-            "ALTER TABLE study_sessions ADD COLUMN IF NOT EXISTS user_id INTEGER DEFAULT 1",
-        ]
-        for m in id_migrations:
-            try:
-                await db.execute(text(m))
-                await db.commit()
-            except Exception:
-                await db.rollback()
-
-        # Remove old data and re-seed (TRUNCATE resets auto-increment IDs)
-        truncates = [
-            "TRUNCATE exercise_items RESTART IDENTITY CASCADE",
-            "TRUNCATE exercise_blocks RESTART IDENTITY CASCADE",
-            "TRUNCATE unit_theory_sections RESTART IDENTITY CASCADE",
-            "TRUNCATE unit_theory RESTART IDENTITY CASCADE",
-            "TRUNCATE exercise_units RESTART IDENTITY CASCADE",
-            "TRUNCATE theory_videos RESTART IDENTITY CASCADE",
-            "TRUNCATE theory_sections RESTART IDENTITY CASCADE",
-            "TRUNCATE topic_theory RESTART IDENTITY CASCADE",
-            "TRUNCATE topics RESTART IDENTITY CASCADE",
-            "TRUNCATE subjects RESTART IDENTITY CASCADE",
-        ]
-        for t in truncates:
-            try:
-                await db.execute(text(t))
                 await db.commit()
             except Exception:
                 await db.rollback()
@@ -105,28 +65,49 @@ async def seed():
             db.add(app_user)
             print("Created app user: fausti / 123")
 
+        await db.flush()
+
         # Load subjects.json
         subjects_path = os.path.join(CONTENT_DIR, "subjects.json")
         with open(subjects_path, "r") as f:
             subjects_data = json.load(f)
 
-        # Assign fausti to all subjects
-        subj_check = await db.execute(select(UserSubject).where(UserSubject.user_id == 1))
-        if not subj_check.scalar_one_or_none():
+        # Assign fausti to all subjects (get user id first)
+        fausti_check = await db.execute(select(AppUser).where(AppUser.username == "fausti"))
+        fausti_user = fausti_check.scalar_one_or_none()
+        if fausti_user:
             for subj_data in subjects_data.get("subjects", []):
-                db.add(UserSubject(user_id=1, subject_id=subj_data["id"]))
+                existing_assignment = await db.execute(
+                    select(UserSubject).where(
+                        UserSubject.user_id == fausti_user.id,
+                        UserSubject.subject_id == subj_data["id"]
+                    )
+                )
+                if not existing_assignment.scalar_one_or_none():
+                    db.add(UserSubject(user_id=fausti_user.id, subject_id=subj_data["id"]))
             print("Assigned fausti to subjects")
 
         for subj_data in subjects_data.get("subjects", []):
-            subject = Subject(
-                id=subj_data["id"],
-                name=subj_data["name"],
-                icon=subj_data.get("icon", ""),
-                color=subj_data.get("color", "#4CAF50"),
-                sort_order=subj_data.get("sort_order", 0),
-                map_config=subj_data.get("mapConfig"),
-            )
-            db.add(subject)
+            # Upsert subject
+            existing_subject = await db.execute(select(Subject).where(Subject.id == subj_data["id"]))
+            subject = existing_subject.scalar_one_or_none()
+            if subject:
+                subject.name = subj_data["name"]
+                subject.icon = subj_data.get("icon", "")
+                subject.color = subj_data.get("color", "#4CAF50")
+                subject.sort_order = subj_data.get("sort_order", 0)
+                subject.map_config = subj_data.get("mapConfig")
+                subject.is_active = True
+            else:
+                subject = Subject(
+                    id=subj_data["id"],
+                    name=subj_data["name"],
+                    icon=subj_data.get("icon", ""),
+                    color=subj_data.get("color", "#4CAF50"),
+                    sort_order=subj_data.get("sort_order", 0),
+                    map_config=subj_data.get("mapConfig"),
+                )
+                db.add(subject)
 
             # Load topics for this subject
             subject_dir = os.path.join(CONTENT_DIR, subj_data["id"])
@@ -137,37 +118,63 @@ async def seed():
                         with open(topic_path, "r") as f:
                             topic_data = json.load(f)
 
-                        await _seed_topic(db, topic_data, subj_data["id"])
+                        await _upsert_topic(db, topic_data, subj_data["id"])
 
         await db.commit()
-        print("Database seeded successfully!")
+        print("Database seeded successfully (upsert mode)!")
 
 
-async def _seed_topic(db, topic_data: dict, subject_id: str):
-    topic = Topic(
-        id=topic_data["id"],
-        subject_id=subject_id,
-        name=topic_data["name"],
-        icon=topic_data.get("icon", ""),
-        difficulty=topic_data.get("difficulty", 1),
-        sort_order=topic_data.get("order", 1),
-    )
-    db.add(topic)
+async def _upsert_topic(db, topic_data: dict, subject_id: str):
+    # Upsert topic
+    existing_topic = await db.execute(select(Topic).where(Topic.id == topic_data["id"]))
+    topic = existing_topic.scalar_one_or_none()
+    if topic:
+        topic.name = topic_data["name"]
+        topic.subject_id = subject_id
+        topic.icon = topic_data.get("icon", "")
+        topic.difficulty = topic_data.get("difficulty", 1)
+        topic.sort_order = topic_data.get("order", 1)
+        topic.is_active = True
+    else:
+        topic = Topic(
+            id=topic_data["id"],
+            subject_id=subject_id,
+            name=topic_data["name"],
+            icon=topic_data.get("icon", ""),
+            difficulty=topic_data.get("difficulty", 1),
+            sort_order=topic_data.get("order", 1),
+        )
+        db.add(topic)
+    await db.flush()
 
-    # Seed topic-level theory
+    # Upsert topic-level theory
     theory_data = topic_data.get("theory")
     if theory_data:
-        theory = TopicTheory(
-            topic_id=topic_data["id"],
-            text=theory_data.get("text", ""),
-            table_headers=theory_data.get("table", {}).get("headers"),
-            table_rows=theory_data.get("table", {}).get("rows"),
-            tips=theory_data.get("tips", []),
-        )
-        db.add(theory)
+        existing_theory = await db.execute(select(TopicTheory).where(TopicTheory.topic_id == topic_data["id"]))
+        theory = existing_theory.scalar_one_or_none()
+        if theory:
+            theory.text = theory_data.get("text", "")
+            theory.table_headers = theory_data.get("table", {}).get("headers")
+            theory.table_rows = theory_data.get("table", {}).get("rows")
+            theory.tips = theory_data.get("tips", [])
+        else:
+            theory = TopicTheory(
+                topic_id=topic_data["id"],
+                text=theory_data.get("text", ""),
+                table_headers=theory_data.get("table", {}).get("headers"),
+                table_rows=theory_data.get("table", {}).get("rows"),
+                tips=theory_data.get("tips", []),
+            )
+            db.add(theory)
         await db.flush()
 
-        # Seed theory sections
+        # Upsert theory sections - delete old ones and recreate
+        existing_sections = await db.execute(
+            select(TheorySection).where(TheorySection.theory_id == theory.id)
+        )
+        for old_section in existing_sections.scalars().all():
+            await db.delete(old_section)
+
         for s_data in theory_data.get("sections", []):
             section = TheorySection(
                 theory_id=theory.id,
@@ -178,30 +185,55 @@ async def _seed_topic(db, topic_data: dict, subject_id: str):
             )
             db.add(section)
 
-    # Seed exercise units
+    # Upsert exercise units
     for unit_data in topic_data.get("units", []):
-        unit = ExerciseUnit(
-            id=unit_data["id"],
-            topic_id=topic_data["id"],
-            title=unit_data["title"],
-            exercise_type=unit_data.get("exerciseType", "fill-blank"),
-            explanation=unit_data.get("explanation", ""),
-            input_mode=unit_data.get("inputMode", "tap"),
-        )
-        db.add(unit)
+        existing_unit = await db.execute(select(ExerciseUnit).where(ExerciseUnit.id == unit_data["id"]))
+        unit = existing_unit.scalar_one_or_none()
+        if unit:
+            unit.title = unit_data["title"]
+            unit.topic_id = topic_data["id"]
+            unit.exercise_type = unit_data.get("exerciseType", "fill-blank")
+            unit.explanation = unit_data.get("explanation", "")
+            unit.input_mode = unit_data.get("inputMode", "tap")
+        else:
+            unit = ExerciseUnit(
+                id=unit_data["id"],
+                topic_id=topic_data["id"],
+                title=unit_data["title"],
+                exercise_type=unit_data.get("exerciseType", "fill-blank"),
+                explanation=unit_data.get("explanation", ""),
+                input_mode=unit_data.get("inputMode", "tap"),
+            )
+            db.add(unit)
+        await db.flush()
 
-        # Seed unit-level theory
+        # Upsert unit-level theory
         unit_theory_data = unit_data.get("theory")
         if unit_theory_data:
-            ut = UnitTheory(
-                unit_id=unit_data["id"],
-                text=unit_theory_data.get("text", ""),
-                table_headers=unit_theory_data.get("table", {}).get("headers"),
-                table_rows=unit_theory_data.get("table", {}).get("rows"),
-                tips=unit_theory_data.get("tips", []),
-            )
-            db.add(ut)
+            existing_ut = await db.execute(select(UnitTheory).where(UnitTheory.unit_id == unit_data["id"]))
+            ut = existing_ut.scalar_one_or_none()
+            if ut:
+                ut.text = unit_theory_data.get("text", "")
+                ut.table_headers = unit_theory_data.get("table", {}).get("headers")
+                ut.table_rows = unit_theory_data.get("table", {}).get("rows")
+                ut.tips = unit_theory_data.get("tips", [])
+            else:
+                ut = UnitTheory(
+                    unit_id=unit_data["id"],
+                    text=unit_theory_data.get("text", ""),
+                    table_headers=unit_theory_data.get("table", {}).get("headers"),
+                    table_rows=unit_theory_data.get("table", {}).get("rows"),
+                    tips=unit_theory_data.get("tips", []),
+                )
+                db.add(ut)
             await db.flush()
+
+            # Delete old sections and recreate
+            existing_ut_sections = await db.execute(
+                select(UnitTheorySection).where(UnitTheorySection.unit_theory_id == ut.id)
+            )
+            for old_s in existing_ut_sections.scalars().all():
+                await db.delete(old_s)
 
             for s_data in unit_theory_data.get("sections", []):
                 section = UnitTheorySection(
@@ -212,16 +244,35 @@ async def _seed_topic(db, topic_data: dict, subject_id: str):
                 )
                 db.add(section)
 
-        # Seed exercise blocks and items
-        for block_data in unit_data.get("blocks", []):
-            block = ExerciseBlock(
-                unit_id=unit_data["id"],
-                title=block_data["title"],
+        # Upsert exercise blocks and items
+        for block_idx, block_data in enumerate(unit_data.get("blocks", [])):
+            # Try to find existing block by unit_id + sort_order
+            existing_block = await db.execute(
+                select(ExerciseBlock).where(
+                    ExerciseBlock.unit_id == unit_data["id"],
+                    ExerciseBlock.sort_order == block_idx
+                )
             )
-            db.add(block)
+            block = existing_block.scalar_one_or_none()
+            if block:
+                block.title = block_data["title"]
+            else:
+                block = ExerciseBlock(
+                    unit_id=unit_data["id"],
+                    title=block_data["title"],
+                    sort_order=block_idx,
+                )
+                db.add(block)
             await db.flush()
 
-            for item_data in block_data.get("items", []):
+            # Delete old items and recreate for this block
+            existing_items = await db.execute(
+                select(ExerciseItem).where(ExerciseItem.block_id == block.id)
+            )
+            for old_item in existing_items.scalars().all():
+                await db.delete(old_item)
+
+            for item_idx, item_data in enumerate(block_data.get("items", [])):
                 item = ExerciseItem(
                     block_id=block.id,
                     item_type=item_data.get("type", "fill-blank"),
@@ -237,6 +288,7 @@ async def _seed_topic(db, topic_data: dict, subject_id: str):
                     pairs=item_data.get("pairs"),
                     is_correct_boolean=item_data.get("isCorrect"),
                     input_mode=item_data.get("input_mode"),
+                    sort_order=item_idx,
                 )
                 db.add(item)
 

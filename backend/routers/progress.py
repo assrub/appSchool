@@ -81,6 +81,15 @@ async def sync_progress(
                 existing.total_items = entry.totalItems
                 existing.completed_items = entry.completedItems
                 existing.test_score = entry.testScore
+                # New pedagogical metrics
+                existing.accuracy = entry.accuracy
+                existing.mastery = entry.mastery
+                existing.status = entry.status
+                existing.items_attempted = entry.itemsAttempted
+                existing.items_mastered = entry.itemsMastered
+                existing.items_correct_first = entry.itemsCorrectFirst
+                existing.time_spent_seconds = entry.timeSpentSeconds
+                existing.last_activity_at = now
                 if entry.completedAt:
                     if entry.completedAt.tzinfo is not None:
                         existing.completed_at = entry.completedAt.replace(tzinfo=None)
@@ -98,6 +107,15 @@ async def sync_progress(
                     test_score=entry.testScore,
                     started_at=now,
                     completed_at=entry.completedAt,
+                    # New pedagogical metrics
+                    accuracy=entry.accuracy,
+                    mastery=entry.mastery,
+                    status=entry.status,
+                    items_attempted=entry.itemsAttempted,
+                    items_mastered=entry.itemsMastered,
+                    items_correct_first=entry.itemsCorrectFirst,
+                    time_spent_seconds=entry.timeSpentSeconds,
+                    last_activity_at=now,
                 )
                 db.add(new_progress)
 
@@ -212,6 +230,14 @@ async def get_progress(
                         totalItems=p.total_items,
                         completedItems=p.completed_items,
                         testScore=p.test_score,
+                        # New pedagogical metrics
+                        accuracy=p.accuracy,
+                        mastery=p.mastery,
+                        status=p.status,
+                        itemsAttempted=p.items_attempted,
+                        itemsMastered=p.items_mastered,
+                        itemsCorrectFirst=p.items_correct_first,
+                        timeSpentSeconds=p.time_spent_seconds,
                     )
                 )
             topics.append(

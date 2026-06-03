@@ -279,6 +279,21 @@ async def delete_unit(
     if not unit:
         raise HTTPException(status_code=404, detail="Unit not found")
 
+    # Clean up orphaned progress data before deleting
+    topic_id = unit.topic_id
+    await db.execute(sqldelete(BlockProgress).where(
+        BlockProgress.topic_id == topic_id,
+        BlockProgress.unit_id == unit_id
+    ))
+    await db.execute(sqldelete(Progress).where(
+        Progress.topic_id == topic_id,
+        Progress.unit_id == unit_id
+    ))
+    await db.execute(sqldelete(AnswerHistory).where(
+        AnswerHistory.topic_id == topic_id,
+        AnswerHistory.unit_id == unit_id
+    ))
+
     await db.delete(unit)
     await db.commit()
     return MessageResponse(message="Unit deleted")
@@ -464,6 +479,13 @@ async def delete_block(
     block = await db.get(ExerciseBlock, block_id)
     if not block:
         raise HTTPException(status_code=404, detail="Block not found")
+
+    # Get unit info for progress cleanup
+    unit = await db.get(ExerciseUnit, block.unit_id)
+    if unit:
+        # We don't delete progress for individual blocks since block_index may shift
+        # Only delete the block and its items (cascade)
+        pass
 
     await db.delete(block)
     await db.commit()
@@ -2060,6 +2082,14 @@ async def get_progress_detail(user_id: int, db: AsyncSession = Depends(get_db), 
             "correctCount": stats["correct"],
             "wrongCount": stats["wrong"],
             "totalAttempts": stats["total"],
+            # New pedagogical metrics
+            "accuracy": p.accuracy if p else 0.0,
+            "mastery": p.mastery if p else 0.0,
+            "status": p.status if p else "not_started",
+            "itemsAttempted": p.items_attempted if p else 0,
+            "itemsMastered": p.items_mastered if p else 0,
+            "itemsCorrectFirst": p.items_correct_first if p else 0,
+            "timeSpentSeconds": p.time_spent_seconds if p else 0,
             "blocks": unit_blocks
         })
 
