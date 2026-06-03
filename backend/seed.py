@@ -251,9 +251,16 @@ async def _upsert_topic(db, topic_data: dict, subject_id: str):
                 select(ExerciseBlock).where(
                     ExerciseBlock.unit_id == unit_data["id"],
                     ExerciseBlock.sort_order == block_idx
-                )
+                ).order_by(ExerciseBlock.id)
             )
-            block = existing_block.scalar_one_or_none()
+            all_blocks = existing_block.scalars().all()
+            # Keep first, delete duplicates
+            block = all_blocks[0] if all_blocks else None
+            if len(all_blocks) > 1:
+                for dup in all_blocks[1:]:
+                    await db.delete(dup)
+                await db.flush()
+
             if block:
                 block.title = block_data["title"]
             else:
