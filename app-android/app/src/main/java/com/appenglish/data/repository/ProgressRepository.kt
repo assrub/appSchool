@@ -107,69 +107,19 @@ class ProgressRepository @Inject constructor(
                                 timeSpentSeconds = unit.timeSpentSeconds
                             )
                         )
-                    } else if (!existing.completed && remoteCompleted) {
-                        // Remote is completed, local is not - accept remote
-                        dao.upsert(
-                            ProgressEntity(
-                                id = existing.id,
-                                deviceId = userId,
-                                topicId = topic.topicId,
-                                unitId = unit.unitId,
-                                completed = remoteCompleted,
-                                score = remoteScore,
-                                totalItems = unit.totalItems,
-                                completedItems = unit.completedItems,
-                                testScore = unit.testScore ?: existing.testScore,
-                                startedAt = existing.startedAt,
-                                completedAt = existing.completedAt,
-                                // Merge metrics: take max values
-                                accuracy = maxOf(existing.accuracy, unit.accuracy),
-                                mastery = maxOf(existing.mastery, unit.mastery),
-                                status = if (remoteCompleted) "completed" else existing.status,
-                                itemsAttempted = maxOf(existing.itemsAttempted, unit.itemsAttempted),
-                                itemsMastered = maxOf(existing.itemsMastered, unit.itemsMastered),
-                                itemsCorrectFirst = maxOf(existing.itemsCorrectFirst, unit.itemsCorrectFirst),
-                                timeSpentSeconds = maxOf(existing.timeSpentSeconds, unit.timeSpentSeconds)
-                            )
-                        )
-                    } else if (remoteScore > existing.score) {
-                        // Remote has higher score - update score but keep local completion state
-                        dao.updateProgress(
-                            deviceId = userId,
-                            topicId = topic.topicId,
-                            unitId = unit.unitId,
-                            completedItems = maxOf(existing.completedItems, unit.completedItems),
-                            score = remoteScore,
-                            totalItems = maxOf(existing.totalItems, unit.totalItems),
-                            completed = existing.completed,
-                            completedAt = existing.completedAt
-                        )
-                        // Also merge metrics
-                        dao.updateMetrics(
-                            deviceId = userId,
-                            topicId = topic.topicId,
-                            unitId = unit.unitId,
-                            accuracy = maxOf(existing.accuracy, unit.accuracy),
-                            mastery = maxOf(existing.mastery, unit.mastery),
-                            status = existing.status,
-                            itemsAttempted = maxOf(existing.itemsAttempted, unit.itemsAttempted),
-                            itemsMastered = maxOf(existing.itemsMastered, unit.itemsMastered),
-                            itemsCorrectFirst = maxOf(existing.itemsCorrectFirst, unit.itemsCorrectFirst),
-                            timeSpentSeconds = maxOf(existing.timeSpentSeconds, unit.timeSpentSeconds),
-                            lastActivityAt = System.currentTimeMillis()
-                        )
                     }
-                    // Otherwise: local wins
+                    // If local exists, always keep local - user is actively working
+                    // Local will sync TO backend, not the other way around
                 }
             }
         }
         for (bp in response.blockProgress) {
             val existing = dao.getBlockProgress(userId, bp.topicId, bp.unitId, bp.blockIndex)
-            val remoteCompletedAt = bp.completedAt?.let { parseTimestamp(it) }
-            if (existing == null || bp.score > existing.score) {
+            if (existing == null) {
+                // Only create from remote if no local record exists
+                val remoteCompletedAt = bp.completedAt?.let { parseTimestamp(it) }
                 dao.upsertBlockProgress(
                     BlockProgressEntity(
-                        id = existing?.id ?: 0,
                         deviceId = userId,
                         topicId = bp.topicId,
                         unitId = bp.unitId,
@@ -177,10 +127,11 @@ class ProgressRepository @Inject constructor(
                         score = bp.score,
                         totalItems = bp.totalItems,
                         completed = bp.completed,
-                        completedAt = remoteCompletedAt ?: existing?.completedAt
+                        completedAt = remoteCompletedAt
                     )
                 )
             }
+            // If local exists, always keep local (user is actively working)
         }
     }
 
