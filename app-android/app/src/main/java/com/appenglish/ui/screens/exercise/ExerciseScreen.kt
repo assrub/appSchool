@@ -559,7 +559,7 @@ private fun FeedbackBar(
                 }
                 if (!isCorrect) {
                     Text(
-                        "Respuesta: ${userAnswer.ifBlank { "(vacío)" }}",
+                        "Respuesta correcta: $correctAnswer",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.85f),
                         maxLines = 1
@@ -691,8 +691,9 @@ private fun ExerciseTabContent(
                             contentAlignment = Alignment.Center
                         ) {
                             if (uiState.showingAnswer) {
+                                // Show the user's answer with correct/incorrect colors
                                 Text(
-                                    currentItem.answer, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                    uiState.userInput, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
                                     fontWeight = FontWeight.Bold,
                                     color = if (uiState.isCorrect == true) CorrectGreen else if (uiState.isCorrect == false) ErrorRed else Primary
                                 )
