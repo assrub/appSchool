@@ -1,6 +1,7 @@
 package com.appenglish.ui.screens.topics
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -139,7 +140,23 @@ fun TopicCard(topic: TopicSummary, onClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().height(6.dp),
                     color = Primary, trackColor = Color(0xFFE0E0E0)
                 )
-                Text("${topic.completedUnits}/${topic.totalUnits} unidades", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "${topic.percentComplete.toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "${topic.completedUnits}/${topic.totalUnits} unidades",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             if (topic.isLocked) {
                 Icon(Icons.Default.Lock, contentDescription = "Bloqueado", tint = Color.Gray)

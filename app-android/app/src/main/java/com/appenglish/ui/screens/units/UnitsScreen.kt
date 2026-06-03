@@ -260,11 +260,27 @@ private fun UnitsListContent(
                                 },
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
-                            Text(
-                                "${u.completedItems}/${u.totalItems} items",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Spacer(Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "${u.percent.toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = when {
+                                        isCompleted -> CorrectGreen
+                                        isApproved -> Color(0xFF4CAF50)
+                                        else -> MaterialTheme.colorScheme.primary
+                                    },
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "${u.completedItems}/${u.totalItems} items",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                         Icon(
                             imageVector = when {
