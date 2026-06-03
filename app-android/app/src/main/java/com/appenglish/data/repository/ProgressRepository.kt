@@ -262,10 +262,66 @@ class ProgressRepository @Inject constructor(
     suspend fun resetAllProgress() {
         dao.deleteAllProgress(userId)
         dao.deleteAllBlockProgress(userId)
+        // Sync reset to backend - send empty sync to clear server data
+        try {
+            api.syncProgress(ProgressSyncRequest(
+                progress = emptyList(),
+                blockProgress = emptyList()
+            ))
+        } catch (_: Exception) {}
     }
 
     suspend fun resetUnitProgress(topicId: String, unitId: String) {
         dao.deleteUnitProgress(userId, topicId, unitId)
         dao.deleteUnitBlockProgress(userId, topicId, unitId)
+        // Sync reset to backend for this unit
+        try {
+            api.syncProgress(ProgressSyncRequest(
+                progress = listOf(
+                    ProgressEntryDto(
+                        topicId = topicId,
+                        unitId = unitId,
+                        completed = false,
+                        score = 0,
+                        totalItems = 0,
+                        completedItems = 0,
+                        status = "not_started"
+                    )
+                ),
+                blockProgress = emptyList()
+            ))
+        } catch (_: Exception) {}
+    }
+
+    suspend fun resetBlockProgress(topicId: String, unitId: String, blockIndex: Int, totalItems: Int) {
+        // Reset local
+        dao.upsertBlockProgress(
+            BlockProgressEntity(
+                deviceId = userId,
+                topicId = topicId,
+                unitId = unitId,
+                blockIndex = blockIndex,
+                score = 0,
+                totalItems = totalItems,
+                completed = false,
+                completedAt = null
+            )
+        )
+        // Sync reset to backend
+        try {
+            api.syncProgress(ProgressSyncRequest(
+                progress = emptyList(),
+                blockProgress = listOf(
+                    BlockProgressEntryDto(
+                        topicId = topicId,
+                        unitId = unitId,
+                        blockIndex = blockIndex,
+                        completed = false,
+                        score = 0,
+                        totalItems = totalItems
+                    )
+                )
+            ))
+        } catch (_: Exception) {}
     }
 }

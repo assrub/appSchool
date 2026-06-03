@@ -80,10 +80,9 @@ class BlocksViewModel @Inject constructor(
         viewModelScope.launch {
             val s = _uiState.value
             if (s.blocks.isNotEmpty()) {
-                progressRepository.saveBlockProgress(
+                progressRepository.resetBlockProgress(
                     topicId = s.topicId, unitId = s.unitId,
-                    blockIndex = blockIndex, score = 0,
-                    totalItems = s.blocks[blockIndex].items.size, completed = false
+                    blockIndex = blockIndex, totalItems = s.blocks[blockIndex].items.size
                 )
                 refreshProgress()
             }

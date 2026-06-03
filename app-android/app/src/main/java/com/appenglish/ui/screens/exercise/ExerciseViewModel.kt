@@ -376,19 +376,15 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun redoUnit() {
         viewModelScope.launch {
-            progressRepository.saveProgress(
-                topicId = topicId, unitId = unitId,
-                completedItems = 0, score = 0,
-                totalItems = _uiState.value.totalItems, completed = false
-            )
+            // Reset all block progress on backend
             for (i in _uiState.value.blocks.indices) {
-                progressRepository.saveBlockProgress(
+                progressRepository.resetBlockProgress(
                     topicId = topicId, unitId = unitId,
-                    blockIndex = i, score = 0,
-                    totalItems = _uiState.value.blocks[i].items.size,
-                    completed = false
+                    blockIndex = i, totalItems = _uiState.value.blocks[i].items.size
                 )
             }
+            // Reset unit progress
+            progressRepository.resetUnitProgress(topicId, unitId)
             _uiState.value = UnitExerciseUiState(
                 unitTitle = _uiState.value.unitTitle,
                 unitExplanation = _uiState.value.unitExplanation,
