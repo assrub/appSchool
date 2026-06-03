@@ -162,8 +162,12 @@ fun BlocksScreen(
                                 title = { Text("Bloque con errores") },
                                 text = { Text("¿Querés rehacer solo los $wrongCount errores o todo el bloque?") },
                                 confirmButton = {
-                                    TextButton(onClick = { clickBlockIdx = null; onBlockClick(uiState.topicId, uiState.unitId, blockIdx) }) {
-                                        Text("Solo errores", color = WarningOrange)
+                                    TextButton(onClick = {
+                                        viewModel.redoBlock(blockIdx)
+                                        clickBlockIdx = null
+                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx)
+                                    }) {
+                                        Text("Rehacer solo errores", color = WarningOrange)
                                     }
                                 },
                                 dismissButton = {
@@ -182,7 +186,11 @@ fun BlocksScreen(
                                 title = { Text("Bloque completado") },
                                 text = { Text("¿Querés rehacer todo el bloque?") },
                                 confirmButton = {
-                                    TextButton(onClick = { clickBlockIdx = null; onBlockClick(uiState.topicId, uiState.unitId, blockIdx) }) {
+                                    TextButton(onClick = {
+                                        viewModel.redoBlock(blockIdx)
+                                        clickBlockIdx = null
+                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx)
+                                    }) {
                                         Text("Repetir", color = Primary)
                                     }
                                 },
