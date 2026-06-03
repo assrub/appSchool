@@ -160,22 +160,37 @@
                     {{ topic.topicName }}
                   </h3>
 
-                  <div v-for="u in topic.units" :key="u.unitId" class="ml-2 mb-3 pa-3 rounded" :style="{ background: u.completed ? '#E8F5E9' : '#FAFAFA' }">
+                  <div v-for="u in topic.units" :key="u.unitId" class="ml-2 mb-3 pa-3 rounded" :style="{ background: u.status === 'mastered' ? '#F3E5F5' : u.completed ? '#E8F5E9' : '#FAFAFA' }">
                     <div class="d-flex align-center mb-1">
                       <div class="flex-grow-1">
                         <div class="text-body-2 font-weight-medium">{{ u.title || u.unitId }}</div>
                         <div class="text-caption text-grey">
                           {{ u.completedItems }}/{{ u.totalItems }} ejercicios
-                          <template v-if="u.completed"> ✅ Completado</template>
-                          <template v-if="u.totalAttempts > 0">
-                            ✅ {{ u.correctCount }} ❌ {{ u.wrongCount }}
-                          </template>
+                          <template v-if="u.status === 'mastered'"> 🏆 Dominado</template>
+                          <template v-else-if="u.completed"> ✅ Completado</template>
+                          <template v-else-if="u.status === 'in_progress'"> 📖 En progreso</template>
                         </div>
                       </div>
                       <v-chip v-if="u.testScore != null" :color="u.testScore >= 14 ? 'success' : 'warning'" size="x-small" variant="tonal" class="mr-1">
                         Test {{ u.testScore }}/20
                       </v-chip>
                       <v-btn icon="mdi-restart" variant="text" size="x-small" color="orange" @click="confirmRedoUnit(u)" />
+                    </div>
+
+                    <!-- New pedagogical metrics -->
+                    <div v-if="u.itemsAttempted > 0" class="d-flex align-center mt-2 mb-2" style="gap: 12px;">
+                      <v-chip size="x-small" :color="u.accuracy >= 70 ? 'success' : u.accuracy >= 50 ? 'warning' : 'error'" variant="tonal">
+                        Precisión: {{ Math.round(u.accuracy) }}%
+                      </v-chip>
+                      <v-chip size="x-small" :color="u.mastery >= 90 ? 'purple' : u.mastery >= 70 ? 'success' : u.mastery >= 50 ? 'warning' : 'error'" variant="tonal">
+                        Dominio: {{ Math.round(u.mastery) }}%
+                      </v-chip>
+                      <v-chip size="x-small" color="info" variant="tonal">
+                        Intentados: {{ u.itemsAttempted }}/{{ u.totalItems }}
+                      </v-chip>
+                      <v-chip v-if="u.timeSpentSeconds > 0" size="x-small" color="grey" variant="tonal">
+                        Tiempo: {{ formatDuration(u.timeSpentSeconds) }}
+                      </v-chip>
                     </div>
 
                     <div v-for="b in u.blocks" :key="b.blockIndex" class="d-flex align-center ml-4 py-1">
@@ -454,6 +469,15 @@ function formatDate(dateStr) {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return '-'
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (hours > 0) return `${hours}h ${minutes}min`
+  if (minutes > 0) return `${minutes}min`
+  return `${seconds}s`
 }
 
 async function fetchUsers() {

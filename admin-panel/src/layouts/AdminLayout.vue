@@ -133,32 +133,26 @@ const breadcrumbs = computed(() => {
 
   const path = route.path
 
-  if (path.startsWith('/subjects') && route.params.subjectId) {
-    items.push({ title: 'Materias', to: '/subjects' })
-    items.push({ title: 'Temas', disabled: true })
-  } else if (path.startsWith('/topics') && route.params.topicId) {
-    items.push({ title: 'Materias', to: '/subjects' })
-    items.push({ title: 'Temas', disabled: true })
-    items.push({ title: 'Unidades', disabled: true })
-  } else if (path.startsWith('/units') && route.params.unitId) {
-    items.push({ title: 'Materias', to: '/subjects' })
-    items.push({ title: 'Temas', to: '/subjects' })
-    items.push({ title: 'Unidades', disabled: true })
-    items.push({ title: 'Bloques', disabled: true })
-  } else if (path === '/subjects') {
+  if (path === '/subjects') {
     items.push({ title: 'Materias', disabled: true })
-  } else if (path === '/progress') {
+  } else if (path.startsWith('/subjects/') && route.params.subjectId) {
     items.push({ title: 'Materias', to: '/subjects' })
+    items.push({ title: 'Temas', disabled: true })
+  } else if (path.startsWith('/topics/') && route.params.topicId) {
+    items.push({ title: 'Materias', to: '/subjects' })
+    items.push({ title: 'Temas', disabled: true })
+    items.push({ title: 'Unidades', disabled: true })
+  } else if (path.startsWith('/units/') && route.params.unitId) {
+    items.push({ title: 'Materias', to: '/subjects' })
+    items.push({ title: 'Bloques', disabled: true })
+  } else if (path === '/progress') {
     items.push({ title: 'Progreso', disabled: true })
   } else if (path === '/users') {
-    items.push({ title: 'Materias', to: '/subjects' })
     items.push({ title: 'Usuarios', disabled: true })
-  } else if (path === '/script') {
-    items.push({ title: 'Materias', to: '/subjects' })
-    items.push({ title: 'Scripts', disabled: true })
+  } else if (path === '/system') {
+    items.push({ title: 'Sistema', disabled: true })
   } else if (path.startsWith('/theory/')) {
     items.push({ title: 'Materias', to: '/subjects' })
-    items.push({ title: 'Temas', to: '/subjects' })
     items.push({ title: 'Editor de Teoría', disabled: true })
   }
 

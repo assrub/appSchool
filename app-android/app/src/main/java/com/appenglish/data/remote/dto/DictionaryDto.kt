@@ -1,7 +1,6 @@
 package com.appenglish.data.remote.dto
 
 data class DictionaryEntryRequest(
-    val deviceId: String,
     val word: String,
     val translation: String,
     val sourceLang: String = "en",

@@ -115,8 +115,12 @@ fun ProgressScreen(
 @Composable
 private fun SummaryCard(progressEntries: List<com.appenglish.data.local.entity.ProgressEntity>) {
     val totalCompleted = progressEntries.filter { it.completed }.size
+    val totalMastered = progressEntries.filter { it.status == "mastered" }.size
     val totalUnits = progressEntries.size
     val overallPercent = if (totalUnits > 0) (totalCompleted.toFloat() / totalUnits * 100).toInt() else 0
+    val avgAccuracy = if (progressEntries.isNotEmpty()) progressEntries.map { it.accuracy }.average().toFloat() else 0f
+    val avgMastery = if (progressEntries.isNotEmpty()) progressEntries.map { it.mastery }.average().toFloat() else 0f
+    val totalTime = progressEntries.sumOf { it.timeSpentSeconds }
 
     Card(
         shape = MaterialTheme.shapes.large,
@@ -152,7 +156,53 @@ private fun SummaryCard(progressEntries: List<com.appenglish.data.local.entity.P
                 color = CorrectGreen,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
+            Spacer(modifier = Modifier.height(16.dp))
+            // New pedagogical metrics
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                MetricItem(label = "Precisión", value = "${avgAccuracy.toInt()}%", color = Color(0xFF2196F3))
+                MetricItem(label = "Dominio", value = "${avgMastery.toInt()}%", color = Color(0xFF9C27B0))
+                MetricItem(label = "Dominados", value = "$totalMastered", color = CorrectGreen)
+            }
+            if (totalTime > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Tiempo total: ${formatTime(totalTime)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun MetricItem(label: String, value: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+private fun formatTime(seconds: Int): String {
+    val hours = seconds / 3600
+    val minutes = (seconds % 3600) / 60
+    return when {
+        hours > 0 -> "${hours}h ${minutes}min"
+        minutes > 0 -> "${minutes}min"
+        else -> "${seconds}s"
     }
 }
 
@@ -283,10 +333,10 @@ private fun TopicProgressItem(topicProgress: TopicProgress) {
 private fun UnitProgressItem(unit: UnitProgress) {
     val progress = unit.progress
     val isCompleted = progress?.completed == true
-    val percent = if (progress != null && progress.totalItems > 0) {
-        (progress.completedItems.toFloat() / progress.totalItems * 100).toInt()
+    val isMastered = progress?.status == "mastered"
+    val avance = if (progress != null && progress.totalItems > 0) {
+        (progress.itemsAttempted.toFloat() / progress.totalItems * 100).toInt()
     } else 0
-    val isApproved = percent >= 70
 
     Row(
         modifier = Modifier
@@ -296,14 +346,14 @@ private fun UnitProgressItem(unit: UnitProgress) {
     ) {
         Icon(
             imageVector = when {
+                isMastered -> Icons.Default.CheckCircle
                 isCompleted -> Icons.Default.CheckCircle
-                isApproved -> Icons.Default.CheckCircle
                 else -> Icons.Default.Schedule
             },
             contentDescription = null,
             tint = when {
+                isMastered -> Color(0xFF9C27B0) // Purple for mastered
                 isCompleted -> CorrectGreen
-                isApproved -> Color(0xFF4CAF50)
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
             modifier = Modifier.size(18.dp)
@@ -313,33 +363,70 @@ private fun UnitProgressItem(unit: UnitProgress) {
             Text(
                 unit.unitTitle,
                 style = MaterialTheme.typography.bodySmall,
-                fontWeight = if (percent > 0) FontWeight.Medium else FontWeight.Normal
+                fontWeight = if (avance > 0) FontWeight.Medium else FontWeight.Normal
             )
-            if (progress != null) {
+            if (progress != null && progress.itemsAttempted > 0) {
                 LinearProgressIndicator(
-                    progress = { progress.completedItems.toFloat() / progress.totalItems.coerceAtLeast(1) },
+                    progress = { progress.itemsAttempted.toFloat() / progress.totalItems.coerceAtLeast(1) },
                     modifier = Modifier.fillMaxWidth().height(3.dp),
                     color = when {
+                        isMastered -> Color(0xFF9C27B0)
                         isCompleted -> CorrectGreen
-                        isApproved -> Color(0xFF4CAF50)
                         else -> MaterialTheme.colorScheme.primary
                     },
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
+                Spacer(Modifier.height(2.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "Avance $avance%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Precisión ${progress.accuracy.toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF2196F3)
+                    )
+                    Text(
+                        "Dominio ${progress.mastery.toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF9C27B0)
+                    )
+                }
             }
         }
         Spacer(Modifier.width(8.dp))
         if (progress != null) {
-            Text(
-                "${progress.score}/${progress.totalItems}",
-                style = MaterialTheme.typography.labelSmall,
-                color = when {
-                    isCompleted -> CorrectGreen
-                    isApproved -> Color(0xFF4CAF50)
-                    else -> MaterialTheme.colorScheme.primary
-                },
-                fontWeight = FontWeight.Bold
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "${progress.score}/${progress.totalItems}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = when {
+                        isMastered -> Color(0xFF9C27B0)
+                        isCompleted -> CorrectGreen
+                        else -> MaterialTheme.colorScheme.primary
+                    },
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    when {
+                        isMastered -> "DOMINADO"
+                        isCompleted -> "COMPLETADO"
+                        progress.status == "in_progress" -> "EN PROGRESO"
+                        else -> "NO INICIADO"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = when {
+                        isMastered -> Color(0xFF9C27B0)
+                        isCompleted -> CorrectGreen
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.appenglish.di
 
+import android.content.Context
 import com.appenglish.data.local.AppDatabase
 import com.appenglish.data.remote.api.ContentApi
 import com.appenglish.data.remote.api.TtsApi
@@ -11,9 +12,11 @@ import com.appenglish.data.repository.ContentRepository
 import com.appenglish.data.repository.ProgressRepository
 import com.appenglish.data.repository.DictionaryRepository
 import com.appenglish.util.ApiConfig
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -100,6 +103,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideGson(): Gson = Gson()
+
+    @Provides
+    @Singleton
     fun provideContentRepository(api: ContentApi, db: AppDatabase): ContentRepository =
         ContentRepository(api, db.contentCacheDao())
 
@@ -107,8 +114,10 @@ object AppModule {
     @Singleton
     fun provideProgressRepository(
         api: ProgressApi,
-        db: AppDatabase
-    ): ProgressRepository = ProgressRepository(api, db.progressDao())
+        db: AppDatabase,
+        gson: Gson,
+        @ApplicationContext context: Context
+    ): ProgressRepository = ProgressRepository(api, db.progressDao(), db.pendingSyncDao(), gson, context)
 
     @Provides
     @Singleton

@@ -38,6 +38,21 @@ interface ProgressDao {
         completedAt: Long?
     )
 
+    @Query("UPDATE progress SET accuracy = :accuracy, mastery = :mastery, status = :status, itemsAttempted = :itemsAttempted, itemsMastered = :itemsMastered, itemsCorrectFirst = :itemsCorrectFirst, timeSpentSeconds = :timeSpentSeconds, lastActivityAt = :lastActivityAt WHERE deviceId = :deviceId AND topicId = :topicId AND unitId = :unitId")
+    suspend fun updateMetrics(
+        deviceId: String,
+        topicId: String,
+        unitId: String,
+        accuracy: Float,
+        mastery: Float,
+        status: String,
+        itemsAttempted: Int,
+        itemsMastered: Int,
+        itemsCorrectFirst: Int,
+        timeSpentSeconds: Int,
+        lastActivityAt: Long
+    )
+
     @Query("UPDATE progress SET testScore = :testScore WHERE deviceId = :deviceId AND topicId = :topicId")
     suspend fun updateTestScore(deviceId: String, topicId: String, testScore: Int)
 

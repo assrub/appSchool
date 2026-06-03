@@ -156,14 +156,14 @@ const showHelp = ref(false)
 const jsonError = ref(null)
 const validationResult = ref(null)
 const confirmDialog = ref(false)
-let pendingScript = null
+const pendingScript = ref(null)
 
-const actionCount = computed(() => pendingScript?.actions?.length || 0)
+const actionCount = computed(() => pendingScript.value?.actions?.length || 0)
 
 const actionSummary = computed(() => {
-  if (!pendingScript?.actions) return []
+  if (!pendingScript.value?.actions) return []
   const counts = {}
-  pendingScript.actions.forEach(a => {
+  pendingScript.value.actions.forEach(a => {
     const action = a.action || 'unknown'
     counts[action] = (counts[action] || 0) + 1
   })
@@ -267,8 +267,8 @@ function confirmExecute() {
     return
   }
   try {
-    pendingScript = JSON.parse(script.value)
-    if (!pendingScript.actions || !Array.isArray(pendingScript.actions)) {
+    pendingScript.value = JSON.parse(script.value)
+    if (!pendingScript.value.actions || !Array.isArray(pendingScript.value.actions)) {
       snackbar.error('El JSON debe tener un array "actions"')
       return
     }
@@ -281,12 +281,12 @@ function confirmExecute() {
 
 async function confirmedExecute() {
   confirmDialog.value = false
-  if (!pendingScript) return
+  if (!pendingScript.value) return
   await executeScript()
 }
 
 async function executeScript() {
-  const parsed = pendingScript
+  const parsed = pendingScript.value
   if (!parsed) return
 
   executing.value = true
@@ -303,7 +303,7 @@ async function executeScript() {
     snackbar.error('Error al ejecutar script')
   } finally {
     executing.value = false
-    pendingScript = null
+    pendingScript.value = null
   }
 }
 
@@ -312,7 +312,7 @@ function clearAll() {
   results.value = []
   jsonError.value = null
   validationResult.value = null
-  pendingScript = null
+  pendingScript.value = null
 }
 </script>
 

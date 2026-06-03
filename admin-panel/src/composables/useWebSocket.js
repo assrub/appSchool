@@ -6,6 +6,8 @@ export function useWebSocket(url) {
   let ws = null
   let reconnectTimer = null
   let pingTimer = null
+  let reconnectDelay = 1000 // Start at 1 second
+  const maxDelay = 30000 // Max 30 seconds
 
   function connect() {
     try {
@@ -13,6 +15,7 @@ export function useWebSocket(url) {
 
       ws.onopen = () => {
         connected.value = true
+        reconnectDelay = 1000 // Reset delay on successful connection
         pingTimer = setInterval(() => {
           if (ws?.readyState === WebSocket.OPEN) ws.send('ping')
         }, 30000)
@@ -28,14 +31,19 @@ export function useWebSocket(url) {
       ws.onclose = () => {
         connected.value = false
         clearInterval(pingTimer)
-        reconnectTimer = setTimeout(connect, 5000)
+        // Exponential backoff with jitter
+        const jitter = Math.random() * 1000
+        reconnectTimer = setTimeout(connect, reconnectDelay + jitter)
+        reconnectDelay = Math.min(reconnectDelay * 2, maxDelay)
       }
 
       ws.onerror = () => {
         ws?.close()
       }
     } catch {
-      reconnectTimer = setTimeout(connect, 5000)
+      const jitter = Math.random() * 1000
+      reconnectTimer = setTimeout(connect, reconnectDelay + jitter)
+      reconnectDelay = Math.min(reconnectDelay * 2, maxDelay)
     }
   }
 

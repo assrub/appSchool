@@ -1,5 +1,9 @@
 package com.appenglish.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -9,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -53,11 +58,28 @@ object Routes {
     fun unitTheory(topicId: String, unitId: String) = "unit-theory/$topicId/$unitId"
 }
 
+private fun getCurrentTab(route: String?): BottomNavTab {
+    return when {
+        route == null -> BottomNavTab.HOME
+        route == Routes.SUBJECTS || route.startsWith("topics/") || route.startsWith("units/") || route.startsWith("blocks/") || route.startsWith("exercise/") || route.startsWith("test/") || route.startsWith("theory/") || route.startsWith("unit-theory/") -> BottomNavTab.HOME
+        route == Routes.DICTIONARY -> BottomNavTab.DICTIONARY
+        route == Routes.PROGRESS -> BottomNavTab.PROGRESS
+        route == Routes.SETTINGS -> BottomNavTab.SETTINGS
+        else -> BottomNavTab.HOME
+    }
+}
+
 @Composable
 fun AppNavGraph() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val context = LocalContext.current
+
+    // Check for existing session on first composition
+    val hasSession = remember {
+        AuthInterceptor.loadSession(context)
+    }
 
     val hideBottomBar = currentRoute in listOf(Routes.LOGIN, Routes.EXERCISE, Routes.TEST, null)
 
@@ -65,13 +87,7 @@ fun AppNavGraph() {
         bottomBar = {
             if (!hideBottomBar) {
                 BottomNavBar(
-                    currentTab = when {
-                        currentRoute in listOf(Routes.SUBJECTS, Routes.TOPICS_LIST, Routes.UNITS_LIST, Routes.BLOCKS, Routes.EXERCISE, Routes.TEST) -> BottomNavTab.HOME
-                        currentRoute == Routes.DICTIONARY -> BottomNavTab.DICTIONARY
-                        currentRoute == Routes.PROGRESS -> BottomNavTab.PROGRESS
-                        currentRoute == Routes.SETTINGS -> BottomNavTab.SETTINGS
-                        else -> BottomNavTab.HOME
-                    },
+                    currentTab = getCurrentTab(currentRoute),
                     onTabClick = { tab ->
                         when (tab) {
                             BottomNavTab.HOME -> {
@@ -102,8 +118,10 @@ fun AppNavGraph() {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.LOGIN,
-            modifier = Modifier.padding(padding)
+            startDestination = if (hasSession) Routes.SUBJECTS else Routes.LOGIN,
+            modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) }
         ) {
             composable(Routes.LOGIN) {
                 LoginScreen(

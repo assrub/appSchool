@@ -45,7 +45,7 @@ class LoginViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val result = withContext(Dispatchers.IO) {
-                    val client = OkHttpClient()
+                    val client = com.appenglish.util.HttpClientFactory.getInstance()
                     val json = JSONObject().apply {
                         put("username", username)
                         put("password", password)

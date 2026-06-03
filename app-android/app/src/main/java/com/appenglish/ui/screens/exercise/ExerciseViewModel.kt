@@ -78,7 +78,16 @@ data class UnitExerciseUiState(
     val reorderWords: List<String> = emptyList(),
     val reorderSlots: List<String?> = emptyList(),
     val matchedPairs: Int = 0,
-    val tfAnswer: Boolean? = null
+    val tfAnswer: Boolean? = null,
+    // New pedagogical metrics
+    val attemptedItems: Set<String> = emptySet(),  // "blockIndex_itemIndex" keys
+    val firstCorrectItems: Set<String> = emptySet(), // correct on first attempt
+    val masteredItems: Set<String> = emptySet(),   // mastered (first correct OR retried correct)
+    val sessionStartTime: Long = System.currentTimeMillis(),
+    val timeSpentSeconds: Int = 0,
+    // Cached options for current item
+    val cachedOptions: List<String> = emptyList(),
+    val cachedOptionsKey: String = ""
 )
 
 data class Feedback(
@@ -329,11 +338,14 @@ class UnitExerciseViewModel @Inject constructor(
             viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, state.soundCorrectUrl, isCorrect = true) }
             val remainingWrongs = state.wrongItems.toMutableList()
             remainingWrongs.removeAt(state.retryIndex)
+            // Track mastered on retry
+            val itemKey = "${wrong.blockIndex}_${wrong.itemIndex}"
+            val newMastered = state.masteredItems + itemKey
             _uiState.value = state.copy(
                 userInput = selectedOption, isCorrect = true,
                 showingAnswer = true,
-                wrongItems = remainingWrongs, score = state.score + 1
-                // Note: completedItems NOT incremented here - it was already counted on first attempt
+                wrongItems = remainingWrongs, score = state.score + 1,
+                masteredItems = newMastered
             )
             // Don't auto-advance — wait for user to tap modal button
         } else {
@@ -502,10 +514,23 @@ class UnitExerciseViewModel @Inject constructor(
             }
         }
 
+        // Track pedagogical metrics
+        val itemKey = "${state.currentBlockIndex}_${state.currentItemIndex}"
+        val newAttempted = state.attemptedItems + itemKey
+        val newFirstCorrect = if (correct) state.firstCorrectItems + itemKey else state.firstCorrectItems
+        val newMastered = if (correct) state.masteredItems + itemKey else state.masteredItems
+        val timeSpent = ((System.currentTimeMillis() - state.sessionStartTime) / 1000).toInt()
+
         val newCompleted = state.completedItems + 1
         if (correct) {
             val newScore = state.score + 1
-            _uiState.value = state.copy(userInput = userAnswer, isCorrect = true, feedback = Feedback("¡Muy bien! ✅", true), score = newScore, completedItems = newCompleted, showingAnswer = true)
+            _uiState.value = state.copy(
+                userInput = userAnswer, isCorrect = true,
+                feedback = Feedback("¡Muy bien! ✅", true),
+                score = newScore, completedItems = newCompleted, showingAnswer = true,
+                attemptedItems = newAttempted, firstCorrectItems = newFirstCorrect,
+                masteredItems = newMastered, timeSpentSeconds = timeSpent
+            )
             saveProgressLocal()
             triggerDebouncedSync()
             if (item.itemType == "fill-blank") {
@@ -514,7 +539,12 @@ class UnitExerciseViewModel @Inject constructor(
             }
         } else {
             val wrong = WrongAnswer(blockIndex = state.currentBlockIndex, itemIndex = state.currentItemIndex, sentence = item.sentence, givenAnswer = userAnswer, correctAnswer = item.answer)
-            _uiState.value = state.copy(isCorrect = false, feedback = Feedback("❌ Incorrecto", false), showAcceptButton = true, wrongItems = state.wrongItems + wrong, completedItems = newCompleted, userInput = userAnswer)
+            _uiState.value = state.copy(
+                isCorrect = false, feedback = Feedback("❌ Incorrecto", false),
+                showAcceptButton = true, wrongItems = state.wrongItems + wrong,
+                completedItems = newCompleted, userInput = userAnswer,
+                attemptedItems = newAttempted, timeSpentSeconds = timeSpent
+            )
             saveProgressLocal()
             triggerDebouncedSync()
         }
@@ -543,16 +573,33 @@ class UnitExerciseViewModel @Inject constructor(
     }
 
     fun getOptions(): List<String> {
-        if (_uiState.value.retryMode) {
-            val wrong = _uiState.value.wrongItems.getOrNull(_uiState.value.retryIndex)
-            return generateOptions(wrong?.correctAnswer ?: "am", _uiState.value.blocks.firstOrNull()?.items?.firstOrNull())
-        }
+        val state = _uiState.value
         val item = getCurrentItem() ?: return listOf("am", "is", "are")
-        if (item.options != null) {
-            val filtered = item.options.filter { it.isNotBlank() }
-            if (filtered.isNotEmpty()) return filtered
+
+        // Create a cache key based on current item
+        val cacheKey = "${state.currentBlockIndex}_${state.currentItemIndex}_${state.retryMode}_${state.retryIndex}"
+
+        // Return cached options if available and matching
+        if (state.cachedOptionsKey == cacheKey && state.cachedOptions.isNotEmpty()) {
+            return state.cachedOptions
         }
-        return generateOptions(item.answer, item)
+
+        // Generate new options
+        val options = if (state.retryMode) {
+            val wrong = state.wrongItems.getOrNull(state.retryIndex)
+            generateOptions(wrong?.correctAnswer ?: "am", state.blocks.firstOrNull()?.items?.firstOrNull())
+        } else {
+            if (item.options != null) {
+                val filtered = item.options.filter { it.isNotBlank() }
+                if (filtered.isNotEmpty()) filtered else generateOptions(item.answer, item)
+            } else {
+                generateOptions(item.answer, item)
+            }
+        }
+
+        // Cache the options
+        _uiState.value = state.copy(cachedOptions = options, cachedOptionsKey = cacheKey)
+        return options
     }
 
     private fun generateOptions(answer: String, item: ExerciseItem?): List<String> {
@@ -574,12 +621,52 @@ class UnitExerciseViewModel @Inject constructor(
 
     private val allAnswerOptions = listOf("I am","I'm not","he is","he isn't","she is","she isn't","it is","it isn't","you are","you aren't","we are","we aren't","they are","they aren't","am not","isn't","aren't","Am","Is","Are")
 
+    private fun calculateMetrics(): PedagogicalMetrics {
+        val state = _uiState.value
+        val totalItems = state.totalItems
+        val attempted = state.attemptedItems.size
+        val firstCorrect = state.firstCorrectItems.size
+        val mastered = state.masteredItems.size
+        val timeSpent = ((System.currentTimeMillis() - state.sessionStartTime) / 1000).toInt()
+
+        val accuracy = if (attempted > 0) (firstCorrect.toFloat() / attempted * 100) else 0f
+        val mastery = if (totalItems > 0) (mastered.toFloat() / totalItems * 100) else 0f
+
+        val status = when {
+            attempted == 0 -> "not_started"
+            mastered >= totalItems && totalItems > 0 -> "mastered"
+            state.completed -> "completed"
+            else -> "in_progress"
+        }
+
+        return PedagogicalMetrics(
+            accuracy = accuracy,
+            mastery = mastery,
+            status = status,
+            itemsAttempted = attempted,
+            itemsMastered = mastered,
+            itemsCorrectFirst = firstCorrect,
+            timeSpentSeconds = timeSpent
+        )
+    }
+
+    private data class PedagogicalMetrics(
+        val accuracy: Float,
+        val mastery: Float,
+        val status: String,
+        val itemsAttempted: Int,
+        val itemsMastered: Int,
+        val itemsCorrectFirst: Int,
+        val timeSpentSeconds: Int
+    )
+
     private fun triggerDebouncedSync() {
         syncDebounceJob?.cancel()
         syncDebounceJob = viewModelScope.launch {
             delay(3000)
             val s = _uiState.value
             val items = s.completedItems
+            val metrics = calculateMetrics()
             try {
                 val existing = progressRepository.getProgress(topicId, unitId)
                 progressRepository.syncProgress(
@@ -591,7 +678,14 @@ class UnitExerciseViewModel @Inject constructor(
                             score = s.score,
                             totalItems = s.totalItems,
                             completedItems = items,
-                            testScore = existing?.testScore
+                            testScore = existing?.testScore,
+                            accuracy = metrics.accuracy,
+                            mastery = metrics.mastery,
+                            status = metrics.status,
+                            itemsAttempted = metrics.itemsAttempted,
+                            itemsMastered = metrics.itemsMastered,
+                            itemsCorrectFirst = metrics.itemsCorrectFirst,
+                            timeSpentSeconds = metrics.timeSpentSeconds
                         )
                     )
                 )
@@ -612,10 +706,22 @@ class UnitExerciseViewModel @Inject constructor(
     private fun saveProgressLocal() {
         viewModelScope.launch(Dispatchers.IO) {
             val state = _uiState.value
+            val metrics = calculateMetrics()
             progressRepository.saveProgress(
                 topicId = topicId, unitId = unitId,
                 completedItems = state.completedItems,
                 score = state.score, totalItems = state.totalItems, completed = false
+            )
+            // Save pedagogical metrics
+            progressRepository.saveMetrics(
+                topicId = topicId, unitId = unitId,
+                accuracy = metrics.accuracy,
+                mastery = metrics.mastery,
+                status = metrics.status,
+                itemsAttempted = metrics.itemsAttempted,
+                itemsMastered = metrics.itemsMastered,
+                itemsCorrectFirst = metrics.itemsCorrectFirst,
+                timeSpentSeconds = metrics.timeSpentSeconds
             )
             var itemsBeforeBlock = 0
             for ((blockIdx, block) in state.blocks.withIndex()) {
@@ -642,6 +748,7 @@ class UnitExerciseViewModel @Inject constructor(
         viewModelScope.launch {
             val state = _uiState.value
             val items = if (completed) state.totalItems else state.completedItems
+            val metrics = calculateMetrics()
             val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
             var itemsBeforeBlock = 0
             for ((blockIdx, block) in state.blocks.withIndex()) {
@@ -679,7 +786,14 @@ class UnitExerciseViewModel @Inject constructor(
                             totalItems = state.totalItems,
                             completedItems = items,
                             testScore = existingProgress?.testScore,
-                            completedAt = if (completed) java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()) else null
+                            completedAt = if (completed) java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()) else null,
+                            accuracy = metrics.accuracy,
+                            mastery = metrics.mastery,
+                            status = if (completed && metrics.status == "in_progress") "completed" else metrics.status,
+                            itemsAttempted = metrics.itemsAttempted,
+                            itemsMastered = metrics.itemsMastered,
+                            itemsCorrectFirst = metrics.itemsCorrectFirst,
+                            timeSpentSeconds = metrics.timeSpentSeconds
                         )
                     ),
                     blockEntries = blockEntries
@@ -697,7 +811,7 @@ class UnitExerciseViewModel @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val fullUrl = if (url.startsWith("http")) url else "${ApiConfig.BASE_URL.removeSuffix("/api/v1/")}$url"
-                val client = OkHttpClient()
+                val client = com.appenglish.util.HttpClientFactory.getInstance()
                 val request = Request.Builder().url(fullUrl).build()
                 val response = client.newCall(request).execute()
                 if (!response.isSuccessful) { if (isCorrect) SoundHelper.playCorrect(app) else SoundHelper.playIncorrect(app); return@withContext }

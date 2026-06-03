@@ -199,7 +199,7 @@ async function fetchData() {
       const subjRes = await api.get('/admin/subjects')
       subjData = subjRes.data || []
     } catch {
-      const pubRes = await api.get('/api/v1/content/subjects')
+      const pubRes = await api.get('/content/subjects')
       subjData = (pubRes.data?.subjects || []).map(s => ({ ...s, topicsCount: s.topicsCount || s.topics?.length || 0 }))
     }
     subjects.value = subjData

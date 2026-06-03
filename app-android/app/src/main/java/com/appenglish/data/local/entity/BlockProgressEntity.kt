@@ -1,9 +1,13 @@
 package com.appenglish.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "block_progress")
+@Entity(
+    tableName = "block_progress",
+    indices = [Index(value = ["deviceId", "topicId", "unitId", "blockIndex"], unique = true)]
+)
 data class BlockProgressEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

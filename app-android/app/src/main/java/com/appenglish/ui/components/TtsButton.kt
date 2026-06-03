@@ -13,6 +13,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,10 @@ fun TtsButton(
                 isReady = true
             }
         }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { tts.shutdown() }
     }
 
     IconButton(
@@ -170,7 +175,7 @@ private fun speakParts(tts: TextToSpeech, text: String, onDone: (Boolean) -> Uni
 suspend fun playViaVps(context: Context, text: String) {
     withContext(Dispatchers.IO) {
         try {
-            val client = OkHttpClient()
+            val client = com.appenglish.util.HttpClientFactory.getInstance()
             val json = JSONObject().apply {
                 put("text", text)
                 put("voice", "en-US-JennyNeural")

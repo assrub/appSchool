@@ -14,18 +14,16 @@ interface DictionaryApi {
     @POST("dictionary")
     suspend fun addEntry(@Body request: DictionaryEntryRequest): DictionaryEntryResponse
 
-    @GET("dictionary/{deviceId}")
+    @GET("dictionary")
     suspend fun listEntries(
-        @Path("deviceId") deviceId: String,
         @Query("sortBy") sortBy: String = "date",
         @Query("order") order: String = "desc",
         @Query("limit") limit: Int = 50,
         @Query("offset") offset: Int = 0
     ): DictionaryListResponse
 
-    @DELETE("dictionary/{deviceId}/{entryId}")
+    @DELETE("dictionary/{entryId}")
     suspend fun deleteEntry(
-        @Path("deviceId") deviceId: String,
-        @Path("entryId") entryId: Int
+        @Path("entryId") entryId: Long
     ): Map<String, String>
 }

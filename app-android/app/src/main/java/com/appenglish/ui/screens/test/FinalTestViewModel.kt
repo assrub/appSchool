@@ -73,7 +73,7 @@ class FinalTestViewModel @Inject constructor(
 
     fun selectOption(option: String) {
         val state = _uiState.value
-        if (state.answered && state.isCorrect == true) return
+        if (state.answered) return  // Already answered this question
 
         val current = state.questions.getOrNull(state.currentIndex) ?: return
         val userAnswer = option.trim().lowercase()
@@ -91,8 +91,9 @@ class FinalTestViewModel @Inject constructor(
                 isCorrect = true,
                 userInput = option,
                 score = state.score + 1,
-                feedback = "¡Muy bien! ✅",
-                showingAnswer = true
+                feedback = "¡Correcto! ✅",
+                showingAnswer = true,
+                readyForNext = true
             )
             viewModelScope.launch {
                 delay(600)
@@ -107,18 +108,13 @@ class FinalTestViewModel @Inject constructor(
                 SoundHelper.playIncorrect(app)
             }
             _uiState.value = state.copy(
+                answered = true,
                 userInput = option,
                 isCorrect = false,
-                feedback = "Intentá de nuevo ❌"
+                feedback = "Incorrecto. La respuesta es: ${current.answer}",
+                showingAnswer = true,
+                readyForNext = true
             )
-            viewModelScope.launch {
-                delay(1200)
-                _uiState.value = _uiState.value.copy(
-                    userInput = "",
-                    isCorrect = null,
-                    feedback = null
-                )
-            }
         }
     }
 
@@ -137,7 +133,7 @@ class FinalTestViewModel @Inject constructor(
 
     fun nextQuestion() {
         val state = _uiState.value
-        if (!state.answered || state.isCorrect != true || !state.readyForNext) return
+        if (!state.answered || !state.readyForNext) return
         if (state.currentIndex + 1 < state.questions.size) {
             _uiState.value = state.copy(
                 currentIndex = state.currentIndex + 1,

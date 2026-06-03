@@ -36,7 +36,7 @@ class UpdateManager @Inject constructor() {
 
         Thread {
             try {
-                val client = OkHttpClient()
+                val client = com.appenglish.util.HttpClientFactory.getInstance()
                 val request = Request.Builder()
                     .url("${ApiConfig.BASE_URL}version")
                     .build()
@@ -85,7 +85,7 @@ class UpdateManager @Inject constructor() {
                 val url = if (apkUrl.startsWith("http")) apkUrl
                     else "${ApiConfig.BASE_URL.removeSuffix("/api/v1/")}${apkUrl}"
 
-                val client = OkHttpClient()
+                val client = com.appenglish.util.HttpClientFactory.getInstance()
                 val request = Request.Builder().url(url).build()
                 val response = client.newCall(request).execute()
                 if (!response.isSuccessful) { activity.runOnUiThread { dialog.dismiss() }; return@Thread }

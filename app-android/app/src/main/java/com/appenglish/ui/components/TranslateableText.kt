@@ -131,6 +131,10 @@ fun TranslateableText(
         TextToSpeech(context) { status -> }
     }
 
+    DisposableEffect(Unit) {
+        onDispose { tts.shutdown() }
+    }
+
     Box(modifier = modifier) {
         SelectionContainer {
             androidx.compose.foundation.text.ClickableText(
@@ -226,7 +230,7 @@ fun TranslateableText(
 
 suspend fun translateWord(word: String): String = withContext(Dispatchers.IO) {
     try {
-        val client = OkHttpClient()
+        val client = com.appenglish.util.HttpClientFactory.getInstance()
         val json = JSONObject().apply {
             put("text", word)
             put("sourceLang", "en")

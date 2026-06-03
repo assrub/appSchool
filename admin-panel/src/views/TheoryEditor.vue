@@ -245,7 +245,6 @@ async function saveManual() {
 }
 
 onMounted(() => {
-  fetchData()
   scheduleAutosave()
 })
 

@@ -36,7 +36,6 @@ class DictionaryRepository @Inject constructor(
         try {
             api.addEntry(
                 DictionaryEntryRequest(
-                    deviceId = userId,
                     word = word,
                     translation = translation
                 )
@@ -52,5 +51,8 @@ class DictionaryRepository @Inject constructor(
 
     suspend fun delete(id: Long) {
         dao.delete(id)
+        try {
+            api.deleteEntry(id)
+        } catch (_: Exception) { }
     }
 }

@@ -31,8 +31,12 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -112,9 +116,36 @@ fun UnitExerciseScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    var showExitDialog by remember { mutableStateOf(false) }
 
     val tts = remember {
         TextToSpeech(context) { status -> }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { tts.shutdown() }
+    }
+
+    // Back press confirmation
+    if (showExitDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("¿Salir del ejercicio?") },
+            text = { Text("Tu progreso se guardará automáticamente. ¿Querés salir?") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showExitDialog = false
+                    onBackClick()
+                }) {
+                    Text("Salir", color = ErrorRed)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showExitDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     LaunchedEffect(uiState.playingFullAudio) {
@@ -136,7 +167,7 @@ fun UnitExerciseScreen(
             TopAppBar(
                 title = { Text(uiState.unitTitle.ifEmpty { "Ejercicios" }, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { showExitDialog = true }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                     }
                 },
@@ -650,7 +681,7 @@ private fun ExerciseTabContent(
 
                         Box(
                             modifier = Modifier
-                                .widthIn(min = 100.dp, max = 160.dp)
+                                .widthIn(min = 100.dp, max = 200.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(color = dropBg, shape = RoundedCornerShape(12.dp))
                                 .border(if (isOverDropZone && draggingWord != null) 3.dp else 2.dp, dropBorder, RoundedCornerShape(12.dp))
@@ -663,6 +694,34 @@ private fun ExerciseTabContent(
                                     currentItem.answer, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
                                     fontWeight = FontWeight.Bold,
                                     color = if (uiState.isCorrect == true) CorrectGreen else if (uiState.isCorrect == false) ErrorRed else Primary
+                                )
+                            } else if (inputMode == "type") {
+                                // Inline text input for type mode
+                                val focusRequester = remember { FocusRequester() }
+                                LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                                BasicTextField(
+                                    value = uiState.userInput,
+                                    onValueChange = onInputChanged,
+                                    modifier = Modifier.focusRequester(focusRequester),
+                                    textStyle = MaterialTheme.typography.headlineSmall.copy(
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Primary
+                                    ),
+                                    singleLine = true,
+                                    cursorBrush = SolidColor(Primary),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = { onCheckTextAnswer() }),
+                                    decorationBox = { innerTextField ->
+                                        if (uiState.userInput.isEmpty()) {
+                                            Text(
+                                                "______",
+                                                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
                                 )
                             } else {
                                 Text(
@@ -684,6 +743,19 @@ private fun ExerciseTabContent(
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
                             Spacer(Modifier.width(8.dp))
                             Text("Reproduciendo audio...", style = MaterialTheme.typography.bodySmall, color = Primary)
+                        }
+                    }
+
+                    // Corregir button for type mode
+                    if (inputMode == "type" && uiState.isCorrect == null && uiState.userInput.isNotBlank()) {
+                        Spacer(Modifier.height(12.dp))
+                        Button(
+                            onClick = onCheckTextAnswer,
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) {
+                            Text("Corregir", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
@@ -717,17 +789,9 @@ private fun ExerciseTabContent(
             }
 
             if (inputMode == "type" && uiState.isCorrect == null) {
-                OutlinedTextField(
-                    value = uiState.userInput, onValueChange = onInputChanged,
-                    label = { Text("Escribí tu respuesta") }, modifier = Modifier.fillMaxWidth(),
-                    singleLine = true, shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { onCheckTextAnswer() })
-                )
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = onCheckTextAnswer, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    Text("Corregir", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                }
+                Text("Escribí tu respuesta directamente en el espacio", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                // No separate input field needed - user types inline
             }
 
             if (inputMode == "tap" && uiState.isCorrect == null && options.isNotEmpty()) {
@@ -930,14 +994,55 @@ private fun ReorderCard(uiState: UnitExerciseUiState, onSelectWord: (String) -> 
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Ordena las palabras:", style = MaterialTheme.typography.titleMedium, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
+
+            // Slots with next indicator
+            val nextEmptyIndex = uiState.reorderSlots.indexOfFirst { it == null }
             Row(modifier = Modifier.fillMaxWidth().border(2.dp, Primary, RoundedCornerShape(12.dp)).padding(8.dp), horizontalArrangement = Arrangement.Center) {
-                if (uiState.reorderSlots.isEmpty() || uiState.reorderSlots.all { it == null }) Text("...", color = Color.Gray, modifier = Modifier.padding(8.dp))
-                else Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { uiState.reorderSlots.forEachIndexed { idx, w -> Box(modifier = Modifier.background(Primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp)).clickable { onRemoveWord(idx) }.padding(horizontal = 12.dp, vertical = 8.dp)) { Text(w ?: "_", color = Primary, fontWeight = FontWeight.Bold) } } }
+                if (uiState.reorderSlots.isEmpty() || uiState.reorderSlots.all { it == null }) {
+                    Text("...", color = Color.Gray, modifier = Modifier.padding(8.dp))
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        uiState.reorderSlots.forEachIndexed { idx, w ->
+                            val isNext = idx == nextEmptyIndex
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (w != null) Primary.copy(alpha = 0.1f)
+                                        else if (isNext) Primary.copy(alpha = 0.05f)
+                                        else Color.Transparent,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .border(
+                                        if (isNext && w == null) 2.dp else 0.dp,
+                                        if (isNext && w == null) Primary.copy(alpha = 0.5f) else Color.Transparent,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable(enabled = w != null) { if (w != null) onRemoveWord(idx) }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    w ?: if (isNext) "▸" else "_",
+                                    color = if (w != null) Primary else if (isNext) Primary.copy(alpha = 0.5f) else Color.Gray,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+                uiState.reorderWords.forEach { w ->
+                    Box(modifier = Modifier.background(Color(0xFFE3F2FD), RoundedCornerShape(10.dp)).clickable { onSelectWord(w) }.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                        Text(w, fontWeight = FontWeight.Bold, color = Primary)
+                    }
+                }
             }
             Spacer(Modifier.height(12.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) { uiState.reorderWords.forEach { w -> Box(modifier = Modifier.background(Color(0xFFE3F2FD), RoundedCornerShape(10.dp)).clickable { onSelectWord(w) }.padding(horizontal = 14.dp, vertical = 10.dp)) { Text(w, fontWeight = FontWeight.Bold, color = Primary) } } }
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = onCheck, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) { Text("Corregir") }
+            Button(onClick = onCheck, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                Text("Corregir")
+            }
         }
     }
 }
@@ -947,14 +1052,118 @@ private fun MatchingCard(item: com.appenglish.domain.model.ExerciseItem, matched
     val pairs = item.pairs ?: emptyList()
     val leftItems = pairs.map { it["left"] ?: "" }
     val rightItems = remember { pairs.map { it["right"] ?: "" }.shuffled() }
-    var selL by remember { mutableStateOf("") }; var selR by remember { mutableStateOf("") }
+    var selL by remember { mutableStateOf("") }
+    var selR by remember { mutableStateOf("") }
+    var matchedLeft by remember { mutableStateOf(setOf<String>()) }
+    var matchedRight by remember { mutableStateOf(setOf<String>()) }
+    var lastWrongLeft by remember { mutableStateOf<String?>(null) }
+    var lastWrongRight by remember { mutableStateOf<String?>(null) }
+
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Uni las columnas (${matchedPairs}/${pairs.size})", style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Column { leftItems.forEach { l -> Box(modifier = Modifier.background(if (selL == l) Primary.copy(alpha = 0.2f) else Color(0xFFE8F5E9), RoundedCornerShape(10.dp)).clickable { selL = l; if (selR.isNotEmpty()) { onMatch(selL, selR); selL = ""; selR = "" } }.padding(12.dp)) { Text(l, fontWeight = FontWeight.Bold) } } }
-                Column { rightItems.forEach { r -> Box(modifier = Modifier.background(if (selR == r) Primary.copy(alpha = 0.2f) else Color(0xFFE3F2FD), RoundedCornerShape(10.dp)).clickable { selR = r; if (selL.isNotEmpty()) { onMatch(selL, selR); selL = ""; selR = "" } }.padding(12.dp)) { Text(r, fontWeight = FontWeight.Bold) } } }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    leftItems.forEach { l ->
+                        val isMatched = matchedLeft.contains(l)
+                        val isWrong = lastWrongLeft == l
+                        val isSelected = selL == l
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    when {
+                                        isMatched -> CorrectGreen.copy(alpha = 0.2f)
+                                        isWrong -> ErrorRed.copy(alpha = 0.2f)
+                                        isSelected -> Primary.copy(alpha = 0.3f)
+                                        else -> Color(0xFFE8F5E9)
+                                    },
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .clickable(enabled = !isMatched) {
+                                    if (!isMatched) {
+                                        selL = l
+                                        lastWrongLeft = null
+                                        lastWrongRight = null
+                                        if (selR.isNotEmpty()) {
+                                            val isCorrect = pairs.any { it["left"] == l && it["right"] == selR }
+                                            if (isCorrect) {
+                                                matchedLeft = matchedLeft + l
+                                                matchedRight = matchedRight + selR
+                                            } else {
+                                                lastWrongLeft = l
+                                                lastWrongRight = selR
+                                            }
+                                            onMatch(l, selR)
+                                            selL = ""
+                                            selR = ""
+                                        }
+                                    }
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isMatched) {
+                                    Icon(Icons.Default.Check, null, tint = CorrectGreen, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                }
+                                Text(l, fontWeight = FontWeight.Bold, color = if (isMatched) CorrectGreen else Color.Unspecified)
+                            }
+                        }
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    rightItems.forEach { r ->
+                        val isMatched = matchedRight.contains(r)
+                        val isWrong = lastWrongRight == r
+                        val isSelected = selR == r
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    when {
+                                        isMatched -> CorrectGreen.copy(alpha = 0.2f)
+                                        isWrong -> ErrorRed.copy(alpha = 0.2f)
+                                        isSelected -> Primary.copy(alpha = 0.3f)
+                                        else -> Color(0xFFE3F2FD)
+                                    },
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .clickable(enabled = !isMatched) {
+                                    if (!isMatched) {
+                                        selR = r
+                                        lastWrongLeft = null
+                                        lastWrongRight = null
+                                        if (selL.isNotEmpty()) {
+                                            val isCorrect = pairs.any { it["left"] == selL && it["right"] == r }
+                                            if (isCorrect) {
+                                                matchedLeft = matchedLeft + selL
+                                                matchedRight = matchedRight + r
+                                            } else {
+                                                lastWrongLeft = selL
+                                                lastWrongRight = r
+                                            }
+                                            onMatch(selL, r)
+                                            selL = ""
+                                            selR = ""
+                                        }
+                                    }
+                                }
+                                .padding(12.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isMatched) {
+                                    Icon(Icons.Default.Check, null, tint = CorrectGreen, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                }
+                                Text(r, fontWeight = FontWeight.Bold, color = if (isMatched) CorrectGreen else Color.Unspecified)
+                            }
+                        }
+                    }
+                }
+            }
+            if (matchedPairs >= pairs.size) {
+                Spacer(Modifier.height(12.dp))
+                Text("¡Todos los pares encontrados! ✅", style = MaterialTheme.typography.bodyMedium, color = CorrectGreen, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -962,13 +1171,67 @@ private fun MatchingCard(item: com.appenglish.domain.model.ExerciseItem, matched
 
 @Composable
 private fun ListeningCard(item: com.appenglish.domain.model.ExerciseItem, userInput: String, onInputChanged: (String) -> Unit, onCheck: () -> Unit) {
+    val context = LocalContext.current
+    var isPlaying by remember { mutableStateOf(false) }
+    val tts = remember { TextToSpeech(context) { } }
+
+    DisposableEffect(Unit) {
+        onDispose { tts.shutdown() }
+    }
+
+    fun playAudio() {
+        isPlaying = true
+        tts.language = Locale.US
+        tts.setSpeechRate(0.85f)
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) { isPlaying = false }
+            override fun onError(utteranceId: String?) { isPlaying = false }
+        })
+        tts.speak(item.sentence, TextToSpeech.QUEUE_FLUSH, null, "listening")
+    }
+
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("\uD83D\uDD0A", fontSize = 60.sp); Spacer(Modifier.height(8.dp))
-            Text("Escucha y escribi", style = MaterialTheme.typography.titleMedium, color = Color.Gray); Spacer(Modifier.height(16.dp))
-            OutlinedTextField(value = userInput, onValueChange = onInputChanged, label = { Text("Tu respuesta") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp))
+            Text("🔊", fontSize = 60.sp)
+            Spacer(Modifier.height(8.dp))
+            Text("Escucha y escribi", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onCheck, colors = ButtonDefaults.buttonColors(containerColor = Primary), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(52.dp), enabled = userInput.isNotBlank()) { Text("Corregir", color = Color.White, fontWeight = FontWeight.Bold) }
+
+            // Replay button
+            Button(
+                onClick = { playAudio() },
+                colors = ButtonDefaults.buttonColors(containerColor = if (isPlaying) Color.Gray else InfoBlue),
+                shape = RoundedCornerShape(12.dp),
+                enabled = !isPlaying
+            ) {
+                Icon(Icons.Default.Check, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(if (isPlaying) "Reproduciendo..." else "Escuchar de nuevo", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = userInput,
+                onValueChange = onInputChanged,
+                label = { Text("Tu respuesta") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onCheck,
+                colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                enabled = userInput.isNotBlank()
+            ) {
+                Text("Corregir", color = Color.White, fontWeight = FontWeight.Bold)
+            }
         }
     }
+
+    // Auto-play on first load
+    LaunchedEffect(Unit) { playAudio() }
 }

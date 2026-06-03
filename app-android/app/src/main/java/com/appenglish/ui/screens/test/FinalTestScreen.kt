@@ -86,6 +86,10 @@ fun FinalTestScreen(
 
     val tts = remember { TextToSpeech(context) { } }
 
+    DisposableEffect(Unit) {
+        onDispose { tts.shutdown() }
+    }
+
     LaunchedEffect(uiState.playingFullAudio) {
         if (uiState.playingFullAudio && uiState.fullSentenceToPlay.isNotEmpty()) {
             tts.language = Locale.US
