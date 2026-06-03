@@ -185,8 +185,11 @@ class UnitExerciseViewModel @Inject constructor(
                     val blockTotal = blocks[blockIdx].items.size
                     
                     // Resume from saved position within the block
-                    val itemIdx = if (blockCompletedItems > 0 && blockCompletedItems < blockTotal) {
-                        blockCompletedItems // Resume from where left off
+                    // If block was fully completed, reset counters to avoid inflation on re-answer
+                    val adjustedCompletedItems = if (blockCompletedItems >= blockTotal) 0 else blockCompletedItems
+                    val adjustedBlockScore = if (blockCompletedItems >= blockTotal) 0 else blockScore
+                    val itemIdx = if (adjustedCompletedItems > 0 && adjustedCompletedItems < blockTotal) {
+                        adjustedCompletedItems // Resume from where left off
                     } else {
                         0 // Start fresh if block not started or completed
                     }
@@ -197,8 +200,8 @@ class UnitExerciseViewModel @Inject constructor(
                         unitTheory = unitTheory, blocks = blocks, totalBlocks = blocks.size, totalItems = totalItems,
                         completedItems = 0, score = 0,
                         currentBlockIndex = blockIdx, currentItemIndex = itemIdx,
-                        currentBlockCompletedItems = blockCompletedItems,
-                        currentBlockScore = blockScore
+                        currentBlockCompletedItems = adjustedCompletedItems,
+                        currentBlockScore = adjustedBlockScore
                     )
                     updateCurrentBlockTheory()
                 },
@@ -385,10 +388,15 @@ class UnitExerciseViewModel @Inject constructor(
             blockCompleted = false,
             currentBlockIndex = state.currentBlockIndex + 1,
             currentItemIndex = 0,
+            currentBlockCompletedItems = 0,  // Reset per-block counter
+            currentBlockScore = 0,           // Reset per-block score
+            wrongItems = emptyList(),        // Clear wrong items for new block
             userInput = "", feedback = null, isCorrect = null,
             showingAnswer = false, playingFullAudio = false,
             readyForNext = false, fullSentenceToPlay = "",
-            showAcceptButton = false
+            showAcceptButton = false,
+            cachedOptions = emptyList(),     // Clear cached options
+            cachedOptionsKey = ""
         )
         updateCurrentBlockTheory()
     }
@@ -522,11 +530,12 @@ class UnitExerciseViewModel @Inject constructor(
         val newMastered = if (correct) state.masteredItems + itemKey else state.masteredItems
         val timeSpent = ((System.currentTimeMillis() - state.sessionStartTime) / 1000).toInt()
 
-        // Track per-block progress
-        val newBlockCompletedItems = state.currentBlockCompletedItems + 1
-        val newBlockScore = if (correct) state.currentBlockScore + 1 else state.currentBlockScore
+        // Track per-block progress, capped at block's total items
+        val blockItemCount = state.blocks.getOrNull(state.currentBlockIndex)?.items?.size ?: Int.MAX_VALUE
+        val newBlockCompletedItems = (state.currentBlockCompletedItems + 1).coerceAtMost(blockItemCount)
+        val newBlockScore = (if (correct) state.currentBlockScore + 1 else state.currentBlockScore).coerceAtMost(blockItemCount)
         
-        val newCompleted = state.completedItems + 1
+        val newCompleted = (state.completedItems + 1).coerceAtMost(state.totalItems)
         if (correct) {
             val newScore = state.score + 1
             _uiState.value = state.copy(
@@ -668,8 +677,9 @@ class UnitExerciseViewModel @Inject constructor(
         syncDebounceJob = viewModelScope.launch {
             delay(3000)
             val s = _uiState.value
-            val items = s.completedItems
             val metrics = calculateMetrics()
+            val cappedCompletedItems = s.completedItems.coerceAtMost(s.totalItems)
+            val cappedScore = s.score.coerceAtMost(s.totalItems)
             try {
                 val existing = progressRepository.getProgress(topicId, unitId)
                 progressRepository.syncProgress(
@@ -678,9 +688,9 @@ class UnitExerciseViewModel @Inject constructor(
                             topicId = topicId,
                             unitId = unitId,
                             completed = false,
-                            score = s.score,
+                            score = cappedScore,
                             totalItems = s.totalItems,
-                            completedItems = items,
+                            completedItems = cappedCompletedItems,
                             testScore = existing?.testScore,
                             accuracy = metrics.accuracy,
                             mastery = metrics.mastery,
@@ -712,11 +722,12 @@ class UnitExerciseViewModel @Inject constructor(
             val metrics = calculateMetrics()
             
             // Save unit-level progress (aggregate of all blocks)
-            val totalCompletedAcrossBlocks = calculateTotalCompletedItems()
+            val totalCompletedAcrossBlocks = calculateTotalCompletedItems().coerceAtMost(state.totalItems)
+            val totalScoreAcrossBlocks = calculateTotalScore().coerceAtMost(state.totalItems)
             progressRepository.saveProgress(
                 topicId = topicId, unitId = unitId,
                 completedItems = totalCompletedAcrossBlocks,
-                score = calculateTotalScore(), totalItems = state.totalItems, completed = false
+                score = totalScoreAcrossBlocks, totalItems = state.totalItems, completed = false
             )
             // Save pedagogical metrics
             progressRepository.saveMetrics(
@@ -733,15 +744,16 @@ class UnitExerciseViewModel @Inject constructor(
             // Save ONLY current block's progress
             val currentBlock = state.blocks.getOrNull(state.currentBlockIndex)
             if (currentBlock != null) {
-                val wrongInCurrentBlock = state.wrongItems.count { it.blockIndex == state.currentBlockIndex }
-                val blockCompleted = state.currentBlockCompletedItems >= currentBlock.items.size
+                val cappedBlockItems = state.currentBlockCompletedItems.coerceAtMost(currentBlock.items.size)
+                val cappedBlockScore = state.currentBlockScore.coerceAtMost(currentBlock.items.size)
+                val blockCompleted = cappedBlockItems >= currentBlock.items.size
                 progressRepository.saveBlockProgress(
                     topicId = topicId, unitId = unitId,
                     blockIndex = state.currentBlockIndex,
-                    score = state.currentBlockScore,
+                    score = cappedBlockScore,
                     totalItems = currentBlock.items.size,
                     completed = blockCompleted,
-                    completedItems = state.currentBlockCompletedItems
+                    completedItems = cappedBlockItems
                 )
             }
         }
@@ -778,7 +790,9 @@ class UnitExerciseViewModel @Inject constructor(
     private fun saveProgress(completed: Boolean = false) {
         viewModelScope.launch {
             val state = _uiState.value
-            val items = if (completed) state.totalItems else state.completedItems
+            val rawItems = state.completedItems.coerceAtMost(state.totalItems)
+            val items = if (completed) state.totalItems else rawItems
+            val cappedScore = state.score.coerceAtMost(state.totalItems)
             val metrics = calculateMetrics()
             val blockEntries = mutableListOf<com.appenglish.data.remote.dto.BlockProgressEntryDto>()
             var itemsBeforeBlock = 0
@@ -814,7 +828,7 @@ class UnitExerciseViewModel @Inject constructor(
                             topicId = topicId,
                             unitId = unitId,
                             completed = completed,
-                            score = state.score,
+                            score = cappedScore,
                             totalItems = state.totalItems,
                             completedItems = items,
                             testScore = existingProgress?.testScore,

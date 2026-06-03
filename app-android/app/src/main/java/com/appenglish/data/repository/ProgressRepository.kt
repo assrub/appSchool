@@ -308,6 +308,7 @@ class ProgressRepository @Inject constructor(
                 score = 0,
                 totalItems = totalItems,
                 completed = false,
+                completedItems = 0,  // Reset completed items
                 completedAt = null
             )
         )
@@ -322,7 +323,8 @@ class ProgressRepository @Inject constructor(
                         blockIndex = blockIndex,
                         completed = false,
                         score = 0,
-                        totalItems = totalItems
+                        totalItems = totalItems,
+                        completedItems = 0
                     )
                 )
             ))
