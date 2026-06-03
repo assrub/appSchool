@@ -231,11 +231,11 @@ private fun BlocksListContent(
 
             itemsIndexed(blocks) { idx, block ->
                 val rawProgress = blockProgress[idx]
-                val progress = rawProgress?.takeIf { it.score > 0 || it.completed }
-                val percent = if (progress != null && progress.totalItems > 0) {
-                    (progress.score.toFloat() / progress.totalItems)
+                val percent = if (rawProgress != null && rawProgress.totalItems > 0) {
+                    (rawProgress.score.toFloat() / rawProgress.totalItems)
                 } else 0f
                 val isComplete = rawProgress?.completed == true
+                val hasStarted = rawProgress != null && (rawProgress.score > 0 || rawProgress.completed)
 
                 val animatedProgress by animateFloatAsState(
                     targetValue = percent,
@@ -264,59 +264,68 @@ private fun BlocksListContent(
                             Column(Modifier.weight(1f)) {
                                 Text(block.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    if (progress != null) "${progress.score}/${progress.totalItems} ejercicios"
-                                    else "${block.items.size} ejercicios",
+                                    "${block.items.size} ejercicios",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
 
-                        if (progress != null) {
-                            Spacer(Modifier.height(8.dp))
-                            LinearProgressIndicator(
-                                progress = { animatedProgress },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(10.dp)
-                                    .clip(RoundedCornerShape(5.dp)),
-                                color = if (isComplete && (progress.totalItems - progress.score) > 0) WarningOrange else barColor,
-                                trackColor = barColor.copy(alpha = 0.15f)
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isComplete) {
-                                    val wrongCount = (progress.totalItems - progress.score).coerceAtLeast(0)
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("✅ ", style = MaterialTheme.typography.labelSmall)
-                                        Text("${progress.score}", style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.Bold)
-                                        Spacer(Modifier.width(6.dp))
-                                        Text("❌ ", style = MaterialTheme.typography.labelSmall)
-                                        Text("${wrongCount}", style = MaterialTheme.typography.labelSmall, color = ErrorRed, fontWeight = FontWeight.Bold)
-                                    }
-                                    Text(
-                                        "${(progress.score.toFloat() / progress.totalItems * 100).toInt()}%",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = CorrectGreen,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                } else {
-                                    Text(
-                                        "${(animatedProgress * 100).toInt()}%",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = barColor,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        "${progress.score}/${progress.totalItems}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                        Spacer(Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { animatedProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp)),
+                            color = if (isComplete && (rawProgress?.totalItems ?: 0 - (rawProgress?.score ?: 0)) > 0) WarningOrange else barColor,
+                            trackColor = barColor.copy(alpha = 0.15f)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (isComplete) {
+                                val wrongCount = ((rawProgress?.totalItems ?: 0) - (rawProgress?.score ?: 0)).coerceAtLeast(0)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("✅ ", style = MaterialTheme.typography.labelSmall)
+                                    Text("${rawProgress?.score ?: 0}", style = MaterialTheme.typography.labelSmall, color = CorrectGreen, fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("❌ ", style = MaterialTheme.typography.labelSmall)
+                                    Text("${wrongCount}", style = MaterialTheme.typography.labelSmall, color = ErrorRed, fontWeight = FontWeight.Bold)
                                 }
+                                Text(
+                                    "${((rawProgress?.score ?: 0).toFloat() / (rawProgress?.totalItems ?: 1).coerceAtLeast(1) * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = CorrectGreen,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else if (hasStarted) {
+                                Text(
+                                    "${(animatedProgress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = barColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "✅ ${rawProgress?.score ?: 0}  ❌ ${((rawProgress?.totalItems ?: 0) - (rawProgress?.score ?: 0)).coerceAtLeast(0)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                Text(
+                                    "0%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "✅ 0  ❌ 0",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }

@@ -157,7 +157,6 @@ class UnitExerciseViewModel @Inject constructor(
 
                     // Load saved progress from local DB
                     val savedProgress = progressRepository.getProgress(topicId, unitId)
-                    val completedItems = savedProgress?.completedItems ?: 0
                     val savedScore = savedProgress?.score ?: 0
 
                     val unitTheory = unitDto.theory?.let { t ->
@@ -171,29 +170,15 @@ class UnitExerciseViewModel @Inject constructor(
                         )
                     }
 
-                    // Calculate starting position
-                    var remaining = completedItems
-                    var blockIdx = 0
-                    var itemIdx = 0
-                    for ((i, block) in blocks.withIndex()) {
-                        if (remaining >= block.items.size) {
-                            remaining -= block.items.size
-                        } else {
-                            blockIdx = i
-                            itemIdx = remaining
-                            break
-                        }
-                    }
-                    if (completedItems >= totalItems && totalItems > 0) {
-                        blockIdx = blocks.lastIndex
-                        itemIdx = blocks.last().items.lastIndex
-                    }
+                    // Always start from the beginning
+                    val blockIdx = 0
+                    val itemIdx = 0
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false, unitTitle = unitDto.title, unitExplanation = unitDto.explanation,
                         soundCorrectUrl = unitDto.soundCorrectUrl, soundIncorrectUrl = unitDto.soundIncorrectUrl,
                         unitTheory = unitTheory, blocks = blocks, totalBlocks = blocks.size, totalItems = totalItems,
-                        completedItems = completedItems, score = savedScore,
+                        completedItems = 0, score = 0,
                         currentBlockIndex = blockIdx, currentItemIndex = itemIdx
                     )
                     updateCurrentBlockTheory()
