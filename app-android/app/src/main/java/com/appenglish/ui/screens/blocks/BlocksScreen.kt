@@ -231,11 +231,15 @@ private fun BlocksListContent(
 
             itemsIndexed(blocks) { idx, block ->
                 val rawProgress = blockProgress[idx]
-                val percent = if (rawProgress != null && rawProgress.totalItems > 0) {
-                    (rawProgress.score.toFloat() / rawProgress.totalItems)
-                } else 0f
                 val isComplete = rawProgress?.completed == true
                 val hasStarted = rawProgress != null && (rawProgress.score > 0 || rawProgress.completed)
+                
+                // If completed, show 100%. Otherwise show accuracy (score/total)
+                val percent = when {
+                    isComplete -> 1f
+                    rawProgress != null && rawProgress.totalItems > 0 -> rawProgress.score.toFloat() / rawProgress.totalItems
+                    else -> 0f
+                }
 
                 val animatedProgress by animateFloatAsState(
                     targetValue = percent,
