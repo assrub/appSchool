@@ -73,6 +73,9 @@ data class UnitExerciseUiState(
     val blockCompleted: Boolean = false,
     val blockScore: Int = 0,
     val blockTotalItems: Int = 0,
+    // Per-block tracking
+    val currentBlockCompletedItems: Int = 0,
+    val currentBlockScore: Int = 0,
     val unitPassed: Boolean = false,
     val mcSelectedIndex: Int? = null,
     val reorderWords: List<String> = emptyList(),
@@ -173,34 +176,29 @@ class UnitExerciseViewModel @Inject constructor(
                     }
 
                     // Calculate starting position based on saved progress
-                    var remaining = savedCompletedItems
-                    var blockIdx = startBlockIndex.coerceIn(0, blocks.lastIndex)
-                    var itemIdx = 0
+                    val blockIdx = startBlockIndex.coerceIn(0, blocks.lastIndex)
                     
-                    // If resuming (not starting fresh), find where to resume
-                    if (savedCompletedItems > 0 && startBlockIndex == 0) {
-                        for ((i, block) in blocks.withIndex()) {
-                            if (remaining >= block.items.size) {
-                                remaining -= block.items.size
-                            } else {
-                                blockIdx = i
-                                itemIdx = remaining
-                                break
-                            }
-                        }
-                        // If all items completed, start from beginning (unit was completed)
-                        if (savedCompletedItems >= totalItems && totalItems > 0) {
-                            blockIdx = 0
-                            itemIdx = 0
-                        }
+                    // Load current block's saved progress
+                    val savedBlockProgress = progressRepository.getBlockProgress(topicId, unitId, blockIdx)
+                    val blockCompletedItems = savedBlockProgress?.completedItems ?: 0
+                    val blockScore = savedBlockProgress?.score ?: 0
+                    val blockTotal = blocks[blockIdx].items.size
+                    
+                    // Resume from saved position within the block
+                    val itemIdx = if (blockCompletedItems > 0 && blockCompletedItems < blockTotal) {
+                        blockCompletedItems // Resume from where left off
+                    } else {
+                        0 // Start fresh if block not started or completed
                     }
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false, unitTitle = unitDto.title, unitExplanation = unitDto.explanation,
                         soundCorrectUrl = unitDto.soundCorrectUrl, soundIncorrectUrl = unitDto.soundIncorrectUrl,
                         unitTheory = unitTheory, blocks = blocks, totalBlocks = blocks.size, totalItems = totalItems,
-                        completedItems = savedCompletedItems, score = savedScore,
-                        currentBlockIndex = blockIdx, currentItemIndex = itemIdx
+                        completedItems = 0, score = 0,
+                        currentBlockIndex = blockIdx, currentItemIndex = itemIdx,
+                        currentBlockCompletedItems = blockCompletedItems,
+                        currentBlockScore = blockScore
                     )
                     updateCurrentBlockTheory()
                 },
@@ -262,11 +260,10 @@ class UnitExerciseViewModel @Inject constructor(
                 readyForNext = false, fullSentenceToPlay = "", showAcceptButton = false
             )
         } else if (state.currentBlockIndex + 1 < state.blocks.size) {
-            val wrongInBlock = state.wrongItems.count { it.blockIndex == state.currentBlockIndex }
-            val blockScore = (currentBlock.items.size - wrongInBlock).coerceAtLeast(0)
+            // Block finished, show completion screen
             _uiState.value = state.copy(
                 blockCompleted = true,
-                blockScore = blockScore,
+                blockScore = state.currentBlockScore,
                 blockTotalItems = currentBlock.items.size,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
@@ -274,6 +271,8 @@ class UnitExerciseViewModel @Inject constructor(
             )
             saveProgress()
         } else {
+            // Last block of unit finished
+            val totalScore = state.currentBlockScore // Will be recalculated in saveProgress
             val percent = if (state.totalItems > 0) (state.score.toFloat() / state.totalItems) * 100 else 0f
             val passed = percent >= 70f
             _uiState.value = state.copy(isFinished = true, unitPassed = passed)
@@ -305,11 +304,10 @@ class UnitExerciseViewModel @Inject constructor(
             )
         }
         else if (state.currentBlockIndex + 1 < state.blocks.size) {
-            val wrongInBlock = state.wrongItems.count { it.blockIndex == state.currentBlockIndex }
-            val blockScore = (currentBlock.items.size - wrongInBlock).coerceAtLeast(0)
+            // Block finished
             _uiState.value = state.copy(
                 blockCompleted = true,
-                blockScore = blockScore,
+                blockScore = state.currentBlockScore,
                 blockTotalItems = currentBlock.items.size,
                 userInput = "", feedback = null, isCorrect = null,
                 showingAnswer = false, playingFullAudio = false,
@@ -319,6 +317,7 @@ class UnitExerciseViewModel @Inject constructor(
             saveProgress()
         }
         else {
+            // Last block finished
             val percent = if (state.totalItems > 0) (state.score.toFloat() / state.totalItems) * 100 else 0f
             val passed = percent >= 70f
             _uiState.value = state.copy(isFinished = true, unitPassed = passed)
@@ -523,6 +522,10 @@ class UnitExerciseViewModel @Inject constructor(
         val newMastered = if (correct) state.masteredItems + itemKey else state.masteredItems
         val timeSpent = ((System.currentTimeMillis() - state.sessionStartTime) / 1000).toInt()
 
+        // Track per-block progress
+        val newBlockCompletedItems = state.currentBlockCompletedItems + 1
+        val newBlockScore = if (correct) state.currentBlockScore + 1 else state.currentBlockScore
+        
         val newCompleted = state.completedItems + 1
         if (correct) {
             val newScore = state.score + 1
@@ -530,6 +533,8 @@ class UnitExerciseViewModel @Inject constructor(
                 userInput = userAnswer, isCorrect = true,
                 feedback = Feedback("¡Muy bien! ✅", true),
                 score = newScore, completedItems = newCompleted, showingAnswer = true,
+                currentBlockCompletedItems = newBlockCompletedItems,
+                currentBlockScore = newBlockScore,
                 attemptedItems = newAttempted, firstCorrectItems = newFirstCorrect,
                 masteredItems = newMastered, timeSpentSeconds = timeSpent
             )
@@ -545,6 +550,8 @@ class UnitExerciseViewModel @Inject constructor(
                 isCorrect = false, feedback = Feedback("❌ Incorrecto", false),
                 showAcceptButton = true, wrongItems = state.wrongItems + wrong,
                 completedItems = newCompleted, userInput = userAnswer,
+                currentBlockCompletedItems = newBlockCompletedItems,
+                currentBlockScore = newBlockScore,
                 attemptedItems = newAttempted, timeSpentSeconds = timeSpent
             )
             saveProgressLocal()
@@ -560,13 +567,7 @@ class UnitExerciseViewModel @Inject constructor(
     }
 
     fun getBlockCompletedItems(): Int {
-        val state = _uiState.value
-        var before = 0
-        for (i in 0 until state.currentBlockIndex) {
-            before += state.blocks.getOrNull(i)?.items?.size ?: 0
-        }
-        val inBlock = (state.completedItems - before).coerceIn(0, state.blocks.getOrNull(state.currentBlockIndex)?.items?.size ?: 0)
-        return inBlock
+        return _uiState.value.currentBlockCompletedItems
     }
 
     fun getBlockTotalItems(): Int {
@@ -709,10 +710,13 @@ class UnitExerciseViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val state = _uiState.value
             val metrics = calculateMetrics()
+            
+            // Save unit-level progress (aggregate of all blocks)
+            val totalCompletedAcrossBlocks = calculateTotalCompletedItems()
             progressRepository.saveProgress(
                 topicId = topicId, unitId = unitId,
-                completedItems = state.completedItems,
-                score = state.score, totalItems = state.totalItems, completed = false
+                completedItems = totalCompletedAcrossBlocks,
+                score = calculateTotalScore(), totalItems = state.totalItems, completed = false
             )
             // Save pedagogical metrics
             progressRepository.saveMetrics(
@@ -725,26 +729,50 @@ class UnitExerciseViewModel @Inject constructor(
                 itemsCorrectFirst = metrics.itemsCorrectFirst,
                 timeSpentSeconds = metrics.timeSpentSeconds
             )
-            var itemsBeforeBlock = 0
-            for ((blockIdx, block) in state.blocks.withIndex()) {
-                if (blockIdx > state.currentBlockIndex) break
-                val completedInBlock = if (blockIdx < state.currentBlockIndex) {
-                    block.items.size
-                } else {
-                    (state.completedItems - itemsBeforeBlock).coerceIn(0, block.items.size)
-                }
-                val wrongInBlock = state.wrongItems.count { it.blockIndex == blockIdx }
-                val blockScore = (completedInBlock - wrongInBlock).coerceAtLeast(0)
-                val blockCompleted = blockIdx < state.currentBlockIndex || (blockIdx == state.currentBlockIndex && completedInBlock == block.items.size)
+            
+            // Save ONLY current block's progress
+            val currentBlock = state.blocks.getOrNull(state.currentBlockIndex)
+            if (currentBlock != null) {
+                val wrongInCurrentBlock = state.wrongItems.count { it.blockIndex == state.currentBlockIndex }
+                val blockCompleted = state.currentBlockCompletedItems >= currentBlock.items.size
                 progressRepository.saveBlockProgress(
                     topicId = topicId, unitId = unitId,
-                    blockIndex = blockIdx, score = blockScore,
-                    totalItems = block.items.size, completed = blockCompleted,
-                    completedItems = completedInBlock
+                    blockIndex = state.currentBlockIndex,
+                    score = state.currentBlockScore,
+                    totalItems = currentBlock.items.size,
+                    completed = blockCompleted,
+                    completedItems = state.currentBlockCompletedItems
                 )
-                itemsBeforeBlock += block.items.size
             }
         }
+    }
+    
+    private suspend fun calculateTotalCompletedItems(): Int {
+        val state = _uiState.value
+        var total = 0
+        for ((idx, block) in state.blocks.withIndex()) {
+            if (idx == state.currentBlockIndex) {
+                total += state.currentBlockCompletedItems
+            } else {
+                val saved = progressRepository.getBlockProgress(topicId, unitId, idx)
+                total += saved?.completedItems ?: 0
+            }
+        }
+        return total
+    }
+    
+    private suspend fun calculateTotalScore(): Int {
+        val state = _uiState.value
+        var total = 0
+        for ((idx, block) in state.blocks.withIndex()) {
+            if (idx == state.currentBlockIndex) {
+                total += state.currentBlockScore
+            } else {
+                val saved = progressRepository.getBlockProgress(topicId, unitId, idx)
+                total += saved?.score ?: 0
+            }
+        }
+        return total
     }
 
     private fun saveProgress(completed: Boolean = false) {
