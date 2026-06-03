@@ -21,3 +21,7 @@ data class DictionaryListResponse(
     val limit: Int,
     val offset: Int
 )
+
+data class DeleteResponse(
+    val status: String = ""
+)
