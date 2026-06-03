@@ -143,6 +143,7 @@ async def sync_progress(
                     existing_bp.score = bp_entry.score
                 existing_bp.completed = bp_entry.completed
                 existing_bp.total_items = bp_entry.totalItems
+                existing_bp.completed_items = bp_entry.completedItems
                 if bp_entry.completedAt:
                     if isinstance(bp_entry.completedAt, datetime):
                         if bp_entry.completedAt.tzinfo is not None:
@@ -160,6 +161,7 @@ async def sync_progress(
                     completed=bp_entry.completed,
                     score=bp_entry.score,
                     total_items=bp_entry.totalItems,
+                    completed_items=bp_entry.completedItems,
                     completed_at=bp_entry.completedAt,
                 )
                 db.add(new_bp)
@@ -260,6 +262,7 @@ async def get_progress(
             score=bp.score,
             totalItems=bp.total_items,
             completedAt=bp.completed_at,
+            completedItems=bp.completed_items,
         )
         for bp in block_rows
     ]

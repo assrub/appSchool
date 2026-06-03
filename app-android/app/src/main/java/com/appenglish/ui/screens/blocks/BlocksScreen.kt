@@ -292,6 +292,12 @@ private fun BlocksListContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (hasStarted) {
+                                Text(
+                                    "${(animatedProgress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = barColor,
+                                    fontWeight = FontWeight.Bold
+                                )
                                 val wrongCount = ((rawProgress?.completedItems ?: 0) - (rawProgress?.score ?: 0)).coerceAtLeast(0)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("✅ ", style = MaterialTheme.typography.labelSmall)
@@ -300,12 +306,6 @@ private fun BlocksListContent(
                                     Text("❌ ", style = MaterialTheme.typography.labelSmall)
                                     Text("${wrongCount}", style = MaterialTheme.typography.labelSmall, color = ErrorRed, fontWeight = FontWeight.Bold)
                                 }
-                                Text(
-                                    "${(animatedProgress * 100).toInt()}%",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = barColor,
-                                    fontWeight = FontWeight.Bold
-                                )
                             } else {
                                 Text(
                                     "0%",

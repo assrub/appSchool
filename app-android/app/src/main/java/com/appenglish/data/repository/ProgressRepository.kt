@@ -127,6 +127,7 @@ class ProgressRepository @Inject constructor(
                         score = bp.score,
                         totalItems = bp.totalItems,
                         completed = bp.completed,
+                        completedItems = bp.completedItems,
                         completedAt = remoteCompletedAt
                     )
                 )

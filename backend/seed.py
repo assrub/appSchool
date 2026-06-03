@@ -45,6 +45,8 @@ async def seed():
             "ALTER TABLE progress ADD COLUMN IF NOT EXISTS items_correct_first INTEGER DEFAULT 0",
             "ALTER TABLE progress ADD COLUMN IF NOT EXISTS time_spent_seconds INTEGER DEFAULT 0",
             "ALTER TABLE progress ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMP",
+            # New completed_items for block_progress
+            "ALTER TABLE block_progress ADD COLUMN IF NOT EXISTS completed_items INTEGER DEFAULT 0",
         ]
         for m in migrations:
             try:

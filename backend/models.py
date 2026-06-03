@@ -269,6 +269,7 @@ class BlockProgress(Base):
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     score: Mapped[int] = mapped_column(Integer, default=0)
     total_items: Mapped[int] = mapped_column(Integer, default=0)
+    completed_items: Mapped[int] = mapped_column(Integer, default=0)
     completed_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
 
 

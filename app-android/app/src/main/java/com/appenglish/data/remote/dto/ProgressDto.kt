@@ -31,7 +31,8 @@ data class BlockProgressEntryDto(
     val completed: Boolean = false,
     val score: Int = 0,
     val totalItems: Int = 0,
-    val completedAt: String? = null
+    val completedAt: String? = null,
+    val completedItems: Int = 0
 )
 
 data class ProgressSyncResponse(
@@ -82,7 +83,8 @@ data class BlockProgressDto(
     val completed: Boolean,
     val score: Int,
     val totalItems: Int,
-    val completedAt: String? = null
+    val completedAt: String? = null,
+    val completedItems: Int = 0
 )
 
 data class AnswerEntryDto(

@@ -29,6 +29,7 @@ class BlockProgressEntry(BaseModel):
     score: int = 0
     totalItems: int = 0
     completedAt: datetime | None = None
+    completedItems: int = 0
 
 
 class ProgressSyncRequest(BaseModel):
@@ -67,6 +68,7 @@ class BlockProgressResponse(BaseModel):
     score: int
     totalItems: int
     completedAt: datetime | None = None
+    completedItems: int = 0
 
 
 class ProgressTopicResponse(BaseModel):

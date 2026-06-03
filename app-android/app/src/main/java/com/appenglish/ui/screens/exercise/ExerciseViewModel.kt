@@ -772,6 +772,7 @@ class UnitExerciseViewModel @Inject constructor(
                         completed = blockCompleted,
                         score = blockScore,
                         totalItems = block.items.size,
+                        completedItems = completedInBlock,
                         completedAt = if (blockCompleted) java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()) else null
                     )
                 )
