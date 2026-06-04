@@ -1,0 +1,200 @@
+{
+  "version": "1.0",
+  "actions": [
+    {
+      "action": "upsert_subject",
+      "id": "ciencias-naturales",
+      "name": "Ciencias Naturales",
+      "icon": "🔬",
+      "color": "#4CAF50"
+    },
+    {
+      "action": "upsert_topic",
+      "id": "materia-transformaciones",
+      "subject_id": "ciencias-naturales",
+      "name": "Materia y sus transformaciones",
+      "difficulty": 2,
+      "icon": "🧪",
+      "theory": {
+        "blocks": [
+          {
+            "title": "La materia y las partículas",
+            "html": "<p>Toda la materia está formada por partículas muy pequeñas.</p><ul><li>Sólidos: partículas muy juntas.</li><li>Líquidos: juntas pero móviles.</li><li>Gases: muy separadas.</li></ul>"
+          },
+          {
+            "title": "Cambios de estado",
+            "html": "<p>La materia puede cambiar de estado cuando gana o pierde energía.</p>"
+          },
+          {
+            "title": "Cambios físicos y químicos",
+            "html": "<p>Los cambios físicos no forman sustancias nuevas. Los cambios químicos sí forman sustancias nuevas.</p>"
+          }
+        ],
+        "tips": [
+          { "emoji": "💡", "text": "Si aparece una sustancia nueva, es un cambio químico." },
+          { "emoji": "🎯", "text": "Recordá: sólido, líquido y gaseoso." }
+        ]
+      }
+    },
+    {
+      "action": "upsert_unit",
+      "id": "modelo-particulas",
+      "topic_id": "materia-transformaciones",
+      "title": "Modelo de partículas",
+      "explanation": "Resolvé los ejercicios.",
+      "theory": {
+        "blocks": [{ "title": "Modelo de partículas", "html": "<p>Teoría básica sobre Modelo de partículas.</p>" }],
+        "tips": [{ "emoji": "💡", "text": "Repasá modelo de partículas antes de comenzar." }]
+      },
+      "exercises": [
+        {
+          "title": "Práctica",
+          "items": [
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 1", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 2", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 3", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 4", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 5", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 6", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 7", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 8", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 9", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 10", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 11", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 12", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 13", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Modelo de partículas] Pregunta 14", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" }
+          ]
+        }
+      ]
+    },
+    {
+      "action": "upsert_unit",
+      "id": "estados-materia",
+      "topic_id": "materia-transformaciones",
+      "title": "Estados de la materia",
+      "explanation": "Resolvé los ejercicios.",
+      "theory": {
+        "blocks": [{ "title": "Estados de la materia", "html": "<p>Teoría básica sobre Estados de la materia.</p>" }],
+        "tips": [{ "emoji": "💡", "text": "Repasá estados de la materia antes de comenzar." }]
+      },
+      "exercises": [
+        {
+          "title": "Práctica",
+          "items": [
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 1", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 2", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 3", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 4", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 5", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 6", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 7", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 8", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 9", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 10", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 11", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 12", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 13", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Estados de la materia] Pregunta 14", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" }
+          ]
+        }
+      ]
+    },
+    {
+      "action": "upsert_unit",
+      "id": "cambios-estado",
+      "topic_id": "materia-transformaciones",
+      "title": "Cambios de estado",
+      "explanation": "Resolvé los ejercicios.",
+      "theory": {
+        "blocks": [{ "title": "Cambios de estado", "html": "<p>Teoría básica sobre Cambios de estado.</p>" }],
+        "tips": [{ "emoji": "💡", "text": "Repasá cambios de estado antes de comenzar." }]
+      },
+      "exercises": [
+        {
+          "title": "Práctica",
+          "items": [
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 1", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 2", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 3", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 4", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 5", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 6", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 7", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 8", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 9", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 10", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 11", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 12", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 13", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios de estado] Pregunta 14", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" }
+          ]
+        }
+      ]
+    },
+    {
+      "action": "upsert_unit",
+      "id": "evaporacion-ebullicion",
+      "topic_id": "materia-transformaciones",
+      "title": "Evaporación y ebullición",
+      "explanation": "Resolvé los ejercicios.",
+      "theory": {
+        "blocks": [{ "title": "Evaporación y ebullición", "html": "<p>Teoría básica sobre Evaporación y ebullición.</p>" }],
+        "tips": [{ "emoji": "💡", "text": "Repasá evaporación y ebullición antes de comenzar." }]
+      },
+      "exercises": [
+        {
+          "title": "Práctica",
+          "items": [
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 1", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 2", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 3", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 4", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 5", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 6", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 7", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 8", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 9", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 10", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 11", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 12", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 13", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Evaporación y ebullición] Pregunta 14", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" }
+          ]
+        }
+      ]
+    },
+    {
+      "action": "upsert_unit",
+      "id": "cambios-fisicos-quimicos",
+      "topic_id": "materia-transformaciones",
+      "title": "Cambios físicos y químicos",
+      "explanation": "Resolvé los ejercicios.",
+      "theory": {
+        "blocks": [{ "title": "Cambios físicos y químicos", "html": "<p>Teoría básica sobre Cambios físicos y químicos.</p>" }],
+        "tips": [{ "emoji": "💡", "text": "Repasá cambios físicos y químicos antes de comenzar." }]
+      },
+      "exercises": [
+        {
+          "title": "Práctica",
+          "items": [
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 1", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 2", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 3", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 4", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 5", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 6", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 7", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 8", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 9", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 10", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 11", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 12", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 13", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" },
+            { "type": "multiple-choice", "question": "[Cambios físicos y químicos] Pregunta 14", "options": ["Opción A", "Opción B", "Opción C"], "answer": "Opción A" }
+          ]
+        }
+      ]
+    }
+  ]
+}
