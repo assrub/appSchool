@@ -112,6 +112,7 @@ class UnitExerciseViewModel @Inject constructor(
     private val topicId: String = savedStateHandle.get<String>("topicId") ?: "verb-to-be"
     private val unitId: String = savedStateHandle.get<String>("unitId") ?: "affirmative"
     private val startBlockIndex: Int = savedStateHandle.get<Int>("startBlockIndex") ?: 0
+    private val retryMode: Boolean = savedStateHandle.get<Int>("retryMode") == 1
 
     private val pendingAnswers = mutableListOf<AnswerEntryDto>()
     private val pendingAnswersMutex = Mutex()
@@ -204,6 +205,37 @@ class UnitExerciseViewModel @Inject constructor(
                         currentBlockCompletedItems = adjustedCompletedItems,
                         currentBlockScore = adjustedBlockScore
                     )
+
+                    if (retryMode) {
+                        val savedBlockProgress = progressRepository.getBlockProgress(topicId, unitId, blockIdx)
+                        val indicesStr = savedBlockProgress?.wrongItemIndices ?: ""
+                        if (indicesStr.isNotBlank()) {
+                            val indices = indicesStr.split(",").mapNotNull { it.toIntOrNull() }
+                            val wrongItems = indices.mapNotNull { idx ->
+                                val block = blocks.getOrNull(blockIdx) ?: return@mapNotNull null
+                                val item = block.items.getOrNull(idx) ?: return@mapNotNull null
+                                WrongAnswer(
+                                    blockIndex = blockIdx,
+                                    itemIndex = idx,
+                                    sentence = item.sentence,
+                                    givenAnswer = "",
+                                    correctAnswer = item.answer
+                                )
+                            }
+                            if (wrongItems.isNotEmpty()) {
+                                _uiState.value = _uiState.value.copy(
+                                    retryMode = true,
+                                    wrongItems = wrongItems,
+                                    retryIndex = 0,
+                                    currentItemIndex = 0,
+                                    currentBlockCompletedItems = 0,
+                                    currentBlockScore = 0,
+                                    currentBlockTheory = null
+                                )
+                            }
+                        }
+                    }
+
                     updateCurrentBlockTheory()
                 },
                 onFailure = { e -> _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error") }
@@ -801,13 +833,17 @@ class UnitExerciseViewModel @Inject constructor(
                 val cappedBlockItems = state.currentBlockCompletedItems.coerceAtMost(currentBlock.items.size)
                 val cappedBlockScore = state.currentBlockScore.coerceAtMost(currentBlock.items.size)
                 val blockCompleted = cappedBlockItems >= currentBlock.items.size
+                val wrongItemIndices = state.wrongItems
+                    .filter { it.blockIndex == state.currentBlockIndex }
+                    .joinToString(",") { it.itemIndex.toString() }
                 progressRepository.saveBlockProgress(
                     topicId = topicId, unitId = unitId,
                     blockIndex = state.currentBlockIndex,
                     score = cappedBlockScore,
                     totalItems = currentBlock.items.size,
                     completed = blockCompleted,
-                    completedItems = cappedBlockItems
+                    completedItems = cappedBlockItems,
+                    wrongItemIndices = wrongItemIndices
                 )
             }
         }

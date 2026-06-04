@@ -19,5 +19,6 @@ data class BlockProgressEntity(
     val totalItems: Int = 0,
     val completed: Boolean = false,
     val completedItems: Int = 0,
-    val completedAt: Long? = null
+    val completedAt: Long? = null,
+    val wrongItemIndices: String = ""
 )

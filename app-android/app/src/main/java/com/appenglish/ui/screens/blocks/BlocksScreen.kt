@@ -76,7 +76,7 @@ import com.appenglish.ui.theme.WarningOrange
 @Composable
 fun BlocksScreen(
     onBackClick: () -> Unit,
-    onBlockClick: (String, String, Int) -> Unit,
+    onBlockClick: (String, String, Int, Boolean) -> Unit,
     onTopicTheoryClick: (String) -> Unit,
     onUnitTheoryClick: (String, String) -> Unit,
     viewModel: BlocksViewModel = hiltViewModel()
@@ -162,19 +162,18 @@ fun BlocksScreen(
                                 title = { Text("Bloque con errores") },
                                 text = { Text("¿Querés rehacer solo los $wrongCount errores o todo el bloque?") },
                                 confirmButton = {
-                                    TextButton(onClick = {
-                                        viewModel.redoBlock(blockIdx)
-                                        clickBlockIdx = null
-                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx)
-                                    }) {
-                                        Text("Rehacer solo errores", color = WarningOrange)
-                                    }
+                                TextButton(onClick = {
+                                    onBlockClick(uiState.topicId, uiState.unitId, blockIdx, true)
+                                    clickBlockIdx = null
+                                }) {
+                                    Text("Rehacer solo errores", color = WarningOrange)
+                                }
                                 },
                                 dismissButton = {
                                     TextButton(onClick = {
                                         viewModel.redoBlock(blockIdx)
                                         clickBlockIdx = null
-                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx)
+                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx, false)
                                     }) {
                                         Text("Rehacer todo", color = Primary)
                                     }
@@ -189,7 +188,7 @@ fun BlocksScreen(
                                     TextButton(onClick = {
                                         viewModel.redoBlock(blockIdx)
                                         clickBlockIdx = null
-                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx)
+                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx, false)
                                     }) {
                                         Text("Repetir", color = Primary)
                                     }
@@ -198,14 +197,14 @@ fun BlocksScreen(
                                     TextButton(onClick = {
                                         viewModel.redoBlock(blockIdx)
                                         clickBlockIdx = null
-                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx)
+                                        onBlockClick(uiState.topicId, uiState.unitId, blockIdx, false)
                                     }) {
                                         Text("Rehacer desde 0", color = WarningOrange)
                                     }
                                 }
                             )
                         } else {
-                            onBlockClick(uiState.topicId, uiState.unitId, blockIdx)
+                            onBlockClick(uiState.topicId, uiState.unitId, blockIdx, false)
                             clickBlockIdx = null
                         }
                     }
