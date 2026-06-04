@@ -6,7 +6,7 @@ from database import Base
 
 
 def _utcnow():
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.utcnow()
 
 
 class Subject(Base):

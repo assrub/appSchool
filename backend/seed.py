@@ -83,21 +83,6 @@ async def seed():
         with open(subjects_path, "r") as f:
             subjects_data = json.load(f)
 
-        # Assign fausti to all subjects (get user id first)
-        fausti_check = await db.execute(select(AppUser).where(AppUser.username == "fausti"))
-        fausti_user = fausti_check.scalar_one_or_none()
-        if fausti_user:
-            for subj_data in subjects_data.get("subjects", []):
-                existing_assignment = await db.execute(
-                    select(UserSubject).where(
-                        UserSubject.user_id == fausti_user.id,
-                        UserSubject.subject_id == subj_data["id"]
-                    )
-                )
-                if not existing_assignment.scalar_one_or_none():
-                    db.add(UserSubject(user_id=fausti_user.id, subject_id=subj_data["id"]))
-            print("Assigned fausti to subjects")
-
         for subj_data in subjects_data.get("subjects", []):
             # Upsert subject
             existing_subject = await db.execute(select(Subject).where(Subject.id == subj_data["id"]))
@@ -129,7 +114,26 @@ async def seed():
                         with open(topic_path, "r") as f:
                             topic_data = json.load(f)
 
+                        if "id" not in topic_data:
+                            print(f"Skipping non-topic content file: {topic_path}")
+                            continue
+
                         await _upsert_topic(db, topic_data, subj_data["id"])
+
+        # Assign fausti to all subjects (get user id first)
+        fausti_check = await db.execute(select(AppUser).where(AppUser.username == "fausti"))
+        fausti_user = fausti_check.scalar_one_or_none()
+        if fausti_user:
+            for subj_data in subjects_data.get("subjects", []):
+                existing_assignment = await db.execute(
+                    select(UserSubject).where(
+                        UserSubject.user_id == fausti_user.id,
+                        UserSubject.subject_id == subj_data["id"]
+                    )
+                )
+                if not existing_assignment.scalar_one_or_none():
+                    db.add(UserSubject(user_id=fausti_user.id, subject_id=subj_data["id"]))
+            print("Assigned fausti to subjects")
 
         await db.commit()
         print("Database seeded successfully (upsert mode)!")
