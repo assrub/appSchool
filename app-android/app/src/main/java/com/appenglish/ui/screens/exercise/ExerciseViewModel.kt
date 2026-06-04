@@ -280,6 +280,10 @@ class UnitExerciseViewModel @Inject constructor(
 
     fun onAcceptClick() {
         val state = _uiState.value
+        if (state.retryMode) {
+            _uiState.value = state.copy(showAcceptButton = false, isCorrect = null, userInput = "", mcSelectedIndex = null)
+            return
+        }
         _uiState.value = state.copy(showAcceptButton = false)
         autoAdvance()
     }
@@ -432,9 +436,27 @@ class UnitExerciseViewModel @Inject constructor(
                 currentBlockTheory = null
             )
             saveProgress()
+            clearWrongItemIndices()
         } else {
             _uiState.value = state.copy(isFinished = true, retryMode = false, blockRetryMode = false)
             saveProgress(completed = true)
+            clearWrongItemIndices()
+        }
+    }
+
+    private fun clearWrongItemIndices() {
+        viewModelScope.launch {
+            val s = _uiState.value
+            val currentBlock = s.blocks.getOrNull(s.currentBlockIndex) ?: return@launch
+            progressRepository.saveBlockProgress(
+                topicId = topicId, unitId = unitId,
+                blockIndex = s.currentBlockIndex,
+                score = s.currentBlockScore,
+                totalItems = currentBlock.items.size,
+                completed = true,
+                completedItems = s.currentBlockCompletedItems,
+                wrongItemIndices = ""
+            )
         }
     }
 
@@ -564,6 +586,12 @@ class UnitExerciseViewModel @Inject constructor(
 
     private fun handleAnswer(correct: Boolean, item: ExerciseItem, userAnswer: String) {
         val state = _uiState.value
+
+        if (state.retryMode) {
+            retryWrongAnswer(userAnswer)
+            return
+        }
+
         val app = getApplication<Application>()
         viewModelScope.launch(Dispatchers.Main) { playFeedbackSound(app, if (correct) state.soundCorrectUrl else state.soundIncorrectUrl, correct) }
 
