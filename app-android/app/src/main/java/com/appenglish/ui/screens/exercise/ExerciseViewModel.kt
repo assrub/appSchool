@@ -228,8 +228,6 @@ class UnitExerciseViewModel @Inject constructor(
                                     wrongItems = wrongItems,
                                     retryIndex = 0,
                                     currentItemIndex = 0,
-                                    currentBlockCompletedItems = 0,
-                                    currentBlockScore = 0,
                                     currentBlockTheory = null
                                 )
                             }
@@ -424,10 +422,16 @@ class UnitExerciseViewModel @Inject constructor(
                 retryIndex = nextIdx,
                 userInput = "", isCorrect = null, showingAnswer = false,
                 playingFullAudio = false, readyForNext = false, showAcceptButton = false,
-                currentBlockTheory = null
+                currentBlockTheory = null,
+                mcSelectedIndex = null,
+                reorderWords = emptyList(),
+                reorderSlots = emptyList(),
+                matchedPairs = 0,
+                tfAnswer = null,
+                cachedOptions = emptyList(),
+                cachedOptionsKey = ""
             )
         } else if (state.blockRetryMode) {
-            // Done retrying block errors, return to block completion
             _uiState.value = state.copy(
                 retryMode = false,
                 blockRetryMode = false,
@@ -435,11 +439,9 @@ class UnitExerciseViewModel @Inject constructor(
                 isFinished = false,
                 currentBlockTheory = null
             )
-            saveProgress()
             clearWrongItemIndices()
         } else {
             _uiState.value = state.copy(isFinished = true, retryMode = false, blockRetryMode = false)
-            saveProgress(completed = true)
             clearWrongItemIndices()
         }
     }
@@ -448,13 +450,14 @@ class UnitExerciseViewModel @Inject constructor(
         viewModelScope.launch {
             val s = _uiState.value
             val currentBlock = s.blocks.getOrNull(s.currentBlockIndex) ?: return@launch
+            val existing = progressRepository.getBlockProgress(topicId, unitId, s.currentBlockIndex)
             progressRepository.saveBlockProgress(
                 topicId = topicId, unitId = unitId,
                 blockIndex = s.currentBlockIndex,
-                score = s.currentBlockScore,
+                score = existing?.score ?: s.currentBlockScore,
                 totalItems = currentBlock.items.size,
-                completed = true,
-                completedItems = s.currentBlockCompletedItems,
+                completed = existing?.completed ?: true,
+                completedItems = existing?.completedItems ?: s.currentBlockCompletedItems,
                 wrongItemIndices = ""
             )
         }
