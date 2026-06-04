@@ -6,6 +6,13 @@
       "icon": "📚",
       "color": "#4CAF50",
       "mapConfig": null
+    },
+    {
+      "id": "ciencias-naturales",
+      "name": "Ciencias Naturales",
+      "icon": "🔬",
+      "color": "#4CAF50",
+      "mapConfig": null
     }
   ]
 }
