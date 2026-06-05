@@ -7,6 +7,7 @@ import com.appenglish.data.remote.dto.SubjectsResponse
 import com.appenglish.data.remote.dto.TopicResponse
 import com.appenglish.data.remote.dto.TestResponse
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +22,7 @@ class ContentRepository @Inject constructor(
         try {
             api.getSubjects().also { saveCache("subjects", it) }
         } catch (e: Exception) {
-            loadCache("subjects", SubjectsResponse::class.java) ?: throw e
+            loadCache<SubjectsResponse>("subjects") ?: throw e
         }
     }
 
@@ -29,7 +30,7 @@ class ContentRepository @Inject constructor(
         try {
             api.getTopic(topicId).also { saveCache("topic_$topicId", it) }
         } catch (e: Exception) {
-            loadCache("topic_$topicId", TopicResponse::class.java) ?: throw e
+            loadCache<TopicResponse>("topic_$topicId") ?: throw e
         }
     }
 
@@ -37,7 +38,7 @@ class ContentRepository @Inject constructor(
         try {
             api.getTest(topicId, count).also { saveCache("test_$topicId", it) }
         } catch (e: Exception) {
-            loadCache("test_$topicId", TestResponse::class.java) ?: throw e
+            loadCache<TestResponse>("test_$topicId") ?: throw e
         }
     }
 
@@ -47,12 +48,11 @@ class ContentRepository @Inject constructor(
         } catch (_: Exception) {}
     }
 
-    private suspend fun <T> loadCache(key: String, clazz: Class<T>): T? {
+    private inline suspend fun <reified T> loadCache(key: String): T? {
         return try {
             val cached = cacheDao.get(key) ?: return null
-            gson.fromJson(cached.jsonData, clazz)
-        } catch (_: Exception) { 
-            // Cache is corrupted or incompatible - delete it
+            gson.fromJson<T>(cached.jsonData, object : TypeToken<T>() {}.type)
+        } catch (_: Exception) {
             try { cacheDao.delete(key) } catch (_: Exception) {}
             null
         }

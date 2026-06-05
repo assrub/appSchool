@@ -82,7 +82,7 @@ class ProgressRepository @Inject constructor(
         for (subject in response.subjects) {
             for (topic in subject.topics) {
                 for (unit in topic.units) {
-                    val isMarkedForRedo = unit.redoData?.get("marked") == true
+                    val isMarkedForRedo = unit.redoData?.marked == true
                     if (isMarkedForRedo) {
                         dao.deleteUnitProgress(userId, topic.topicId, unit.unitId)
                         dao.deleteUnitBlockProgress(userId, topic.topicId, unit.unitId)

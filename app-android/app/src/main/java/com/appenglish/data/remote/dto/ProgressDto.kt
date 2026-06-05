@@ -59,6 +59,10 @@ data class ProgressTopicDto(
     val testScore: Int? = null
 )
 
+data class RedoData(
+    val marked: Boolean? = null
+)
+
 data class ProgressUnitDto(
     val unitId: String,
     val completed: Boolean,
@@ -73,7 +77,7 @@ data class ProgressUnitDto(
     val itemsMastered: Int = 0,
     val itemsCorrectFirst: Int = 0,
     val timeSpentSeconds: Int = 0,
-    val redoData: Map<String, Any>? = null
+    val redoData: RedoData? = null
 )
 
 data class BlockProgressDto(
